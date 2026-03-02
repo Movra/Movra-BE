@@ -9,11 +9,11 @@ public record UserId(
         UUID userId
 ) {
 
-    public UserId newId(){
+    public static UserId newId(){
         return new UserId(UUID.randomUUID());
     }
 
-    public UserId of(UUID userId){
+    public static UserId of(UUID userId){
         return new UserId(userId);
     }
 }

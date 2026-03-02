@@ -9,11 +9,11 @@ public record TeamSubGoalAssignmentId(
         UUID teamSubGoalAssignmentId
 ) {
 
-    public TeamSubGoalAssignmentId newId(){
+    public static TeamSubGoalAssignmentId newId(){
         return new TeamSubGoalAssignmentId(UUID.randomUUID());
     }
 
-    public TeamSubGoalAssignmentId of(UUID teamSubGoalAssignmentId){
+    public static TeamSubGoalAssignmentId of(UUID teamSubGoalAssignmentId){
         return new TeamSubGoalAssignmentId(teamSubGoalAssignmentId);
     }
 }

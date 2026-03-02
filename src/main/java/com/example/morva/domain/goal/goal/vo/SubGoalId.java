@@ -6,11 +6,11 @@ public record SubGoalId(
         UUID subGoalId
 ) {
 
-    public SubGoalId newId(){
+    public static SubGoalId newId(){
         return new SubGoalId(UUID.randomUUID());
     }
 
-    public SubGoalId of(UUID subGoalId){
+    public static SubGoalId of(UUID subGoalId){
         return new SubGoalId(subGoalId);
     }
 }

@@ -9,7 +9,7 @@ public record TeamChatRoomId(
         UUID teamChatRoomId
 ) {
 
-    public TeamChatRoomId newId(){
+    public static TeamChatRoomId newId(){
         return new TeamChatRoomId(UUID.randomUUID());
     }
 

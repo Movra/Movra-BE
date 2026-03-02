@@ -9,7 +9,7 @@ public record TeamSubGoalId(
         UUID teamSubGoalId
 ) {
 
-    public TeamSubGoalId newId(){
+    public static TeamSubGoalId newId(){
         return new TeamSubGoalId(UUID.randomUUID());
     }
 

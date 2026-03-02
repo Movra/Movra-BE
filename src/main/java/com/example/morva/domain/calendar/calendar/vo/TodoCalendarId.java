@@ -9,7 +9,7 @@ public record TodoCalendarId(
         UUID todoCalendarId
 ) {
 
-    public TodoCalendarId newId(){
+    public static TodoCalendarId newId(){
         return new TodoCalendarId(UUID.randomUUID());
     }
 

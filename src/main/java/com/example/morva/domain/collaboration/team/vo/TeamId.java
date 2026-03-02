@@ -9,11 +9,11 @@ public record TeamId(
         UUID teamId
 ) {
 
-    public TeamId newId(){
+    public static TeamId newId(){
         return new TeamId(UUID.randomUUID());
     }
 
-    public TeamId of(UUID teamId){
+    public static TeamId of(UUID teamId){
         return new TeamId(teamId);
     }
 }
