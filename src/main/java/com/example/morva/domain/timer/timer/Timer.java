@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 @Getter
 @Builder(access = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "tbl_goals")
+@Table(name = "tbl_timers")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Timer {
