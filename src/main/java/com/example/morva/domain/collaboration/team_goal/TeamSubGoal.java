@@ -18,7 +18,7 @@ public class TeamSubGoal {
     private TeamSubGoalId teamSubGoalId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_goal_id")
+    @JoinColumn(name = "team_goal_id", nullable = false)
     private TeamGoal teamGoal;
 
     @Column(length = 100, nullable = false)

@@ -21,7 +21,7 @@ public class InviteCode {
 
     @MapsId
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id")
+    @JoinColumn(name = "team_id", nullable = false)
     private Team team;
 
     @Column(length = 6, nullable = false)

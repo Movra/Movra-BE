@@ -20,7 +20,7 @@ public class TeamChatMessage {
     private TeamChatMessageId teamChatMessageId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_chat_room_id")
+    @JoinColumn(name = "team_chat_room_id", nullable = false)
     private TeamChatRoom teamChatRoom;
 
     @Embedded

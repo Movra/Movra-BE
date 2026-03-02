@@ -17,7 +17,7 @@ public class TeamSubGoalAssignment {
     private TeamSubGoalAssignmentId teamSubGoalAssignmentId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_goal_assignment_id")
+    @JoinColumn(name = "team_goal_assignment_id", nullable = false)
     private TeamGoalAssignment teamGoalAssignment;
 
     @Embedded
