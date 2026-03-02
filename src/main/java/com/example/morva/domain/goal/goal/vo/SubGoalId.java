@@ -1,7 +1,10 @@
 package com.example.morva.domain.goal.goal.vo;
 
+import jakarta.persistence.Embeddable;
+
 import java.util.UUID;
 
+@Embeddable
 public record SubGoalId(
         UUID subGoalId
 ) {
