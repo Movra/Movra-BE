@@ -3,9 +3,9 @@ package com.example.morva.domain.collaboration.assignment;
 import com.example.morva.domain.account.user.vo.UserId;
 import com.example.morva.domain.collaboration.assignment.vo.TeamGoalAssignmentId;
 import com.example.morva.domain.collaboration.team_goal.vo.TeamGoalId;
+import com.example.morva.sharedkernel.domain.AbstractAggregateRoot;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.domain.AbstractAggregateRoot;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,7 +16,7 @@ import java.util.List;
 @Table(name = "tbl_team_goal_assignments")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class TeamGoalAssignment extends AbstractAggregateRoot<TeamGoalAssignment> {
+public class TeamGoalAssignment extends AbstractAggregateRoot {
 
     @EmbeddedId
     private TeamGoalAssignmentId teamGoalAssignmentId;
