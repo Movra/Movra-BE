@@ -23,7 +23,7 @@ public class User extends AbstractAggregateRoot {
     private String profileImage;
 
     @Column(nullable = false)
-    private String password;
+    private String passwordHash;
 
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private AuthCredential authCredential;
