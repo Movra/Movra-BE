@@ -18,8 +18,12 @@ public class AuthDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String userId) throws UsernameNotFoundException {
-        return userRepository.findById(UserId.of(UUID.fromString(userId)))
-                .map(AuthDetails::new)
-                .orElseThrow(() -> new UsernameNotFoundException(userId));
+        try {
+            return userRepository.findById(UserId.of(UUID.fromString(userId)))
+                    .map(AuthDetails::new)
+                    .orElseThrow(() -> new UsernameNotFoundException(userId));
+        } catch (IllegalArgumentException e) {
+            throw new UsernameNotFoundException(userId);
+        }
     }
 }

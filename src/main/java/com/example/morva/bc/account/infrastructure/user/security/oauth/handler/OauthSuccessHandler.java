@@ -6,6 +6,7 @@ import com.example.morva.bc.account.infrastructure.user.security.jwt.JwtTokenPro
 import com.example.morva.bc.account.infrastructure.user.security.oauth.OauthAttribute;
 import com.example.morva.bc.account.infrastructure.user.security.oauth.dto.PendingOauth;
 import com.example.morva.bc.account.infrastructure.user.security.oauth.pending.PendingOauthStore;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -50,9 +51,11 @@ public class OauthSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
         jwtTokenProvider.save(authDetails.getUser().getId().id().toString(), refreshToken);
 
+        addHttpOnlyCookie(response, "accessToken", accessToken, 60 * 60);
+        addHttpOnlyCookie(response, "refreshToken", refreshToken, 60 * 60 * 24 * 7);
+
         String redirectUrl = UriComponentsBuilder.fromUriString(frontendUrl)
-                .queryParam("accessToken", accessToken)
-                .queryParam("refreshToken", refreshToken)
+                .queryParam("isProfileCompleted", true)
                 .build()
                 .toUriString();
 
@@ -70,12 +73,22 @@ public class OauthSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
                         .build()
         );
 
+        addHttpOnlyCookie(response, "pendingToken", pendingToken, 60 * 30);
+
         String redirectUrl = UriComponentsBuilder.fromUriString(frontendUrl)
-                .queryParam("pendingToken", pendingToken)
                 .queryParam("isProfileCompleted", false)
                 .build()
                 .toUriString();
 
         response.sendRedirect(redirectUrl);
+    }
+
+    private void addHttpOnlyCookie(HttpServletResponse response, String name, String value, int maxAge) {
+        Cookie cookie = new Cookie(name, value);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(true);
+        cookie.setPath("/");
+        cookie.setMaxAge(maxAge);
+        response.addCookie(cookie);
     }
 }

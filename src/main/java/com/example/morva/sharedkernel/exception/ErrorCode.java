@@ -16,6 +16,7 @@ public enum ErrorCode {
     DUPLICATE_ACCOUNT_ID(HttpStatus.CONFLICT, "이미 존재하는 accountId 입니다."),
     DUPLICATE_USER(HttpStatus.CONFLICT, "이미 존재하는 사용자입니다."),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 존재하는 이메일입니다."),
+    LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "아이디 또는 비밀번호가 올바르지 않습니다."),
     ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "accountId가 존재하지 않습니다."),
     PASSWORD_MISMATCH(HttpStatus.UNAUTHORIZED, "비밀번호가 다릅니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),

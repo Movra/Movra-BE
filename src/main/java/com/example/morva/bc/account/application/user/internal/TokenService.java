@@ -19,7 +19,12 @@ public class TokenService {
 
     public User authenticate(String token){
         String userId = jwtTokenProvider.extractSubject(token);
-        return userRepository.findById(UserId.of(UUID.fromString(userId)))
-                .orElseThrow(UserNotFoundException::new);
+
+        try {
+            return userRepository.findById(UserId.of(UUID.fromString(userId)))
+                    .orElseThrow(UserNotFoundException::new);
+        } catch (IllegalArgumentException e) {
+            throw new UserNotFoundException();
+        }
     }
 }

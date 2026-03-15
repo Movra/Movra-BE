@@ -159,7 +159,7 @@ public class ImageFileStorageService {
 
     //키 유효성 검사
     private void validateKey(String key) {
-        if (key == null || key.isBlank() || key.contains("..") || key.contains("/")) {
+        if (key == null || key.isBlank() || key.contains("..")) {
             throw new FileDeleteFailedException();
         }
     }

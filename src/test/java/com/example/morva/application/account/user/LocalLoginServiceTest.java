@@ -3,8 +3,7 @@ package com.example.morva.application.account.user;
 import com.example.morva.bc.account.application.user.LocalLoginService;
 import com.example.morva.bc.account.application.user.dto.request.LocalLoginRequest;
 import com.example.morva.bc.account.application.user.dto.response.TokenResponse;
-import com.example.morva.bc.account.application.user.exception.AccountNotFoundException;
-import com.example.morva.bc.account.application.user.exception.PasswordMismatchException;
+import com.example.morva.bc.account.application.user.exception.LoginFailedException;
 import com.example.morva.bc.account.domain.user.User;
 import com.example.morva.bc.account.domain.user.repository.UserRepository;
 import com.example.morva.bc.account.infrastructure.user.security.jwt.JwtTokenProvider;
@@ -69,7 +68,7 @@ class LocalLoginServiceTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 accountId로 로그인 시 AccountNotFoundException 발생")
+    @DisplayName("존재하지 않는 accountId로 로그인 시 LoginFailedException 발생")
     void login_accountNotFound_throwsException() {
         // given
         LocalLoginRequest request = new LocalLoginRequest("unknown", "password123");
@@ -77,11 +76,11 @@ class LocalLoginServiceTest {
 
         // when & then
         assertThatThrownBy(() -> localLoginService.login(request))
-                .isInstanceOf(AccountNotFoundException.class);
+                .isInstanceOf(LoginFailedException.class);
     }
 
     @Test
-    @DisplayName("비밀번호 불일치 시 PasswordMismatchException 발생")
+    @DisplayName("비밀번호 불일치 시 LoginFailedException 발생")
     void login_passwordMismatch_throwsException() {
         // given
         LocalLoginRequest request = new LocalLoginRequest("testuser", "wrongPassword");
@@ -92,6 +91,6 @@ class LocalLoginServiceTest {
 
         // when & then
         assertThatThrownBy(() -> localLoginService.login(request))
-                .isInstanceOf(PasswordMismatchException.class);
+                .isInstanceOf(LoginFailedException.class);
     }
 }

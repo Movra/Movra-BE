@@ -58,6 +58,7 @@ public class OauthProfileSetupService {
             String refreshToken = jwtTokenProvider.generateRefreshToken(user.getId().id());
 
             jwtTokenProvider.save(user.getId().id().toString(), refreshToken);
+            pendingOauthStore.remove(token);
 
             return ProfileSetupResponse.builder()
                     .accessToken(accessToken)
