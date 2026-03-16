@@ -1,0 +1,31 @@
+package com.example.movra.bc.account.application.user.dto.request;
+
+import com.example.movra.sharedkernel.validation.NotEmptyMultipartFile;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import org.springframework.web.multipart.MultipartFile;
+
+public record LocalSignupRequest(
+
+        @NotBlank(message = "이메일은 필수입니다.")
+        @Email(message = "유효한 이메일 형식이 아닙니다.")
+        @Size(max = 255, message = "255자 이내로 작성해주세요.")
+        String email,
+
+        @NotBlank(message = "account ID는 필수입니다.")
+        @Size(max = 30, message = "account ID를 30 사이로 입력해주세요.")
+        String accountId,
+
+        @NotBlank(message = "이름은 필수입니다.")
+        @Size(max = 20, message = "이름을 20 사이로 입력해주세요.")
+        String profileName,
+
+        @NotEmptyMultipartFile
+        MultipartFile profileImage,
+
+        @NotBlank(message = "비밀번호는 필수입니다.")
+        @Size(min = 8, max = 20, message = "비밀번호를 8 ~ 20 사이로 입력해주세요.")
+        String password
+) {
+}
