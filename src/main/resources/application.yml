@@ -21,3 +21,71 @@ spring:
       hibernate:
         format_sql: true
     show-sql: true
+
+  jwt:
+    secretKey: ${JWT_SECRET}
+    accessExp: ${ACCESS_EXP}
+    refreshExp: ${REFRESH_EXP}
+    header: ${HEADER}
+    prefix: ${PREFIX}
+
+  data:
+    redis:
+      port: ${REDIS_PORT}
+      host: ${REDIS_HOST}
+
+  oauth:
+    redirect:
+      frontend-url: ${FRONTEND_URL}
+
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
+            authorization-grant-type: authorization_code
+            scope:
+              - email
+
+          naver:
+            client-id: ${NAVER_CLIENT_ID}
+            client-secret: ${NAVER_CLIENT_SECRET}
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/naver"
+            scope:
+              - email
+
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://openidconnect.googleapis.com/v1/userinfo
+            user-name-attribute: email
+
+          naver:
+            authorization-uri: https://nid.naver.com/oauth2.0/authorize
+            token-uri: https://nid.naver.com/oauth2.0/token
+            user-info-uri: https://openapi.naver.com/v1/nid/me
+            user-name-attribute: response
+
+cloud:
+  file:
+    seaweedfs:
+      bucket: ${BUCKET_NAME}
+      endpoint: ${SEAWEEDFS_ENDPOINT}
+      url-prefix: ${MEEZY_IMAGE_FOLDER}
+      region: ${SEAWEEDFS_REGION}
+
+    credentials:
+      access-key: ${SEAWEEDFS_ACCESS_KEY}
+      secret-key: ${SEAWEEDFS_SECRET_KEY}
+
+server:
+  forward-headers-strategy: framework
+  tomcat:
+    remoteip:
+      internal-proxies: ${TRUSTED_PROXY_IP:10\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|192\\.168\\.\\d{1,3}\\.\\d{1,3}|172\\.(1[6-9]|2\\d|3[01])\\.\\d{1,3}\\.\\d{1,3}|127\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}}
