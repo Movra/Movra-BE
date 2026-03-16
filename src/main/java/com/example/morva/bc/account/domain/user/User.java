@@ -20,7 +20,7 @@ public class User extends AbstractAggregateRoot {
     @EmbeddedId
     private UserId id;
 
-    @Column(length = 20, nullable = false)
+    @Column(length = 20, unique = true, nullable = false)
     private String accountId;
 
     @Column(length = 20, nullable = false)
