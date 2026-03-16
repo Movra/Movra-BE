@@ -10,7 +10,6 @@ import com.example.morva.sharedkernel.file.storage.ImageFileStorageService;
 import com.example.morva.sharedkernel.file.storage.type.ImageType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,10 +42,6 @@ public class LocalSignupService {
                     localSignupRequest.email(),
                     localSignupRequest.password()
             );
-        } catch (DataIntegrityViolationException e){
-            cleanupUploadedImage(profileUrl);
-            log.warn("회원가입 중복 발생 (레이스 컨디션): {}", e.getMessage());
-            throw new DuplicateAccountIdException();
         } catch (Exception e){
             cleanupUploadedImage(profileUrl);
             log.error("회원가입 실패: {}", e.getMessage());
