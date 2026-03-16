@@ -2,7 +2,9 @@ package com.example.morva.bc.account.application.user;
 
 import com.example.morva.bc.account.application.user.dto.request.LocalLoginRequest;
 import com.example.morva.bc.account.application.user.dto.response.TokenResponse;
+import com.example.morva.bc.account.application.user.exception.AccountNotFoundException;
 import com.example.morva.bc.account.application.user.exception.LoginFailedException;
+import com.example.morva.bc.account.application.user.exception.PasswordMismatchException;
 import com.example.morva.bc.account.domain.user.User;
 import com.example.morva.bc.account.domain.user.repository.UserRepository;
 import com.example.morva.bc.account.infrastructure.user.security.jwt.JwtTokenProvider;
@@ -12,7 +14,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class LocalLoginService {
@@ -25,14 +26,10 @@ public class LocalLoginService {
     public TokenResponse login(LocalLoginRequest localLoginRequest){
 
         User user = userRepository.findByAccountId(localLoginRequest.accountId())
-                .orElseThrow(() -> {
-                    log.warn("로그인 실패: 존재하지 않는 accountId={}", localLoginRequest.accountId());
-                    return new LoginFailedException();
-                });
+                .orElseThrow(AccountNotFoundException::new);
 
         if(!passwordEncoder.matches(localLoginRequest.password(), user.getPasswordHash())){
-            log.warn("로그인 실패: 비밀번호 불일치 accountId={}", localLoginRequest.accountId());
-            throw new LoginFailedException();
+            throw new PasswordMismatchException();
         }
 
         String accessToken = jwtTokenProvider.generateAccessToken(user.getId().id());
