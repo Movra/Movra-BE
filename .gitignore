@@ -37,3 +37,7 @@ out/
 .vscode/
 
 CLAUDE.md
+
+tinking/**
+
+seaweedfs/s3_config.json
