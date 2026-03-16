@@ -16,9 +16,11 @@ import com.example.morva.bc.account.infrastructure.user.security.oauth.pending.P
 import com.example.morva.sharedkernel.file.storage.ImageFileStorageService;
 import com.example.morva.sharedkernel.file.storage.type.ImageType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OauthProfileSetupService {
@@ -76,7 +78,7 @@ public class OauthProfileSetupService {
         try{
             imageFileStorageService.deleteByKey(profileUrl);
         } catch (Exception e){
-            //Exception 발생해도 그냥 진행
+            log.warn("프로필 이미지 삭제 실패 (고아 파일 발생 가능): {}", profileUrl);
         }
     }
 }
