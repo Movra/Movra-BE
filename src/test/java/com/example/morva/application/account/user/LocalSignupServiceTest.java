@@ -4,10 +4,9 @@ import com.example.morva.bc.account.application.user.LocalSignupService;
 import com.example.morva.bc.account.application.user.dto.request.LocalSignupRequest;
 import com.example.morva.bc.account.application.user.exception.DuplicateAccountIdException;
 import com.example.morva.bc.account.application.user.exception.DuplicateEmailException;
+import com.example.morva.bc.account.application.user.helper.ProfileImageHelper;
 import com.example.morva.bc.account.application.user.helper.UserPersister;
 import com.example.morva.bc.account.domain.user.repository.UserRepository;
-import com.example.morva.sharedkernel.file.storage.ImageFileStorageService;
-import com.example.morva.sharedkernel.file.storage.type.ImageType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -17,7 +16,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -35,7 +33,7 @@ class LocalSignupServiceTest {
     private UserPersister userPersister;
 
     @Mock
-    private ImageFileStorageService imageFileStorageService;
+    private ProfileImageHelper profileImageHelper;
 
     private LocalSignupRequest createSignupRequest() {
         return new LocalSignupRequest(
@@ -54,7 +52,7 @@ class LocalSignupServiceTest {
         LocalSignupRequest request = createSignupRequest();
         given(userRepository.existsByAccountId(request.accountId())).willReturn(false);
         given(userRepository.existsByAuthCredentialEmail(request.email())).willReturn(false);
-        given(imageFileStorageService.upload(request.profileImage(), ImageType.PROFILE)).willReturn("uploaded-url");
+        given(profileImageHelper.upload(request.profileImage())).willReturn("uploaded-url");
 
         // when
         localSignupService.signup(request);

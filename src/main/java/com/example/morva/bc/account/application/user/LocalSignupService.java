@@ -4,14 +4,13 @@ import com.example.morva.bc.account.application.user.dto.request.LocalSignupRequ
 import com.example.morva.bc.account.application.user.exception.DuplicateAccountIdException;
 import com.example.morva.bc.account.application.user.exception.DuplicateEmailException;
 import com.example.morva.bc.account.application.user.exception.UserCreationFailedException;
+import com.example.morva.bc.account.application.user.helper.ProfileImageHelper;
 import com.example.morva.bc.account.application.user.helper.UserPersister;
 import com.example.morva.bc.account.domain.user.repository.UserRepository;
-import com.example.morva.sharedkernel.file.storage.ImageFileStorageService;
-import com.example.morva.sharedkernel.file.storage.type.ImageType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -20,9 +19,8 @@ public class LocalSignupService {
 
     private final UserRepository userRepository;
     private final UserPersister userPersister;
-    private final ImageFileStorageService imageFileStorageService;
+    private final ProfileImageHelper profileImageHelper;
 
-    @Transactional
     public void signup(LocalSignupRequest localSignupRequest){
         if(userRepository.existsByAccountId(localSignupRequest.accountId())){
             throw new DuplicateAccountIdException();
@@ -32,7 +30,7 @@ public class LocalSignupService {
             throw new DuplicateEmailException();
         }
 
-        String profileUrl = imageFileStorageService.upload(localSignupRequest.profileImage(), ImageType.PROFILE);
+        String profileUrl = profileImageHelper.upload(localSignupRequest.profileImage());
 
         try{
             userPersister.saveLocalUser(
@@ -42,18 +40,14 @@ public class LocalSignupService {
                     localSignupRequest.email(),
                     localSignupRequest.password()
             );
+        } catch (DataIntegrityViolationException e){
+            profileImageHelper.cleanup(profileUrl);
+            log.warn("회원가입 중복 발생 (레이스 컨디션): {}", e.getMessage());
+            throw new DuplicateAccountIdException();
         } catch (Exception e){
-            cleanupUploadedImage(profileUrl);
+            profileImageHelper.cleanup(profileUrl);
             log.error("회원가입 실패: {}", e.getMessage());
             throw new UserCreationFailedException();
-        }
-    }
-
-    private void cleanupUploadedImage(String profileUrl){
-        try{
-            imageFileStorageService.deleteByKey(profileUrl);
-        } catch (Exception e){
-            log.warn("프로필 이미지 삭제 실패 (고아 파일 발생 가능): {}", profileUrl);
         }
     }
 }
