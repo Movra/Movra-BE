@@ -1,0 +1,7 @@
+package com.example.movra.bc.planning.daily_plan.domain.event;
+
+import com.example.movra.bc.planning.daily_plan.domain.vo.DailyPlanId;
+
+public record DailyPlanCreatedEvent(
+        DailyPlanId dailyPlanId
+) {}
