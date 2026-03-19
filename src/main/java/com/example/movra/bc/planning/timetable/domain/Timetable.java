@@ -6,6 +6,7 @@ import com.example.movra.bc.planning.timetable.domain.event.SlotRescheduledEvent
 import com.example.movra.bc.planning.timetable.domain.exception.InvalidTimeRangeException;
 import com.example.movra.bc.planning.timetable.domain.exception.SlotNotFoundException;
 import com.example.movra.bc.planning.timetable.domain.exception.TimeOverlapException;
+import com.example.movra.bc.planning.timetable.domain.exception.TopPickSlotLimitExceededException;
 import com.example.movra.bc.planning.timetable.domain.exception.TopPicksNotFullyAssignedException;
 import com.example.movra.bc.planning.timetable.domain.vo.SlotId;
 import com.example.movra.bc.planning.timetable.domain.vo.TimetableId;
@@ -34,7 +35,7 @@ public class Timetable extends AbstractAggregateRoot {
     private int topPickTotal;
 
     @Embedded
-    @AttributeOverride(name = "id", column = @Column(name = "daily_plan_id", nullable = false))
+    @AttributeOverride(name = "id", column = @Column(name = "daily_plan_id", nullable = false, unique = true))
     private DailyPlanId dailyPlanId;
 
     @Builder.Default
@@ -42,6 +43,10 @@ public class Timetable extends AbstractAggregateRoot {
     private List<Slot> slots = new ArrayList<>();
 
     public static Timetable create(DailyPlanId dailyPlanId, int topPickTotal) {
+        if (topPickTotal < 0) {
+            throw new IllegalArgumentException("topPickTotal must be >= 0");
+        }
+
         return Timetable.builder()
                 .timetableId(TimetableId.newId())
                 .dailyPlanId(dailyPlanId)
@@ -50,6 +55,11 @@ public class Timetable extends AbstractAggregateRoot {
     }
 
     public void assignTopPick(TaskId taskId, LocalTime startTime, LocalTime endTime) {
+        long assignedTopPicks = slots.stream().filter(Slot::isTopPick).count();
+        if (topPickTotal > 0 && assignedTopPicks >= topPickTotal) {
+            throw new TopPickSlotLimitExceededException();
+        }
+
         validateTimeRange(startTime, endTime);
         validateNoOverlap(startTime, endTime, null);
 

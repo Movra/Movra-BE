@@ -27,6 +27,13 @@ public class TopPickDetail {
     private Task task;
 
     public static TopPickDetail create(int estimatedMinutes, String memo, Task task){
+        if (estimatedMinutes <= 0) {
+            throw new IllegalArgumentException("estimatedMinutes must be positive");
+        }
+        if (memo == null || memo.isBlank()) {
+            throw new IllegalArgumentException("memo must not be blank");
+        }
+
         return TopPickDetail.builder()
                 .topPickDetailId(TopPickDetailId.newId())
                 .estimatedMinutes(estimatedMinutes)

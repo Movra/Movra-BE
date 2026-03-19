@@ -40,6 +40,7 @@ public enum ErrorCode {
     TIME_OVERLAP(HttpStatus.BAD_REQUEST, "다른 슬롯과 시간이 겹칩니다."),
     INVALID_TIME_RANGE(HttpStatus.BAD_REQUEST, "시작 시간이 종료 시간보다 늦을 수 없습니다."),
     TOP_PICKS_NOT_FULLY_ASSIGNED(HttpStatus.BAD_REQUEST, "최우선 할 일을 모두 배치한 후에 다른 항목을 추가할 수 있습니다."),
+    TOP_PICK_SLOT_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "최우선 할 일 슬롯이 이미 모두 배정되었습니다."),
     NOT_TOP_PICKED_TASK(HttpStatus.BAD_REQUEST, "최우선 할 일만 예상 시간을 변경할 수 있습니다."),
     TOP_PICK_DETAIL_NOT_FOUND(HttpStatus.BAD_REQUEST, "TopPickDetail이 존재하지 않습니다.");
 
