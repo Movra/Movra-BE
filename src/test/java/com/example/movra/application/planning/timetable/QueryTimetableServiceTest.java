@@ -83,21 +83,21 @@ class QueryTimetableServiceTest {
     @DisplayName("존재하지 않는 Timetable 조회 시 TimetableNotFoundException 발생")
     void findByDailyPlanId_timetableNotFound_throwsException() {
         // given
-        UUID dailyPlanId = UUID.randomUUID();
-        given(timetableRepository.findByDailyPlanId(DailyPlanId.of(dailyPlanId))).willReturn(Optional.empty());
+        DailyPlanId dailyPlanId = DailyPlanId.newId();
+        DailyPlan dailyPlan = DailyPlan.create(userId, LocalDate.of(2026, 3, 17));
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(dailyPlanId, userId)).willReturn(Optional.of(dailyPlan));
+        given(timetableRepository.findByDailyPlanId(dailyPlanId)).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> queryTimetableService.findByDailyPlanId(dailyPlanId))
+        assertThatThrownBy(() -> queryTimetableService.findByDailyPlanId(dailyPlanId.id()))
                 .isInstanceOf(TimetableNotFoundException.class);
     }
 
     @Test
-    @DisplayName("Timetable은 있지만 DailyPlan이 없으면 DailyPlanNotFoundException 발생")
+    @DisplayName("DailyPlan이 없으면 DailyPlanNotFoundException 발생")
     void findByDailyPlanId_dailyPlanNotFound_throwsException() {
         // given
         DailyPlanId dailyPlanId = DailyPlanId.newId();
-        Timetable timetable = Timetable.create(dailyPlanId, 0);
-        given(timetableRepository.findByDailyPlanId(dailyPlanId)).willReturn(Optional.of(timetable));
         given(dailyPlanRepository.findByDailyPlanIdAndUserId(dailyPlanId, userId)).willReturn(Optional.empty());
 
         // when & then

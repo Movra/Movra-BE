@@ -30,10 +30,11 @@ public class AddDirectSlotService {
         DailyPlan dailyPlan = dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), currentUserQuery.currentUser().userId())
                 .orElseThrow(DailyPlanNotFoundException::new);
 
-        Task task = dailyPlan.addTask(request.content());
-
         Timetable timetable = timetableRepository.findById(TimetableId.of(timetableId))
+                .filter(t -> t.getDailyPlanId().equals(dailyPlan.getDailyPlanId()))
                 .orElseThrow(TimetableNotFoundException::new);
+
+        Task task = dailyPlan.addTask(request.content());
 
         timetable.assignTask(task.getTaskId(), request.startTime(), request.endTime());
 

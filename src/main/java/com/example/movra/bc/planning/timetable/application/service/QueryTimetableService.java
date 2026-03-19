@@ -27,11 +27,11 @@ public class QueryTimetableService {
     public TimetableResponse findByDailyPlanId(UUID dailyPlanId) {
         DailyPlanId planId = DailyPlanId.of(dailyPlanId);
 
-        Timetable timetable = timetableRepository.findByDailyPlanId(planId)
-                .orElseThrow(TimetableNotFoundException::new);
-
         DailyPlan dailyPlan = dailyPlanRepository.findByDailyPlanIdAndUserId(planId, currentUserQuery.currentUser().userId())
                 .orElseThrow(DailyPlanNotFoundException::new);
+
+        Timetable timetable = timetableRepository.findByDailyPlanId(planId)
+                .orElseThrow(TimetableNotFoundException::new);
 
         return TimetableResponse.from(timetable, dailyPlan);
     }
