@@ -41,7 +41,7 @@ public class SlotController {
         assignTopPickSlotService.assign(timetableId, taskId, request);
     }
 
-    @PostMapping("/task/{taskId}")
+    @PostMapping("/tasks/{taskId}")
     public void assignTask(
             @PathVariable UUID timetableId,
             @PathVariable UUID taskId,
