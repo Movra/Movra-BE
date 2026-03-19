@@ -6,8 +6,7 @@ import com.example.movra.bc.planning.timetable.domain.exception.TimetableNotFoun
 import com.example.movra.bc.planning.timetable.domain.repository.TimetableRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
@@ -16,8 +15,7 @@ public class TaskTopPickedEventHandler {
 
     private final TimetableRepository timetableRepository;
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    @TransactionalEventListener
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void handle(TaskTopPickedEvent event) {
         Timetable timetable = timetableRepository.findByDailyPlanId(event.dailyPlanId())
                 .orElseThrow(TimetableNotFoundException::new);

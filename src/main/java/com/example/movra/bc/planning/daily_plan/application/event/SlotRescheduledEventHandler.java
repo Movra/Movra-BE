@@ -6,7 +6,7 @@ import com.example.movra.bc.planning.daily_plan.domain.repository.DailyPlanRepos
 import com.example.movra.bc.planning.timetable.domain.event.SlotRescheduledEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 @Component
@@ -15,9 +15,7 @@ public class SlotRescheduledEventHandler {
 
     private final DailyPlanRepository dailyPlanRepository;
 
-
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
-    @TransactionalEventListener
+    @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void handle(SlotRescheduledEvent event){
         DailyPlan dailyPlan = dailyPlanRepository.findById(event.dailyPlanId())
                 .orElseThrow(DailyPlanNotFoundException::new);
