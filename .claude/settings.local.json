@@ -3,7 +3,11 @@
     "allow": [
       "Bash(./gradlew compileJava:*)",
       "Bash(docker exec:*)",
-      "Bash(./gradlew test:*)"
+      "Bash(./gradlew test:*)",
+      "Bash(xargs grep:*)",
+      "Bash(./gradlew build:*)",
+      "Bash(gh pr:*)",
+      "Bash(where gh:*)"
     ]
   }
 }
