@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.BDDMockito.then;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,7 +38,7 @@ class DailyPlanCreateServiceTest {
     private final LocalDate planDate = LocalDate.of(2026, 3, 17);
 
     private void givenCurrentUser() {
-        given(currentUserQuery.currentUser()).willReturn(
+        lenient().when(currentUserQuery.currentUser()).thenReturn(
                 AuthenticatedUser.builder().userId(userId).build()
         );
     }

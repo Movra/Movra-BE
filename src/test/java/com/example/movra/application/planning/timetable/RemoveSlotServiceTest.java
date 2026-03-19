@@ -1,5 +1,8 @@
 package com.example.movra.application.planning.timetable;
 
+import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.planning.daily_plan.domain.DailyPlan;
+import com.example.movra.bc.planning.daily_plan.domain.repository.DailyPlanRepository;
 import com.example.movra.bc.planning.daily_plan.domain.vo.DailyPlanId;
 import com.example.movra.bc.planning.daily_plan.domain.vo.TaskId;
 import com.example.movra.bc.planning.timetable.application.service.RemoveSlotService;
@@ -8,6 +11,9 @@ import com.example.movra.bc.planning.timetable.domain.exception.SlotNotFoundExce
 import com.example.movra.bc.planning.timetable.domain.exception.TimetableNotFoundException;
 import com.example.movra.bc.planning.timetable.domain.repository.TimetableRepository;
 import com.example.movra.bc.planning.timetable.domain.vo.TimetableId;
+import com.example.movra.sharedkernel.user.AuthenticatedUser;
+import com.example.movra.sharedkernel.user.CurrentUserQuery;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +21,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -22,6 +29,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.BDDMockito.then;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,6 +41,25 @@ class RemoveSlotServiceTest {
     @Mock
     private TimetableRepository timetableRepository;
 
+    @Mock
+    private DailyPlanRepository dailyPlanRepository;
+
+    @Mock
+    private CurrentUserQuery currentUserQuery;
+
+    private final UserId userId = UserId.newId();
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(currentUserQuery.currentUser()).thenReturn(
+                AuthenticatedUser.builder().userId(userId).build());
+    }
+
+    private void stubOwnership(Timetable timetable) {
+        DailyPlan dailyPlan = DailyPlan.create(userId, LocalDate.of(2026, 3, 17));
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(timetable.getDailyPlanId(), userId)).willReturn(Optional.of(dailyPlan));
+    }
+
     @Test
     @DisplayName("슬롯 삭제 성공")
     void remove_success() {
@@ -42,6 +69,7 @@ class RemoveSlotServiceTest {
         UUID timetableId = timetable.getTimetableId().id();
         UUID slotId = timetable.getSlots().get(0).getSlotId().id();
         given(timetableRepository.findById(TimetableId.of(timetableId))).willReturn(Optional.of(timetable));
+        stubOwnership(timetable);
 
         // when
         removeSlotService.remove(timetableId, slotId);
@@ -71,6 +99,7 @@ class RemoveSlotServiceTest {
         timetable.assignTopPick(TaskId.newId(), LocalTime.of(9, 0), LocalTime.of(10, 0));
         UUID timetableId = timetable.getTimetableId().id();
         given(timetableRepository.findById(TimetableId.of(timetableId))).willReturn(Optional.of(timetable));
+        stubOwnership(timetable);
 
         // when & then
         assertThatThrownBy(() -> removeSlotService.remove(timetableId, UUID.randomUUID()))

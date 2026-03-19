@@ -8,6 +8,7 @@ import com.example.movra.bc.planning.timetable.application.service.dto.response.
 import com.example.movra.bc.planning.timetable.domain.Timetable;
 import com.example.movra.bc.planning.timetable.domain.exception.TimetableNotFoundException;
 import com.example.movra.bc.planning.timetable.domain.repository.TimetableRepository;
+import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +21,7 @@ public class QueryTimetableService {
 
     private final TimetableRepository timetableRepository;
     private final DailyPlanRepository dailyPlanRepository;
+    private final CurrentUserQuery currentUserQuery;
 
     @Transactional(readOnly = true)
     public TimetableResponse findByDailyPlanId(UUID dailyPlanId) {
@@ -28,7 +30,7 @@ public class QueryTimetableService {
         Timetable timetable = timetableRepository.findByDailyPlanId(planId)
                 .orElseThrow(TimetableNotFoundException::new);
 
-        DailyPlan dailyPlan = dailyPlanRepository.findById(planId)
+        DailyPlan dailyPlan = dailyPlanRepository.findByDailyPlanIdAndUserId(planId, currentUserQuery.currentUser().userId())
                 .orElseThrow(DailyPlanNotFoundException::new);
 
         return TimetableResponse.from(timetable, dailyPlan);

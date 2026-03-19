@@ -5,6 +5,7 @@ import com.example.movra.bc.planning.daily_plan.application.service.task.mind_sw
 import com.example.movra.bc.planning.daily_plan.domain.DailyPlan;
 import com.example.movra.bc.planning.daily_plan.domain.repository.DailyPlanRepository;
 import com.example.movra.bc.planning.daily_plan.domain.vo.DailyPlanId;
+import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,10 +17,11 @@ import java.util.UUID;
 public class AddMindSweepService {
 
     private final DailyPlanRepository dailyPlanRepository;
+    private final CurrentUserQuery currentUserQuery;
 
     @Transactional
     public void create(MindSweepRequest request, UUID dailyPlanId){
-        DailyPlan dailyPlan = dailyPlanRepository.findById(DailyPlanId.of(dailyPlanId))
+        DailyPlan dailyPlan = dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), currentUserQuery.currentUser().userId())
                 .orElseThrow(DailyPlanNotFoundException::new);
 
         dailyPlan.addTask(request.content());

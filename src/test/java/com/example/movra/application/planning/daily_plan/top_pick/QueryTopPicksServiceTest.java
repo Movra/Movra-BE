@@ -7,6 +7,9 @@ import com.example.movra.bc.planning.daily_plan.application.service.task.top_pic
 import com.example.movra.bc.planning.daily_plan.domain.DailyPlan;
 import com.example.movra.bc.planning.daily_plan.domain.repository.DailyPlanRepository;
 import com.example.movra.bc.planning.daily_plan.domain.vo.DailyPlanId;
+import com.example.movra.sharedkernel.user.AuthenticatedUser;
+import com.example.movra.sharedkernel.user.CurrentUserQuery;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +25,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class QueryTopPicksServiceTest {
@@ -32,16 +36,27 @@ class QueryTopPicksServiceTest {
     @Mock
     private DailyPlanRepository dailyPlanRepository;
 
+    @Mock
+    private CurrentUserQuery currentUserQuery;
+
+    private final UserId userId = UserId.newId();
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(currentUserQuery.currentUser()).thenReturn(
+                AuthenticatedUser.builder().userId(userId).build());
+    }
+
     @Test
     @DisplayName("Top Pick 목록 조회 성공")
     void queryAll_success() {
         // given
-        DailyPlan dailyPlan = DailyPlan.create(UserId.newId(), LocalDate.of(2026, 3, 17));
+        DailyPlan dailyPlan = DailyPlan.create(userId, LocalDate.of(2026, 3, 17));
         dailyPlan.addTask("Top Pick 할 일");
         dailyPlan.addTask("일반 할 일");
         dailyPlan.markAsTopPicked(dailyPlan.getTasks().get(0).getTaskId(), 30, "중요");
         UUID dailyPlanId = dailyPlan.getDailyPlanId().id();
-        given(dailyPlanRepository.findById(DailyPlanId.of(dailyPlanId))).willReturn(Optional.of(dailyPlan));
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId)).willReturn(Optional.of(dailyPlan));
 
         // when
         List<TopPicksResponse> responses = queryTopPicksService.queryAll(dailyPlanId);
@@ -57,10 +72,10 @@ class QueryTopPicksServiceTest {
     @DisplayName("Top Pick이 없으면 빈 목록 반환")
     void queryAll_noTopPicks_returnsEmpty() {
         // given
-        DailyPlan dailyPlan = DailyPlan.create(UserId.newId(), LocalDate.of(2026, 3, 17));
+        DailyPlan dailyPlan = DailyPlan.create(userId, LocalDate.of(2026, 3, 17));
         dailyPlan.addTask("일반 할 일");
         UUID dailyPlanId = dailyPlan.getDailyPlanId().id();
-        given(dailyPlanRepository.findById(DailyPlanId.of(dailyPlanId))).willReturn(Optional.of(dailyPlan));
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId)).willReturn(Optional.of(dailyPlan));
 
         // when
         List<TopPicksResponse> responses = queryTopPicksService.queryAll(dailyPlanId);
@@ -74,7 +89,7 @@ class QueryTopPicksServiceTest {
     void queryAll_dailyPlanNotFound_throwsException() {
         // given
         UUID dailyPlanId = UUID.randomUUID();
-        given(dailyPlanRepository.findById(DailyPlanId.of(dailyPlanId))).willReturn(Optional.empty());
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> queryTopPicksService.queryAll(dailyPlanId))

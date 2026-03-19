@@ -10,6 +10,7 @@ import com.example.movra.bc.planning.timetable.domain.Timetable;
 import com.example.movra.bc.planning.timetable.domain.exception.TimetableNotFoundException;
 import com.example.movra.bc.planning.timetable.domain.repository.TimetableRepository;
 import com.example.movra.bc.planning.timetable.domain.vo.TimetableId;
+import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,10 +23,11 @@ public class AddDirectSlotService {
 
     private final DailyPlanRepository dailyPlanRepository;
     private final TimetableRepository timetableRepository;
+    private final CurrentUserQuery currentUserQuery;
 
     @Transactional
     public void execute(UUID timetableId, UUID dailyPlanId, AddDirectSlotRequest request) {
-        DailyPlan dailyPlan = dailyPlanRepository.findById(DailyPlanId.of(dailyPlanId))
+        DailyPlan dailyPlan = dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), currentUserQuery.currentUser().userId())
                 .orElseThrow(DailyPlanNotFoundException::new);
 
         Task task = dailyPlan.addTask(request.content());

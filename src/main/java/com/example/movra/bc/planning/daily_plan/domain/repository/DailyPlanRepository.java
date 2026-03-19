@@ -12,6 +12,8 @@ import java.util.Optional;
 @Repository
 public interface DailyPlanRepository extends JpaRepository<DailyPlan, DailyPlanId> {
 
+    Optional<DailyPlan> findByDailyPlanIdAndUserId(DailyPlanId dailyPlanId, UserId userId);
+
     Optional<DailyPlan> findByUserIdAndPlanDate(UserId userId, LocalDate planDate);
 
     boolean existsByUserIdAndPlanDate(UserId userId, LocalDate planDate);

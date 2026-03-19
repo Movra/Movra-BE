@@ -7,6 +7,9 @@ import com.example.movra.bc.planning.daily_plan.domain.DailyPlan;
 import com.example.movra.bc.planning.daily_plan.domain.repository.DailyPlanRepository;
 import com.example.movra.bc.planning.daily_plan.domain.vo.DailyPlanId;
 import com.example.movra.bc.planning.daily_plan.domain.exception.TaskNotFoundException;
+import com.example.movra.sharedkernel.user.AuthenticatedUser;
+import com.example.movra.sharedkernel.user.CurrentUserQuery;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,6 +24,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.BDDMockito.then;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,8 +36,19 @@ class DeselectTopPicksServiceTest {
     @Mock
     private DailyPlanRepository dailyPlanRepository;
 
+    @Mock
+    private CurrentUserQuery currentUserQuery;
+
+    private final UserId userId = UserId.newId();
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(currentUserQuery.currentUser()).thenReturn(
+                AuthenticatedUser.builder().userId(userId).build());
+    }
+
     private DailyPlan createDailyPlanWithTopPick() {
-        DailyPlan dailyPlan = DailyPlan.create(UserId.newId(), LocalDate.of(2026, 3, 17));
+        DailyPlan dailyPlan = DailyPlan.create(userId, LocalDate.of(2026, 3, 17));
         dailyPlan.addTask("Top Pick된 할 일");
         dailyPlan.markAsTopPicked(dailyPlan.getTasks().get(0).getTaskId(), 30, "메모");
         return dailyPlan;
@@ -46,7 +61,7 @@ class DeselectTopPicksServiceTest {
         DailyPlan dailyPlan = createDailyPlanWithTopPick();
         UUID dailyPlanId = dailyPlan.getDailyPlanId().id();
         UUID taskId = dailyPlan.getTasks().get(0).getTaskId().id();
-        given(dailyPlanRepository.findById(DailyPlanId.of(dailyPlanId))).willReturn(Optional.of(dailyPlan));
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId)).willReturn(Optional.of(dailyPlan));
 
         // when
         deselectTopPicksService.deselect(dailyPlanId, taskId);
@@ -61,7 +76,7 @@ class DeselectTopPicksServiceTest {
     void deselect_dailyPlanNotFound_throwsException() {
         // given
         UUID dailyPlanId = UUID.randomUUID();
-        given(dailyPlanRepository.findById(DailyPlanId.of(dailyPlanId))).willReturn(Optional.empty());
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> deselectTopPicksService.deselect(dailyPlanId, UUID.randomUUID()))
@@ -74,7 +89,7 @@ class DeselectTopPicksServiceTest {
         // given
         DailyPlan dailyPlan = createDailyPlanWithTopPick();
         UUID dailyPlanId = dailyPlan.getDailyPlanId().id();
-        given(dailyPlanRepository.findById(DailyPlanId.of(dailyPlanId))).willReturn(Optional.of(dailyPlan));
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId)).willReturn(Optional.of(dailyPlan));
 
         // when & then
         assertThatThrownBy(() -> deselectTopPicksService.deselect(dailyPlanId, UUID.randomUUID()))

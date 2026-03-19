@@ -10,6 +10,9 @@ import com.example.movra.bc.planning.timetable.application.service.dto.response.
 import com.example.movra.bc.planning.timetable.domain.Timetable;
 import com.example.movra.bc.planning.timetable.domain.exception.TimetableNotFoundException;
 import com.example.movra.bc.planning.timetable.domain.repository.TimetableRepository;
+import com.example.movra.sharedkernel.user.AuthenticatedUser;
+import com.example.movra.sharedkernel.user.CurrentUserQuery;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,6 +28,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class QueryTimetableServiceTest {
@@ -38,12 +42,23 @@ class QueryTimetableServiceTest {
     @Mock
     private DailyPlanRepository dailyPlanRepository;
 
+    @Mock
+    private CurrentUserQuery currentUserQuery;
+
+    private final UserId userId = UserId.newId();
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(currentUserQuery.currentUser()).thenReturn(
+                AuthenticatedUser.builder().userId(userId).build());
+    }
+
     @Test
     @DisplayName("DailyPlanId로 Timetable 조회 성공")
     void findByDailyPlanId_success() {
         // given
         DailyPlanId dailyPlanId = DailyPlanId.newId();
-        DailyPlan dailyPlan = DailyPlan.create(UserId.newId(), LocalDate.of(2026, 3, 17));
+        DailyPlan dailyPlan = DailyPlan.create(userId, LocalDate.of(2026, 3, 17));
 
         Timetable timetable = Timetable.create(dailyPlanId, 0);
         timetable.assignTopPick(
@@ -53,7 +68,7 @@ class QueryTimetableServiceTest {
         );
 
         given(timetableRepository.findByDailyPlanId(dailyPlanId)).willReturn(Optional.of(timetable));
-        given(dailyPlanRepository.findById(dailyPlanId)).willReturn(Optional.of(dailyPlan));
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(dailyPlanId, userId)).willReturn(Optional.of(dailyPlan));
 
         // when
         TimetableResponse response = queryTimetableService.findByDailyPlanId(dailyPlanId.id());
@@ -83,7 +98,7 @@ class QueryTimetableServiceTest {
         DailyPlanId dailyPlanId = DailyPlanId.newId();
         Timetable timetable = Timetable.create(dailyPlanId, 0);
         given(timetableRepository.findByDailyPlanId(dailyPlanId)).willReturn(Optional.of(timetable));
-        given(dailyPlanRepository.findById(dailyPlanId)).willReturn(Optional.empty());
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(dailyPlanId, userId)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> queryTimetableService.findByDailyPlanId(dailyPlanId.id()))
