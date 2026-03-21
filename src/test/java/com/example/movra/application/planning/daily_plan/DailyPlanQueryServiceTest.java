@@ -58,6 +58,7 @@ class DailyPlanQueryServiceTest {
         // then
         assertThat(response.planDate()).isEqualTo(planDate);
         assertThat(response.tasks()).isEmpty();
+        assertThat(response.morningTasks()).isEmpty();
     }
 
     @Test
