@@ -11,14 +11,18 @@ import java.util.UUID;
 public record DailyPlanResponse(
         UUID dailyPlanId,
         LocalDate planDate,
-        List<TaskResponse> tasks
+        List<TaskResponse> tasks,
+        List<TaskResponse> morningTasks
 ) {
 
     public static DailyPlanResponse from(DailyPlan dailyPlan) {
         return DailyPlanResponse.builder()
                 .dailyPlanId(dailyPlan.getDailyPlanId().id())
                 .planDate(dailyPlan.getPlanDate())
-                .tasks(dailyPlan.getTasks().stream()
+                .tasks(dailyPlan.getGeneralTasks().stream()
+                        .map(TaskResponse::from)
+                        .toList())
+                .morningTasks(dailyPlan.getMorningTasks().stream()
                         .map(TaskResponse::from)
                         .toList())
                 .build();
