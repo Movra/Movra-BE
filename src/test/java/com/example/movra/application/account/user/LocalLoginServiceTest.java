@@ -3,7 +3,8 @@ package com.example.movra.application.account.user;
 import com.example.movra.bc.account.application.user.LocalLoginService;
 import com.example.movra.bc.account.application.user.dto.request.LocalLoginRequest;
 import com.example.movra.bc.account.application.user.dto.response.TokenResponse;
-import com.example.movra.bc.account.application.user.exception.LoginFailedException;
+import com.example.movra.bc.account.application.user.exception.AccountNotFoundException;
+import com.example.movra.bc.account.application.user.exception.PasswordMismatchException;
 import com.example.movra.bc.account.domain.user.User;
 import com.example.movra.bc.account.domain.user.repository.UserRepository;
 import com.example.movra.bc.account.infrastructure.user.security.jwt.JwtTokenProvider;
@@ -76,7 +77,7 @@ class LocalLoginServiceTest {
 
         // when & then
         assertThatThrownBy(() -> localLoginService.login(request))
-                .isInstanceOf(LoginFailedException.class);
+                .isInstanceOf(AccountNotFoundException.class);
     }
 
     @Test
@@ -91,6 +92,6 @@ class LocalLoginServiceTest {
 
         // when & then
         assertThatThrownBy(() -> localLoginService.login(request))
-                .isInstanceOf(LoginFailedException.class);
+                .isInstanceOf(PasswordMismatchException.class);
     }
 }
