@@ -4,6 +4,7 @@ import com.example.movra.bc.planning.daily_plan.application.exception.DailyPlanN
 import com.example.movra.bc.planning.daily_plan.application.service.task.mind_sweep.dto.response.MindSweepResponse;
 import com.example.movra.bc.planning.daily_plan.domain.DailyPlan;
 import com.example.movra.bc.planning.daily_plan.domain.repository.DailyPlanRepository;
+import com.example.movra.bc.planning.daily_plan.domain.type.TaskType;
 import com.example.movra.bc.planning.daily_plan.domain.vo.DailyPlanId;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class QueryMindSweepService {
                 .orElseThrow(DailyPlanNotFoundException::new);
 
         return dailyPlan.getTasks().stream()
+                .filter(task -> task.getTaskType() == TaskType.GENERAL)
                 .filter(task -> !task.isTopPicked())
                 .map(MindSweepResponse::from)
                 .toList();
