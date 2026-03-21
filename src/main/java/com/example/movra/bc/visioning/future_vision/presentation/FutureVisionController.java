@@ -1,9 +1,9 @@
 package com.example.movra.bc.visioning.future_vision.presentation;
 
-import com.example.movra.bc.visioning.future_vision.application.CreateFutureVisionService;
-import com.example.movra.bc.visioning.future_vision.application.QueryFutureVisionService;
-import com.example.movra.bc.visioning.future_vision.application.UpdateWeeklyVisionService;
-import com.example.movra.bc.visioning.future_vision.application.UpdateYearlyVisionService;
+import com.example.movra.bc.visioning.future_vision.application.service.CreateFutureVisionService;
+import com.example.movra.bc.visioning.future_vision.application.service.QueryFutureVisionService;
+import com.example.movra.bc.visioning.future_vision.application.service.UpdateWeeklyVisionService;
+import com.example.movra.bc.visioning.future_vision.application.service.UpdateYearlyVisionService;
 import com.example.movra.bc.visioning.future_vision.application.service.dto.request.CreateFutureVisionRequest;
 import com.example.movra.bc.visioning.future_vision.application.service.dto.request.UpdateWeeklyVisionRequest;
 import com.example.movra.bc.visioning.future_vision.application.service.dto.request.UpdateYearlyVisionRequest;

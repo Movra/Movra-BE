@@ -33,6 +33,8 @@ public enum ErrorCode {
     DAILY_PLAN_NOT_FOUND(HttpStatus.NOT_FOUND, "Daily plan was not found."),
     FUTURE_VISION_ALREADY_EXISTS(HttpStatus.CONFLICT, "Future vision already exists."),
     FUTURE_VISION_NOT_FOUND(HttpStatus.NOT_FOUND, "Future vision was not found."),
+    FUTURE_VISION_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Future vision creation failed."),
+    FUTURE_VISION_UPDATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "Future vision update failed."),
     TASK_NOT_FOUND(HttpStatus.NOT_FOUND, "Task was not found."),
     INVALID_TASK_TYPE(HttpStatus.BAD_REQUEST, "Invalid task type for this operation."),
     TASK_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "Completed task cannot be modified."),

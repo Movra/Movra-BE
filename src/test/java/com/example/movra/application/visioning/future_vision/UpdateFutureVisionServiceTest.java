@@ -1,13 +1,16 @@
 package com.example.movra.application.visioning.future_vision;
 
 import com.example.movra.bc.account.domain.user.vo.UserId;
-import com.example.movra.bc.visioning.future_vision.application.UpdateWeeklyVisionService;
-import com.example.movra.bc.visioning.future_vision.application.UpdateYearlyVisionService;
+import com.example.movra.bc.visioning.future_vision.application.service.UpdateWeeklyVisionService;
+import com.example.movra.bc.visioning.future_vision.application.service.UpdateYearlyVisionService;
 import com.example.movra.bc.visioning.future_vision.application.exception.FutureVisionNotFoundException;
+import com.example.movra.bc.visioning.future_vision.application.helper.FutureVisionPersister;
 import com.example.movra.bc.visioning.future_vision.application.service.dto.request.UpdateWeeklyVisionRequest;
 import com.example.movra.bc.visioning.future_vision.application.service.dto.request.UpdateYearlyVisionRequest;
 import com.example.movra.bc.visioning.future_vision.domain.FutureVision;
 import com.example.movra.bc.visioning.future_vision.domain.repository.FutureVisionRepository;
+import com.example.movra.sharedkernel.file.storage.ImageHelper;
+import com.example.movra.sharedkernel.file.storage.type.ImageType;
 import com.example.movra.sharedkernel.user.AuthenticatedUser;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import org.junit.jupiter.api.Test;
@@ -15,14 +18,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 
 @ExtendWith(MockitoExtension.class)
 class UpdateFutureVisionServiceTest {
@@ -35,6 +39,12 @@ class UpdateFutureVisionServiceTest {
 
     @Mock
     private FutureVisionRepository futureVisionRepository;
+
+    @Mock
+    private FutureVisionPersister futureVisionPersister;
+
+    @Mock
+    private ImageHelper imageHelper;
 
     @Mock
     private CurrentUserQuery currentUserQuery;
@@ -53,10 +63,12 @@ class UpdateFutureVisionServiceTest {
         FutureVision futureVision = FutureVision.create(userId, "weekly.png", "yearly.png", "annual vision");
         given(futureVisionRepository.findByUserId(userId)).willReturn(Optional.of(futureVision));
 
-        updateWeeklyVisionService.update(new UpdateWeeklyVisionRequest("weekly-updated.png"));
+        MultipartFile newWeeklyImage = mock(MultipartFile.class);
+        given(imageHelper.update("weekly.png", newWeeklyImage, ImageType.FUTURE)).willReturn("weekly-updated.png");
 
-        assertThat(futureVision.getWeeklyVisionImageUrl()).isEqualTo("weekly-updated.png");
-        then(futureVisionRepository).should().save(futureVision);
+        updateWeeklyVisionService.update(new UpdateWeeklyVisionRequest(newWeeklyImage));
+
+        then(futureVisionPersister).should().saveFutureVision(futureVision);
     }
 
     @Test
@@ -65,11 +77,12 @@ class UpdateFutureVisionServiceTest {
         FutureVision futureVision = FutureVision.create(userId, "weekly.png", "yearly.png", "annual vision");
         given(futureVisionRepository.findByUserId(userId)).willReturn(Optional.of(futureVision));
 
-        updateYearlyVisionService.update(new UpdateYearlyVisionRequest("yearly-updated.png", "updated vision"));
+        MultipartFile newYearlyImage = mock(MultipartFile.class);
+        given(imageHelper.update("yearly.png", newYearlyImage, ImageType.FUTURE)).willReturn("yearly-updated.png");
 
-        assertThat(futureVision.getYearlyVisionImageUrl()).isEqualTo("yearly-updated.png");
-        assertThat(futureVision.getYearlyVisionDescription()).isEqualTo("updated vision");
-        then(futureVisionRepository).should().save(futureVision);
+        updateYearlyVisionService.update(new UpdateYearlyVisionRequest(newYearlyImage, "updated vision"));
+
+        then(futureVisionPersister).should().saveFutureVision(futureVision);
     }
 
     @Test
@@ -77,7 +90,9 @@ class UpdateFutureVisionServiceTest {
         givenCurrentUser();
         given(futureVisionRepository.findByUserId(userId)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> updateWeeklyVisionService.update(new UpdateWeeklyVisionRequest("weekly-updated.png")))
+        MultipartFile newWeeklyImage = mock(MultipartFile.class);
+
+        assertThatThrownBy(() -> updateWeeklyVisionService.update(new UpdateWeeklyVisionRequest(newWeeklyImage)))
                 .isInstanceOf(FutureVisionNotFoundException.class);
     }
 }
