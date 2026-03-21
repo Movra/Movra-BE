@@ -10,6 +10,8 @@ public record UserId(
         UUID id
 ) implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     public static UserId newId(){
         return new UserId(UUID.randomUUID());
     }
