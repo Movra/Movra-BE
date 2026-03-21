@@ -4,9 +4,10 @@ import com.example.movra.bc.account.application.user.LocalSignupService;
 import com.example.movra.bc.account.application.user.dto.request.LocalSignupRequest;
 import com.example.movra.bc.account.application.user.exception.DuplicateAccountIdException;
 import com.example.movra.bc.account.application.user.exception.DuplicateEmailException;
-import com.example.movra.bc.account.application.user.helper.ProfileImageHelper;
+import com.example.movra.sharedkernel.file.storage.ImageHelper;
 import com.example.movra.bc.account.application.user.helper.UserPersister;
 import com.example.movra.bc.account.domain.user.repository.UserRepository;
+import com.example.movra.sharedkernel.file.storage.type.ImageType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,7 +34,7 @@ class LocalSignupServiceTest {
     private UserPersister userPersister;
 
     @Mock
-    private ProfileImageHelper profileImageHelper;
+    private ImageHelper imageHelper;
 
     private LocalSignupRequest createSignupRequest() {
         return new LocalSignupRequest(
@@ -52,7 +53,7 @@ class LocalSignupServiceTest {
         LocalSignupRequest request = createSignupRequest();
         given(userRepository.existsByAccountId(request.accountId())).willReturn(false);
         given(userRepository.existsByAuthCredentialEmail(request.email())).willReturn(false);
-        given(profileImageHelper.upload(request.profileImage())).willReturn("uploaded-url");
+        given(imageHelper.upload(request.profileImage(), ImageType.PROFILE)).willReturn("uploaded-url");
 
         // when
         localSignupService.signup(request);
