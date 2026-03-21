@@ -2,6 +2,7 @@ package com.example.movra.bc.planning.daily_plan.domain;
 
 import com.example.movra.bc.planning.daily_plan.domain.exception.TaskAlreadyCompletedException;
 import com.example.movra.bc.planning.daily_plan.domain.exception.TopPickDetailNotFoundException;
+import com.example.movra.bc.planning.daily_plan.domain.type.TaskType;
 import com.example.movra.bc.planning.daily_plan.domain.vo.TaskId;
 import jakarta.persistence.*;
 import lombok.*;
@@ -27,6 +28,10 @@ public class Task {
     @Column(nullable = false)
     private boolean completed;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private TaskType taskType;
+
     @OneToOne(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private TopPickDetail topPickDetail;
 
@@ -34,12 +39,21 @@ public class Task {
     @JoinColumn(name = "daily_plan_id", nullable = false)
     private DailyPlan dailyPlan;
 
-    static Task create(String content, DailyPlan dailyPlan) {
+    static Task createGeneral(String content, DailyPlan dailyPlan) {
+        return create(content, TaskType.GENERAL, dailyPlan);
+    }
+
+    static Task createMorning(String content, DailyPlan dailyPlan) {
+        return create(content, TaskType.MORNING, dailyPlan);
+    }
+
+    private static Task create(String content, TaskType taskType, DailyPlan dailyPlan) {
         return Task.builder()
                 .taskId(TaskId.newId())
                 .content(content)
                 .topPicked(false)
                 .completed(false)
+                .taskType(taskType)
                 .dailyPlan(dailyPlan)
                 .build();
     }
@@ -73,6 +87,14 @@ public class Task {
             throw new TopPickDetailNotFoundException();
         }
         this.topPickDetail.updateEstimatedMinutes(newEstimatedMinutes);
+    }
+
+    public boolean isGeneral() {
+        return this.taskType == TaskType.GENERAL;
+    }
+
+    public boolean isMorning() {
+        return this.taskType == TaskType.MORNING;
     }
 
     private void validateNotCompleted() {

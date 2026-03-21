@@ -5,9 +5,11 @@ import com.example.movra.bc.planning.daily_plan.domain.event.DailyPlanCreatedEve
 import com.example.movra.bc.planning.daily_plan.domain.event.TaskTopPickUnpickedEvent;
 import com.example.movra.bc.planning.daily_plan.domain.event.TaskTopPickedEvent;
 import com.example.movra.bc.planning.daily_plan.domain.exception.CoreSelectedLimitExceededException;
+import com.example.movra.bc.planning.daily_plan.domain.exception.InvalidTaskTypeException;
 import com.example.movra.bc.planning.daily_plan.domain.exception.NotTopPickedTaskException;
 import com.example.movra.bc.planning.daily_plan.domain.exception.TaskAlreadyCompletedException;
 import com.example.movra.bc.planning.daily_plan.domain.exception.TaskNotFoundException;
+import com.example.movra.bc.planning.daily_plan.domain.type.TaskType;
 import com.example.movra.bc.planning.daily_plan.domain.vo.DailyPlanId;
 import com.example.movra.bc.planning.daily_plan.domain.vo.TaskId;
 import com.example.movra.sharedkernel.domain.AbstractAggregateRoot;
@@ -58,7 +60,13 @@ public class DailyPlan extends AbstractAggregateRoot {
     }
 
     public Task addTask(String content) {
-        Task task = Task.create(content, this);
+        Task task = Task.createGeneral(content, this);
+        this.tasks.add(task);
+        return task;
+    }
+
+    public Task addMorningTask(String content){
+        Task task = Task.createMorning(content, this);
         this.tasks.add(task);
         return task;
     }
@@ -117,6 +125,26 @@ public class DailyPlan extends AbstractAggregateRoot {
         }
 
         task.updateEstimatedMinutes(newEstimatedMinutes);
+    }
+
+    public void validateTaskType(TaskId taskId, TaskType expectedType) {
+        Task task = findTask(taskId);
+
+        if (task.getTaskType() != expectedType) {
+            throw new InvalidTaskTypeException();
+        }
+    }
+
+    public List<Task> getGeneralTasks() {
+        return tasks.stream()
+                .filter(Task::isGeneral)
+                .toList();
+    }
+
+    public List<Task> getMorningTasks() {
+        return tasks.stream()
+                .filter(Task::isMorning)
+                .toList();
     }
 
     private Task findTask(TaskId taskId) {
