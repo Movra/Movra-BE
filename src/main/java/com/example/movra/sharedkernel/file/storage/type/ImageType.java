@@ -5,7 +5,8 @@ import lombok.Getter;
 @Getter
 public enum ImageType {
 
-    PROFILE("profile-image/");
+    PROFILE("profile-image/"),
+    FUTURE("future-vision-image/");
 
     private final String prefix;
 

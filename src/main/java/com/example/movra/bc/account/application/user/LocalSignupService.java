@@ -4,9 +4,10 @@ import com.example.movra.bc.account.application.user.dto.request.LocalSignupRequ
 import com.example.movra.bc.account.application.user.exception.DuplicateAccountIdException;
 import com.example.movra.bc.account.application.user.exception.DuplicateEmailException;
 import com.example.movra.bc.account.application.user.exception.UserCreationFailedException;
-import com.example.movra.bc.account.application.user.helper.ProfileImageHelper;
+import com.example.movra.sharedkernel.file.storage.ImageHelper;
 import com.example.movra.bc.account.application.user.helper.UserPersister;
 import com.example.movra.bc.account.domain.user.repository.UserRepository;
+import com.example.movra.sharedkernel.file.storage.type.ImageType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -19,7 +20,7 @@ public class LocalSignupService {
 
     private final UserRepository userRepository;
     private final UserPersister userPersister;
-    private final ProfileImageHelper profileImageHelper;
+    private final ImageHelper imageHelper;
 
     public void signup(LocalSignupRequest localSignupRequest){
         if(userRepository.existsByAccountId(localSignupRequest.accountId())){
@@ -30,7 +31,7 @@ public class LocalSignupService {
             throw new DuplicateEmailException();
         }
 
-        String profileUrl = profileImageHelper.upload(localSignupRequest.profileImage());
+        String profileUrl = imageHelper.upload(localSignupRequest.profileImage(), ImageType.PROFILE);
 
         try{
             userPersister.saveLocalUser(
@@ -41,11 +42,11 @@ public class LocalSignupService {
                     localSignupRequest.password()
             );
         } catch (DataIntegrityViolationException e){
-            profileImageHelper.cleanup(profileUrl);
+            imageHelper.cleanup(profileUrl);
             log.warn("회원가입 중복 발생 (레이스 컨디션): {}", e.getMessage());
             throw new DuplicateAccountIdException();
         } catch (Exception e){
-            profileImageHelper.cleanup(profileUrl);
+            imageHelper.cleanup(profileUrl);
             log.error("회원가입 실패: {}", e.getMessage());
             throw new UserCreationFailedException();
         }
