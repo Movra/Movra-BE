@@ -32,19 +32,17 @@ public class UpdateYearlyVisionService {
         FutureVision futureVision = futureVisionRepository.findByUserId(userId)
                 .orElseThrow(FutureVisionNotFoundException::new);
 
-        String newYearlyVisionImageUrl = imageHelper.update(
-                futureVision.getYearlyVisionImageUrl(),
-                request.yearlyVisionImageUrl(),
-                ImageType.FUTURE
-        );
+        String oldYearlyVisionImageUrl = futureVision.getYearlyVisionImageUrl();
+        String newYearlyVisionImageUrl = imageHelper.upload(request.yearlyVisionImageUrl(), ImageType.FUTURE);
 
-        try{
+        try {
             futureVision.updateYearlyVision(
                     newYearlyVisionImageUrl,
                     request.yearlyVisionDescription()
             );
             futureVisionPersister.saveFutureVision(futureVision);
-        }catch (Exception e){
+            imageHelper.cleanup(oldYearlyVisionImageUrl);
+        } catch (Exception e) {
             log.error("FutureVision 실패: {}", e.getMessage());
             imageHelper.cleanup(newYearlyVisionImageUrl);
             throw new FutureVisionUpdateFailedException();

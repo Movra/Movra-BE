@@ -32,16 +32,13 @@ public class UpdateWeeklyVisionService {
         FutureVision futureVision = futureVisionRepository.findByUserId(userId)
                 .orElseThrow(FutureVisionNotFoundException::new);
 
-        String newWeeklyVisionImageUrl = imageHelper.update(
-                futureVision.getWeeklyVisionImageUrl(),
-                request.weeklyVisionImageUrl(),
-                ImageType.FUTURE
-        );
+        String oldWeeklyVisionImageUrl = futureVision.getWeeklyVisionImageUrl();
+        String newWeeklyVisionImageUrl = imageHelper.upload(request.weeklyVisionImageUrl(), ImageType.FUTURE);
 
-        try{
+        try {
             futureVision.updateWeeklyVision(newWeeklyVisionImageUrl);
-
             futureVisionPersister.saveFutureVision(futureVision);
+            imageHelper.cleanup(oldWeeklyVisionImageUrl);
         } catch (Exception e) {
             log.error("FutureVision 실패: {}", e.getMessage());
             imageHelper.cleanup(newWeeklyVisionImageUrl);
