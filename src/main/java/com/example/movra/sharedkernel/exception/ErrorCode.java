@@ -47,7 +47,9 @@ public enum ErrorCode {
     TOP_PICKS_NOT_FULLY_ASSIGNED(HttpStatus.BAD_REQUEST, "All top picks must be assigned first."),
     TOP_PICK_SLOT_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "Top pick slot limit exceeded."),
     NOT_TOP_PICKED_TASK(HttpStatus.BAD_REQUEST, "Only top-picked tasks can update estimated time."),
-    TOP_PICK_DETAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "Top pick detail was not found.");
+    TOP_PICK_DETAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "Top pick detail was not found."),
+
+    TINY_WIN_NOT_FOUND(HttpStatus.NOT_FOUND, "Tiny win was not found.");
 
     private final HttpStatus httpStatus;
     private final String message;
