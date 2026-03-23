@@ -10,7 +10,7 @@ public record TinyWinRequest(
         String title,
 
         @NotBlank(message = "본문은 필수입니다.")
-        @Size(max = 3000, message = "내용을 3000자 아내로 작성해주세요")
+        @Size(max = 3000, message = "내용을 3000자 이내로 작성해주세요")
         String content
 ) {
 }
