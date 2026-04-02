@@ -18,7 +18,9 @@ import java.time.LocalDateTime;
 @Getter
 @Builder(access = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "tbl_participant")
+@Table(name = "tbl_participant", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"user_id", "room_id"})
+})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Participant extends AbstractAggregateRoot {

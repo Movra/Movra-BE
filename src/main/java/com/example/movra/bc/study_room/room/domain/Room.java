@@ -29,7 +29,7 @@ public abstract class Room extends AbstractAggregateRoot {
     private RoomId id;
 
     @Embedded
-    @AttributeOverride(name = "id", column = @Column(name = "leader_id", unique = true))
+    @AttributeOverride(name = "id", column = @Column(name = "leader_id", nullable = false))
     private UserId leaderId;
 
     @Column(length = 20, nullable = false)
