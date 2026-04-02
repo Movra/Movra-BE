@@ -5,12 +5,19 @@ import com.example.movra.bc.study_room.room.domain.event.ParticipantJoinedEvent;
 import com.example.movra.bc.study_room.room.domain.event.ParticipantKickedEvent;
 import com.example.movra.bc.study_room.room.domain.event.RoomCreatedEvent;
 import com.example.movra.bc.study_room.room.domain.event.RoomDissolvedEvent;
-import com.example.movra.bc.study_room.room.domain.vo.RoomId;
-import com.example.movra.bc.study_room.room.domain.vo.Visibility;
 import com.example.movra.bc.study_room.room.domain.exception.LeaderCannotKickSelfException;
 import com.example.movra.bc.study_room.room.domain.exception.NotLeaderException;
+import com.example.movra.bc.study_room.room.domain.vo.RoomId;
+import com.example.movra.bc.study_room.room.domain.vo.Visibility;
 import com.example.movra.sharedkernel.domain.AbstractAggregateRoot;
-import jakarta.persistence.*;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
+import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,7 +36,7 @@ public abstract class Room extends AbstractAggregateRoot {
     private RoomId id;
 
     @Embedded
-    @AttributeOverride(name = "id", column = @Column(name = "leader_id", unique = true))
+    @AttributeOverride(name = "id", column = @Column(name = "leader_id", nullable = false))
     private UserId leaderId;
 
     @Column(length = 20, nullable = false)
@@ -75,6 +82,10 @@ public abstract class Room extends AbstractAggregateRoot {
     }
 
     public void reassignLeader(UserId newLeaderId) {
+        if (newLeaderId == null) {
+            throw new IllegalArgumentException("newLeaderId must not be null");
+        }
+
         this.leaderId = newLeaderId;
     }
 

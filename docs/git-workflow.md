@@ -1,42 +1,42 @@
-# Git 워크플로우
+# Git Workflow
 
-## 브랜치 전략
+## Branches
 
-| 브랜치 | 용도 |
-|--------|------|
-| `main` | 배포 브랜치 |
-| `feat/xxx` | 기능 개발 브랜치 |
+| Branch | Purpose |
+|--------|---------|
+| `main` | Release branch |
+| `feat/xxx` | Feature development branch |
 
-## 커밋 메시지
+## Commit Message
 
+```text
+<type>: <short summary>
 ```
-<type>: <한국어 설명>
-```
 
-### Type
+### Types
 
-| Type | 용도 | 예시 |
-|------|------|------|
-| `feat` | 새 기능 추가 | `feat: 스터디룸 생성 서비스 구현` |
-| `fix` | 버그 수정 | `fix: 집중 타이머 시간 계산 오류 수정` |
-| `refactor` | 리팩토링 | `refactor: Room 애그리거트 멤버십 제거` |
-| `test` | 테스트 추가/수정 | `test: CreateRoomService 유닛 테스트 추가` |
-| `chore` | 설정, 의존성 등 | `chore: Spring Boot 버전 업그레이드` |
+| Type | Purpose | Example |
+|------|---------|---------|
+| `feat` | Add feature | `feat: implement study room creation service` |
+| `fix` | Fix bug | `fix: correct focus time calculation` |
+| `refactor` | Refactor code | `refactor: simplify room aggregate members` |
+| `test` | Add or update tests | `test: add CreateRoomService tests` |
+| `chore` | Config or dependency change | `chore: upgrade Spring Boot version` |
 
-### 규칙
+### Rules
 
-- 설명은 **한국어**로 작성
-- 기능별로 커밋을 **나누어** 작성
-- 한번에 몰아서 커밋하지 않음
-- 커밋 단위: 하나의 논리적 변경 (서비스 1개, 테스트 1개 등)
+- Write the summary in imperative mood.
+- Keep each commit focused on one logical change.
+- Do not bundle unrelated changes into one commit.
+- Prefer a small commit scope that is easy to review.
 
-### 예시
+### Examples
 
-```
-feat: Room 도메인 모델 구현
-feat: Participant 도메인 모델 구현
-feat: 스터디룸 서비스 레이어 구현
-test: 스터디룸 서비스 유닛 테스트 추가
-refactor: FocusTimer 상태 모델 단순화
-fix: CurrentUserQuery import 경로 수정
+```text
+feat: implement Room domain model
+feat: implement Participant domain model
+feat: implement study room service layer
+test: add study room service unit tests
+refactor: simplify FocusTimer state model
+fix: correct CurrentUserQuery import path
 ```
