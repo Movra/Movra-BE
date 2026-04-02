@@ -30,11 +30,11 @@ public class Participant extends AbstractAggregateRoot {
     private ParticipantId id;
 
     @Embedded
-    @AttributeOverride(name = "id", column = @Column(name = "user_id"))
+    @AttributeOverride(name = "id", column = @Column(name = "user_id", nullable = false))
     private UserId userId;
 
     @Embedded
-    @AttributeOverride(name = "id", column = @Column(name = "room_id"))
+    @AttributeOverride(name = "id", column = @Column(name = "room_id", nullable = false))
     private RoomId roomId;
 
     @Enumerated(EnumType.STRING)
@@ -48,6 +48,9 @@ public class Participant extends AbstractAggregateRoot {
     private LocalDateTime joinedAt;
 
     public static Participant enter(UserId userId, RoomId roomId) {
+        if (userId == null || roomId == null) {
+            throw new IllegalArgumentException("userId and roomId must not be null");
+        }
         return Participant.builder()
                 .id(ParticipantId.newId())
                 .userId(userId)
