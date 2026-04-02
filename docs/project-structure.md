@@ -160,5 +160,5 @@ src/test/java/com/example/movra/
 │   │   ├── room/                  # Room 서비스 테스트
 │   │   └── participant/           # Participant 서비스 테스트
 │   └── visioning/future_vision/   # FutureVision 서비스 테스트
-└── MorvaApplicationTests.java     # 통합 테스트
+└── MovraApplicationTests.java     # 통합 테스트
 ```

@@ -55,7 +55,7 @@ class CreateXxxServiceTest {
         given(xxxRepository.existsById(any())).willReturn(true);
 
         // when & then
-        assertThatThrownBy(() -> createXxxService.create(request))
+        assertThatThrownBy(() -> createXxxService.create(new CreateXxxRequest("이름")))
                 .isInstanceOf(XxxAlreadyExistsException.class);
     }
 }
