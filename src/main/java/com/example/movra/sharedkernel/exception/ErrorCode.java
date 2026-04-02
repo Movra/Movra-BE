@@ -49,7 +49,19 @@ public enum ErrorCode {
     NOT_TOP_PICKED_TASK(HttpStatus.BAD_REQUEST, "Only top-picked tasks can update estimated time."),
     TOP_PICK_DETAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "Top pick detail was not found."),
 
-    TINY_WIN_NOT_FOUND(HttpStatus.NOT_FOUND, "Tiny win was not found.");
+    TINY_WIN_NOT_FOUND(HttpStatus.NOT_FOUND, "Tiny win was not found."),
+
+    ALREADY_JOINED(HttpStatus.CONFLICT, "Already joined this room."),
+    PARTICIPANT_NOT_FOUND(HttpStatus.NOT_FOUND, "Participant was not found."),
+    NOT_LEADER(HttpStatus.FORBIDDEN, "Only the leader can perform this action."),
+    LEADER_CANNOT_KICK_SELF(HttpStatus.BAD_REQUEST, "Leader cannot kick themselves."),
+    PRIVATE_ROOM_REQUIRES_INVITE_CODE(HttpStatus.BAD_REQUEST, "Private room requires an invite code."),
+    INVALID_INVITE_CODE(HttpStatus.BAD_REQUEST, "Invalid invite code."),
+
+    ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "Room was not found."),
+
+    ALREADY_FOCUSING(HttpStatus.BAD_REQUEST, "Already focusing."),
+    NOT_FOCUSING(HttpStatus.BAD_REQUEST, "Not focusing.");
 
     private final HttpStatus httpStatus;
     private final String message;
