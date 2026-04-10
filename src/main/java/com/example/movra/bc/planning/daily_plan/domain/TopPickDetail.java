@@ -1,5 +1,7 @@
 package com.example.movra.bc.planning.daily_plan.domain;
 
+import com.example.movra.bc.planning.daily_plan.domain.exception.InvalidTopPickEstimatedMinutesException;
+import com.example.movra.bc.planning.daily_plan.domain.exception.InvalidTopPickMemoException;
 import com.example.movra.bc.planning.daily_plan.domain.vo.TopPickDetailId;
 import jakarta.persistence.*;
 import lombok.*;
@@ -27,12 +29,8 @@ public class TopPickDetail {
     private Task task;
 
     public static TopPickDetail create(int estimatedMinutes, String memo, Task task){
-        if (estimatedMinutes <= 0) {
-            throw new IllegalArgumentException("estimatedMinutes must be positive");
-        }
-        if (memo == null || memo.isBlank()) {
-            throw new IllegalArgumentException("memo must not be blank");
-        }
+        validateEstimatedMinutes(estimatedMinutes);
+        validateMemo(memo);
 
         return TopPickDetail.builder()
                 .topPickDetailId(TopPickDetailId.newId())
@@ -43,6 +41,19 @@ public class TopPickDetail {
     }
 
     void updateEstimatedMinutes(int newEstimatedMinutes) {
+        validateEstimatedMinutes(newEstimatedMinutes);
         this.estimatedMinutes = newEstimatedMinutes;
+    }
+
+    private static void validateEstimatedMinutes(int estimatedMinutes) {
+        if (estimatedMinutes <= 0) {
+            throw new InvalidTopPickEstimatedMinutesException();
+        }
+    }
+
+    private static void validateMemo(String memo) {
+        if (memo == null || memo.isBlank()) {
+            throw new InvalidTopPickMemoException();
+        }
     }
 }

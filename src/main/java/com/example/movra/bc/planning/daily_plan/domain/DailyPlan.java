@@ -4,11 +4,11 @@ import com.example.movra.bc.account.domain.user.vo.UserId;
 import com.example.movra.bc.planning.daily_plan.domain.event.DailyPlanCreatedEvent;
 import com.example.movra.bc.planning.daily_plan.domain.event.TaskTopPickUnpickedEvent;
 import com.example.movra.bc.planning.daily_plan.domain.event.TaskTopPickedEvent;
-import com.example.movra.bc.planning.daily_plan.domain.exception.CoreSelectedLimitExceededException;
 import com.example.movra.bc.planning.daily_plan.domain.exception.InvalidTaskTypeException;
 import com.example.movra.bc.planning.daily_plan.domain.exception.NotTopPickedTaskException;
 import com.example.movra.bc.planning.daily_plan.domain.exception.TaskAlreadyCompletedException;
 import com.example.movra.bc.planning.daily_plan.domain.exception.TaskNotFoundException;
+import com.example.movra.bc.planning.daily_plan.domain.exception.TopPickLimitExceededException;
 import com.example.movra.bc.planning.daily_plan.domain.type.TaskType;
 import com.example.movra.bc.planning.daily_plan.domain.vo.DailyPlanId;
 import com.example.movra.bc.planning.daily_plan.domain.vo.TaskId;
@@ -30,7 +30,7 @@ import java.util.List;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class DailyPlan extends AbstractAggregateRoot {
 
-    private static final int MAX_CORE_SELECTED = 3;
+    private static final int MAX_TOP_PICKS = 3;
 
     @EmbeddedId
     @AttributeOverride(name = "id", column = @Column(name = "daily_plan_id"))
@@ -98,8 +98,8 @@ public class DailyPlan extends AbstractAggregateRoot {
 
         long count = tasks.stream().filter(Task::isTopPicked).count();
 
-        if (count >= MAX_CORE_SELECTED) {
-            throw new CoreSelectedLimitExceededException();
+        if (count >= MAX_TOP_PICKS) {
+            throw new TopPickLimitExceededException();
         }
 
         task.markAsTopPicked(estimatedMinutes, memo);

@@ -12,8 +12,8 @@ public record TaskResponse(
         String content,
         boolean completed,
         TaskType taskType,
-        boolean coreSelected,
-        TopPickDetailResponse coreDetail
+        boolean topPicked,
+        TopPickDetailResponse topPickDetail
 ) {
 
     public static TaskResponse from(Task task) {
@@ -22,8 +22,8 @@ public record TaskResponse(
                 .content(task.getContent())
                 .completed(task.isCompleted())
                 .taskType(task.getTaskType())
-                .coreSelected(task.isTopPicked())
-                .coreDetail(task.getTopPickDetail() != null
+                .topPicked(task.isTopPicked())
+                .topPickDetail(task.getTopPickDetail() != null
                         ? TopPickDetailResponse.from(task.getTopPickDetail())
                         : null)
                 .build();

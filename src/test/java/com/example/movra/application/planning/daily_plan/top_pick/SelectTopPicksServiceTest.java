@@ -5,10 +5,12 @@ import com.example.movra.bc.planning.daily_plan.application.exception.DailyPlanN
 import com.example.movra.bc.planning.daily_plan.application.service.task.top_pick.SelectTopPicksService;
 import com.example.movra.bc.planning.daily_plan.application.service.task.top_pick.dto.request.TopPicksRequest;
 import com.example.movra.bc.planning.daily_plan.domain.DailyPlan;
-import com.example.movra.bc.planning.daily_plan.domain.exception.CoreSelectedLimitExceededException;
+import com.example.movra.bc.planning.daily_plan.domain.exception.InvalidTopPickEstimatedMinutesException;
+import com.example.movra.bc.planning.daily_plan.domain.exception.InvalidTopPickMemoException;
 import com.example.movra.bc.planning.daily_plan.domain.repository.DailyPlanRepository;
 import com.example.movra.bc.planning.daily_plan.domain.vo.DailyPlanId;
 import com.example.movra.bc.planning.daily_plan.domain.exception.TaskNotFoundException;
+import com.example.movra.bc.planning.daily_plan.domain.exception.TopPickLimitExceededException;
 import com.example.movra.sharedkernel.user.AuthenticatedUser;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import org.junit.jupiter.api.BeforeEach;
@@ -73,7 +75,7 @@ class SelectTopPicksServiceTest {
     }
 
     @Test
-    @DisplayName("Top Pick 3개 초과 시 CoreSelectedLimitExceededException 발생")
+    @DisplayName("Top Pick 3개 초과 시 TopPickLimitExceededException 발생")
     void select_exceedsLimit_throwsException() {
         // given
         DailyPlan dailyPlan = DailyPlan.create(userId, LocalDate.of(2026, 3, 17));
@@ -89,7 +91,35 @@ class SelectTopPicksServiceTest {
 
         // when & then
         assertThatThrownBy(() -> selectTopPicksService.select(new TopPicksRequest(30, "메모"), dailyPlanId, fourthTaskId))
-                .isInstanceOf(CoreSelectedLimitExceededException.class);
+                .isInstanceOf(TopPickLimitExceededException.class);
+    }
+
+    @Test
+    @DisplayName("Top Pick 예상 시간은 양수여야 한다")
+    void select_invalidEstimatedMinutes_throwsException() {
+        // given
+        DailyPlan dailyPlan = createDailyPlanWithTask();
+        UUID dailyPlanId = dailyPlan.getDailyPlanId().id();
+        UUID taskId = dailyPlan.getTasks().get(0).getTaskId().id();
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId)).willReturn(Optional.of(dailyPlan));
+
+        // when & then
+        assertThatThrownBy(() -> selectTopPicksService.select(new TopPicksRequest(0, "메모"), dailyPlanId, taskId))
+                .isInstanceOf(InvalidTopPickEstimatedMinutesException.class);
+    }
+
+    @Test
+    @DisplayName("Top Pick 메모는 비어 있을 수 없다")
+    void select_blankMemo_throwsException() {
+        // given
+        DailyPlan dailyPlan = createDailyPlanWithTask();
+        UUID dailyPlanId = dailyPlan.getDailyPlanId().id();
+        UUID taskId = dailyPlan.getTasks().get(0).getTaskId().id();
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId)).willReturn(Optional.of(dailyPlan));
+
+        // when & then
+        assertThatThrownBy(() -> selectTopPicksService.select(new TopPicksRequest(30, " "), dailyPlanId, taskId))
+                .isInstanceOf(InvalidTopPickMemoException.class);
     }
 
     @Test
