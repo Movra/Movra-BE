@@ -47,9 +47,15 @@ public enum ErrorCode {
     TOP_PICKS_NOT_FULLY_ASSIGNED(HttpStatus.BAD_REQUEST, "All top picks must be assigned first."),
     TOP_PICK_SLOT_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "Top pick slot limit exceeded."),
     NOT_TOP_PICKED_TASK(HttpStatus.BAD_REQUEST, "Only top-picked tasks can update estimated time."),
+    INVALID_TOP_PICK_ESTIMATED_MINUTES(HttpStatus.BAD_REQUEST, "Top pick estimated minutes must be positive."),
+    INVALID_TOP_PICK_MEMO(HttpStatus.BAD_REQUEST, "Top pick memo must not be blank."),
     TOP_PICK_DETAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "Top pick detail was not found."),
 
     TINY_WIN_NOT_FOUND(HttpStatus.NOT_FOUND, "Tiny win was not found."),
+    DAILY_REFLECTION_ALREADY_EXISTS(HttpStatus.CONFLICT, "Daily reflection already exists."),
+    DAILY_REFLECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "Daily reflection was not found."),
+    BEHAVIOR_PROFILE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Behavior profile already exists."),
+    BEHAVIOR_PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND, "Behavior profile was not found."),
 
     ALREADY_JOINED(HttpStatus.CONFLICT, "Already joined this room."),
     PARTICIPANT_NOT_FOUND(HttpStatus.NOT_FOUND, "Participant was not found."),

@@ -195,13 +195,30 @@ public enum ErrorCode {
 }
 ```
 
-- HTTP 상태 + 영문 메시지
+- 모든 비즈니스 예외의 응답 기준
+- HTTP 상태 코드와 기본 메시지를 중앙에서 관리
+- 메시지는 영문으로 통일
 - `NOT_FOUND`: 조회 실패
 - `BAD_REQUEST`: 비즈니스 규칙 위반
 - `CONFLICT`: 중복
 - `FORBIDDEN`: 권한 부족
 
 ### CustomException
+
+```java
+@Getter
+public abstract class CustomException extends RuntimeException {
+
+    private final ErrorCode errorCode;
+
+    protected CustomException(ErrorCode errorCode) {
+        super(errorCode.getMessage());
+        this.errorCode = errorCode;
+    }
+}
+```
+
+### 구체 예외 클래스
 
 ```java
 public class XxxNotFoundException extends CustomException {
@@ -211,11 +228,22 @@ public class XxxNotFoundException extends CustomException {
 }
 ```
 
+- 예외 클래스는 얇게 유지
+- 예외의 의미는 클래스 이름으로 표현
+- 상태 코드와 메시지는 `ErrorCode`에 위임
+
 **예외 위치 규칙:**
-- 도메인 규칙 위반 (불변식) → `domain/exception/`
+- 도메인 규칙 위반, 불변식 검증 → `domain/exception/`
   - 예: `AlreadyFocusingException`, `LeaderCannotKickSelfException`
-- 조회 실패, 외부 연동 → `application/exception/`
+- 조회 실패, 유스케이스 처리 실패 → `application/exception/`
   - 예: `RoomNotFoundException`, `ParticipantNotFoundException`
+- JWT, 파일, 외부 시스템 관련 실패 → `infrastructure/.../exception/` 또는 `sharedkernel/.../exception/`
+  - 예: `InvalidJwtException`, `InvalidFileExtensionException`
+
+**사용 규칙:**
+- 비즈니스 실패는 `CustomException` 계열 사용
+- 내부 검증, 잘못된 인자, 개발자 오류는 `IllegalArgumentException` 사용 가능
+- 최종 응답 변환은 전역 예외 처리기에서 담당
 
 ---
 
