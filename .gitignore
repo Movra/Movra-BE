@@ -43,3 +43,5 @@ tinking/**
 seaweedfs/s3_config.json
 
 .claude
+
+AGENTS.md
