@@ -5,6 +5,7 @@ import com.example.movra.bc.feedback.daily_reflection.application.exception.Dail
 import com.example.movra.bc.feedback.daily_reflection.application.service.UpdateDailyReflectionService;
 import com.example.movra.bc.feedback.daily_reflection.application.service.dto.request.UpdateDailyReflectionRequest;
 import com.example.movra.bc.feedback.daily_reflection.domain.DailyReflection;
+import com.example.movra.bc.feedback.daily_reflection.domain.exception.InvalidDailyReflectionException;
 import com.example.movra.bc.feedback.daily_reflection.domain.repository.DailyReflectionRepository;
 import com.example.movra.bc.feedback.daily_reflection.domain.vo.DailyReflectionId;
 import com.example.movra.sharedkernel.user.AuthenticatedUser;
@@ -48,47 +49,62 @@ class UpdateDailyReflectionServiceTest {
     }
 
     @Test
-    @DisplayName("일일 회고 수정 성공")
+    @DisplayName("update succeeds")
     void update_success() {
-        // given
         givenCurrentUser();
         DailyReflection dailyReflection = DailyReflection.create(
                 userId,
                 LocalDate.of(2026, 4, 10),
-                "기존 잘한 점",
-                "기존 실패 지점",
-                "기존 다음 행동"
+                "Existing win",
+                "Existing breakdown",
+                "Existing next action"
         );
         UpdateDailyReflectionRequest request = new UpdateDailyReflectionRequest(
-                "수정된 잘한 점",
-                "수정된 실패 지점",
-                "수정된 다음 행동"
+                "Updated win",
+                "Updated breakdown",
+                "Updated next action"
         );
         given(dailyReflectionRepository.findByIdAndUserId(any(DailyReflectionId.class), any(UserId.class)))
                 .willReturn(Optional.of(dailyReflection));
 
-        // when
         updateDailyReflectionService.update(UUID.randomUUID(), request);
 
-        // then
-        assertThat(dailyReflection.getWhatWentWell()).isEqualTo("수정된 잘한 점");
-        assertThat(dailyReflection.getWhatBrokeDown()).isEqualTo("수정된 실패 지점");
-        assertThat(dailyReflection.getNextAction()).isEqualTo("수정된 다음 행동");
+        assertThat(dailyReflection.getWhatWentWell()).isEqualTo("Updated win");
+        assertThat(dailyReflection.getWhatBrokeDown()).isEqualTo("Updated breakdown");
+        assertThat(dailyReflection.getNextAction()).isEqualTo("Updated next action");
         then(dailyReflectionRepository).should().save(dailyReflection);
     }
 
     @Test
-    @DisplayName("회고가 없으면 DailyReflectionNotFoundException 발생")
+    @DisplayName("update throws when reflection is missing")
     void update_notFound_throwsException() {
-        // given
         givenCurrentUser();
         given(dailyReflectionRepository.findByIdAndUserId(any(DailyReflectionId.class), any(UserId.class)))
                 .willReturn(Optional.empty());
 
-        // when & then
         assertThatThrownBy(() -> updateDailyReflectionService.update(
                 UUID.randomUUID(),
-                new UpdateDailyReflectionRequest("잘한 점", "실패 지점", "다음 행동")
+                new UpdateDailyReflectionRequest("One win", "One breakdown", "Next action")
         )).isInstanceOf(DailyReflectionNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("update throws when reflection content is invalid")
+    void update_invalidContent_throwsException() {
+        givenCurrentUser();
+        DailyReflection dailyReflection = DailyReflection.create(
+                userId,
+                LocalDate.of(2026, 4, 10),
+                "Existing win",
+                "Existing breakdown",
+                "Existing next action"
+        );
+        given(dailyReflectionRepository.findByIdAndUserId(any(DailyReflectionId.class), any(UserId.class)))
+                .willReturn(Optional.of(dailyReflection));
+
+        assertThatThrownBy(() -> updateDailyReflectionService.update(
+                UUID.randomUUID(),
+                new UpdateDailyReflectionRequest(" ", "Updated breakdown", "Updated next action")
+        )).isInstanceOf(InvalidDailyReflectionException.class);
     }
 }

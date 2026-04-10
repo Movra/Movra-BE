@@ -5,6 +5,7 @@ import com.example.movra.bc.personalization.behavior_profile.application.excepti
 import com.example.movra.bc.personalization.behavior_profile.application.service.UpdateBehaviorProfileService;
 import com.example.movra.bc.personalization.behavior_profile.application.service.dto.request.UpdateBehaviorProfileRequest;
 import com.example.movra.bc.personalization.behavior_profile.domain.BehaviorProfile;
+import com.example.movra.bc.personalization.behavior_profile.domain.exception.InvalidBehaviorProfileException;
 import com.example.movra.bc.personalization.behavior_profile.domain.repository.BehaviorProfileRepository;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.ExecutionDifficultyLevel;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.FocusWindow;
@@ -48,9 +49,8 @@ class UpdateBehaviorProfileServiceTest {
     }
 
     @Test
-    @DisplayName("행동 프로필 수정 성공")
+    @DisplayName("update succeeds")
     void update_success() {
-        // given
         givenCurrentUser();
         BehaviorProfile behaviorProfile = BehaviorProfile.create(
                 userId,
@@ -69,10 +69,8 @@ class UpdateBehaviorProfileServiceTest {
         );
         given(behaviorProfileRepository.findByUserId(userId)).willReturn(Optional.of(behaviorProfile));
 
-        // when
         updateBehaviorProfileService.update(request);
 
-        // then
         assertThat(behaviorProfile.getExecutionDifficultyLevel()).isEqualTo(ExecutionDifficultyLevel.LOW);
         assertThat(behaviorProfile.getSocialPreferenceLevel()).isEqualTo(SocialPreferenceLevel.HIGH);
         assertThat(behaviorProfile.getRecoveryStyle()).isEqualTo(RecoveryStyle.IMMEDIATE_RETRY);
@@ -81,9 +79,8 @@ class UpdateBehaviorProfileServiceTest {
     }
 
     @Test
-    @DisplayName("행동 프로필이 없으면 BehaviorProfileNotFoundException 발생")
+    @DisplayName("update throws when profile is missing")
     void update_notFound_throwsException() {
-        // given
         givenCurrentUser();
         UpdateBehaviorProfileRequest request = new UpdateBehaviorProfileRequest(
                 ExecutionDifficultyLevel.MEDIUM,
@@ -94,8 +91,32 @@ class UpdateBehaviorProfileServiceTest {
         );
         given(behaviorProfileRepository.findByUserId(userId)).willReturn(Optional.empty());
 
-        // when & then
         assertThatThrownBy(() -> updateBehaviorProfileService.update(request))
                 .isInstanceOf(BehaviorProfileNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("update throws when profile input is invalid")
+    void update_invalidInput_throwsException() {
+        givenCurrentUser();
+        BehaviorProfile behaviorProfile = BehaviorProfile.create(
+                userId,
+                ExecutionDifficultyLevel.HIGH,
+                SocialPreferenceLevel.LOW,
+                RecoveryStyle.NEED_RESET,
+                FocusWindow.EVENING,
+                PlanningDepth.LIGHT
+        );
+        given(behaviorProfileRepository.findByUserId(userId)).willReturn(Optional.of(behaviorProfile));
+
+        assertThatThrownBy(() -> updateBehaviorProfileService.update(
+                new UpdateBehaviorProfileRequest(
+                        ExecutionDifficultyLevel.LOW,
+                        null,
+                        RecoveryStyle.IMMEDIATE_RETRY,
+                        FocusWindow.MORNING,
+                        PlanningDepth.DEEP
+                )
+        )).isInstanceOf(InvalidBehaviorProfileException.class);
     }
 }

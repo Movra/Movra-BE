@@ -7,6 +7,7 @@ import com.example.movra.bc.personalization.behavior_profile.domain.BehaviorProf
 import com.example.movra.bc.personalization.behavior_profile.domain.repository.BehaviorProfileRepository;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,15 +26,19 @@ public class CreateBehaviorProfileService {
             throw new BehaviorProfileAlreadyExistsException();
         }
 
-        behaviorProfileRepository.save(
-                BehaviorProfile.create(
-                        userId,
-                        request.executionDifficultyLevel(),
-                        request.socialPreferenceLevel(),
-                        request.recoveryStyle(),
-                        request.preferredFocusWindow(),
-                        request.planningDepth()
-                )
-        );
+        try {
+            behaviorProfileRepository.saveAndFlush(
+                    BehaviorProfile.create(
+                            userId,
+                            request.executionDifficultyLevel(),
+                            request.socialPreferenceLevel(),
+                            request.recoveryStyle(),
+                            request.preferredFocusWindow(),
+                            request.planningDepth()
+                    )
+            );
+        } catch (DataIntegrityViolationException e) {
+            throw new BehaviorProfileAlreadyExistsException();
+        }
     }
 }

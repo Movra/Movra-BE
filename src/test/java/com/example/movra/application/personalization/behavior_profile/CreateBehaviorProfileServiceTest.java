@@ -4,6 +4,7 @@ import com.example.movra.bc.account.domain.user.vo.UserId;
 import com.example.movra.bc.personalization.behavior_profile.application.exception.BehaviorProfileAlreadyExistsException;
 import com.example.movra.bc.personalization.behavior_profile.application.service.CreateBehaviorProfileService;
 import com.example.movra.bc.personalization.behavior_profile.application.service.dto.request.CreateBehaviorProfileRequest;
+import com.example.movra.bc.personalization.behavior_profile.domain.exception.InvalidBehaviorProfileException;
 import com.example.movra.bc.personalization.behavior_profile.domain.repository.BehaviorProfileRepository;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.ExecutionDifficultyLevel;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.FocusWindow;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,9 +48,8 @@ class CreateBehaviorProfileServiceTest {
     }
 
     @Test
-    @DisplayName("행동 프로필 생성 성공")
+    @DisplayName("create succeeds")
     void create_success() {
-        // given
         givenCurrentUser();
         CreateBehaviorProfileRequest request = new CreateBehaviorProfileRequest(
                 ExecutionDifficultyLevel.HIGH,
@@ -59,17 +60,14 @@ class CreateBehaviorProfileServiceTest {
         );
         given(behaviorProfileRepository.existsByUserId(userId)).willReturn(false);
 
-        // when
         createBehaviorProfileService.create(request);
 
-        // then
-        then(behaviorProfileRepository).should().save(any());
+        then(behaviorProfileRepository).should().saveAndFlush(any());
     }
 
     @Test
-    @DisplayName("행동 프로필이 이미 존재하면 BehaviorProfileAlreadyExistsException 발생")
+    @DisplayName("create throws when profile already exists")
     void create_alreadyExists_throwsException() {
-        // given
         givenCurrentUser();
         CreateBehaviorProfileRequest request = new CreateBehaviorProfileRequest(
                 ExecutionDifficultyLevel.MEDIUM,
@@ -80,8 +78,43 @@ class CreateBehaviorProfileServiceTest {
         );
         given(behaviorProfileRepository.existsByUserId(userId)).willReturn(true);
 
-        // when & then
         assertThatThrownBy(() -> createBehaviorProfileService.create(request))
                 .isInstanceOf(BehaviorProfileAlreadyExistsException.class);
+    }
+
+    @Test
+    @DisplayName("create converts unique constraint violations to BehaviorProfileAlreadyExistsException")
+    void create_duplicateAtWrite_throwsException() {
+        givenCurrentUser();
+        CreateBehaviorProfileRequest request = new CreateBehaviorProfileRequest(
+                ExecutionDifficultyLevel.MEDIUM,
+                SocialPreferenceLevel.MEDIUM,
+                RecoveryStyle.IMMEDIATE_RETRY,
+                FocusWindow.AFTERNOON,
+                PlanningDepth.BALANCED
+        );
+        given(behaviorProfileRepository.existsByUserId(userId)).willReturn(false);
+        given(behaviorProfileRepository.saveAndFlush(any()))
+                .willThrow(new DataIntegrityViolationException("duplicate"));
+
+        assertThatThrownBy(() -> createBehaviorProfileService.create(request))
+                .isInstanceOf(BehaviorProfileAlreadyExistsException.class);
+    }
+
+    @Test
+    @DisplayName("create throws when profile input is invalid")
+    void create_invalidInput_throwsException() {
+        givenCurrentUser();
+        CreateBehaviorProfileRequest request = new CreateBehaviorProfileRequest(
+                null,
+                SocialPreferenceLevel.MEDIUM,
+                RecoveryStyle.IMMEDIATE_RETRY,
+                FocusWindow.AFTERNOON,
+                PlanningDepth.BALANCED
+        );
+        given(behaviorProfileRepository.existsByUserId(userId)).willReturn(false);
+
+        assertThatThrownBy(() -> createBehaviorProfileService.create(request))
+                .isInstanceOf(InvalidBehaviorProfileException.class);
     }
 }

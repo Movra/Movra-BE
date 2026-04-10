@@ -14,15 +14,18 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 class DailyPlanQueryServiceTest {
@@ -46,66 +49,72 @@ class DailyPlanQueryServiceTest {
     }
 
     @Test
-    @DisplayName("날짜별 일일 계획 조회 성공")
+    @DisplayName("findByPlanDate succeeds")
     void findByPlanDate_success() {
-        // given
         givenCurrentUser();
         DailyPlan dailyPlan = DailyPlan.create(userId, planDate);
         given(dailyPlanRepository.findByUserIdAndPlanDate(userId, planDate)).willReturn(Optional.of(dailyPlan));
 
-        // when
         DailyPlanResponse response = dailyPlanQueryService.findByPlanDate(planDate);
 
-        // then
         assertThat(response.planDate()).isEqualTo(planDate);
         assertThat(response.tasks()).isEmpty();
         assertThat(response.morningTasks()).isEmpty();
     }
 
     @Test
-    @DisplayName("존재하지 않는 날짜 조회 시 DailyPlanNotFoundException 발생")
+    @DisplayName("findByPlanDate throws when missing")
     void findByPlanDate_notFound_throwsException() {
-        // given
         givenCurrentUser();
         given(dailyPlanRepository.findByUserIdAndPlanDate(userId, planDate)).willReturn(Optional.empty());
 
-        // when & then
         assertThatThrownBy(() -> dailyPlanQueryService.findByPlanDate(planDate))
                 .isInstanceOf(DailyPlanNotFoundException.class);
     }
 
     @Test
-    @DisplayName("오늘 계획이 존재하면 그대로 조회한다")
+    @DisplayName("findOrCreateToday returns the existing plan")
     void findOrCreateToday_existing_success() {
-        // given
         givenCurrentUser();
         LocalDate today = LocalDate.now();
         DailyPlan dailyPlan = DailyPlan.create(userId, today);
         given(dailyPlanRepository.findByUserIdAndPlanDate(userId, today)).willReturn(Optional.of(dailyPlan));
 
-        // when
         DailyPlanResponse response = dailyPlanQueryService.findOrCreateToday();
 
-        // then
         assertThat(response.planDate()).isEqualTo(today);
         then(dailyPlanRepository).should().findByUserIdAndPlanDate(userId, today);
     }
 
     @Test
-    @DisplayName("오늘 계획이 없으면 자동 생성 후 조회한다")
+    @DisplayName("findOrCreateToday creates a new plan when missing")
     void findOrCreateToday_notFound_createSuccess() {
-        // given
         givenCurrentUser();
         LocalDate today = LocalDate.now();
         given(dailyPlanRepository.findByUserIdAndPlanDate(userId, today)).willReturn(Optional.empty());
-        given(dailyPlanRepository.save(org.mockito.ArgumentMatchers.any(DailyPlan.class)))
-                .willAnswer(invocation -> invocation.getArgument(0));
+        given(dailyPlanRepository.saveAndFlush(any(DailyPlan.class)))
+                .willAnswer(invocation -> invocation.getArgument(0, DailyPlan.class));
 
-        // when
         DailyPlanResponse response = dailyPlanQueryService.findOrCreateToday();
 
-        // then
         assertThat(response.planDate()).isEqualTo(today);
-        then(dailyPlanRepository).should().save(org.mockito.ArgumentMatchers.any(DailyPlan.class));
+        then(dailyPlanRepository).should().saveAndFlush(any(DailyPlan.class));
+    }
+
+    @Test
+    @DisplayName("findOrCreateToday reloads the plan when concurrent creation wins")
+    void findOrCreateToday_duplicateAtWrite_returnsExistingPlan() {
+        givenCurrentUser();
+        LocalDate today = LocalDate.now();
+        DailyPlan dailyPlan = DailyPlan.create(userId, today);
+        given(dailyPlanRepository.findByUserIdAndPlanDate(userId, today))
+                .willReturn(Optional.empty(), Optional.of(dailyPlan));
+        given(dailyPlanRepository.saveAndFlush(any(DailyPlan.class)))
+                .willThrow(new DataIntegrityViolationException("duplicate"));
+
+        DailyPlanResponse response = dailyPlanQueryService.findOrCreateToday();
+
+        assertThat(response.planDate()).isEqualTo(today);
+        then(dailyPlanRepository).should(times(2)).findByUserIdAndPlanDate(userId, today);
     }
 }

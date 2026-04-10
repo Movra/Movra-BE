@@ -10,6 +10,7 @@ import com.example.movra.bc.personalization.behavior_profile.domain.type.Reflect
 import com.example.movra.bc.personalization.behavior_profile.domain.type.SocialMode;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.SocialPreferenceLevel;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.StartMode;
+import com.example.movra.bc.personalization.behavior_profile.domain.exception.InvalidBehaviorProfileException;
 import com.example.movra.bc.personalization.behavior_profile.domain.vo.BehaviorProfileId;
 import com.example.movra.sharedkernel.domain.AbstractAggregateRoot;
 import jakarta.persistence.AttributeOverride;
@@ -73,6 +74,15 @@ public class BehaviorProfile extends AbstractAggregateRoot {
             FocusWindow preferredFocusWindow,
             PlanningDepth planningDepth
     ) {
+        validate(
+                userId,
+                executionDifficultyLevel,
+                socialPreferenceLevel,
+                recoveryStyle,
+                preferredFocusWindow,
+                planningDepth
+        );
+
         return BehaviorProfile.builder()
                 .id(BehaviorProfileId.newId())
                 .userId(userId)
@@ -91,6 +101,15 @@ public class BehaviorProfile extends AbstractAggregateRoot {
             FocusWindow preferredFocusWindow,
             PlanningDepth planningDepth
     ) {
+        validate(
+                this.userId,
+                executionDifficultyLevel,
+                socialPreferenceLevel,
+                recoveryStyle,
+                preferredFocusWindow,
+                planningDepth
+        );
+
         this.executionDifficultyLevel = executionDifficultyLevel;
         this.socialPreferenceLevel = socialPreferenceLevel;
         this.recoveryStyle = recoveryStyle;
@@ -125,5 +144,23 @@ public class BehaviorProfile extends AbstractAggregateRoot {
             return CoachingTone.GENTLE;
         }
         return CoachingTone.DIRECT;
+    }
+
+    private static void validate(
+            UserId userId,
+            ExecutionDifficultyLevel executionDifficultyLevel,
+            SocialPreferenceLevel socialPreferenceLevel,
+            RecoveryStyle recoveryStyle,
+            FocusWindow preferredFocusWindow,
+            PlanningDepth planningDepth
+    ) {
+        if (userId == null
+                || executionDifficultyLevel == null
+                || socialPreferenceLevel == null
+                || recoveryStyle == null
+                || preferredFocusWindow == null
+                || planningDepth == null) {
+            throw new InvalidBehaviorProfileException();
+        }
     }
 }

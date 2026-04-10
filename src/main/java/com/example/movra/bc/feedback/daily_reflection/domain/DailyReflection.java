@@ -1,6 +1,7 @@
 package com.example.movra.bc.feedback.daily_reflection.domain;
 
 import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.feedback.daily_reflection.domain.exception.InvalidDailyReflectionException;
 import com.example.movra.bc.feedback.daily_reflection.domain.vo.DailyReflectionId;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
@@ -27,6 +28,10 @@ import java.time.LocalDate;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class DailyReflection {
 
+    private static final int WHAT_WENT_WELL_MAX_LENGTH = 500;
+    private static final int WHAT_BROKE_DOWN_MAX_LENGTH = 1000;
+    private static final int NEXT_ACTION_MAX_LENGTH = 500;
+
     @EmbeddedId
     @AttributeOverride(name = "id", column = @Column(name = "daily_reflection_id"))
     private DailyReflectionId id;
@@ -38,13 +43,13 @@ public class DailyReflection {
     @Column(name = "reflection_date", nullable = false)
     private LocalDate reflectionDate;
 
-    @Column(name = "what_went_well", nullable = false, length = 500)
+    @Column(name = "what_went_well", nullable = false, length = WHAT_WENT_WELL_MAX_LENGTH)
     private String whatWentWell;
 
-    @Column(name = "what_broke_down", nullable = false, length = 1000)
+    @Column(name = "what_broke_down", nullable = false, length = WHAT_BROKE_DOWN_MAX_LENGTH)
     private String whatBrokeDown;
 
-    @Column(name = "next_action", nullable = false, length = 500)
+    @Column(name = "next_action", nullable = false, length = NEXT_ACTION_MAX_LENGTH)
     private String nextAction;
 
     public static DailyReflection create(
@@ -54,6 +59,8 @@ public class DailyReflection {
             String whatBrokeDown,
             String nextAction
     ) {
+        validate(userId, reflectionDate, whatWentWell, whatBrokeDown, nextAction);
+
         return DailyReflection.builder()
                 .id(DailyReflectionId.newId())
                 .userId(userId)
@@ -65,8 +72,34 @@ public class DailyReflection {
     }
 
     public void update(String whatWentWell, String whatBrokeDown, String nextAction) {
+        validateText(whatWentWell, WHAT_WENT_WELL_MAX_LENGTH);
+        validateText(whatBrokeDown, WHAT_BROKE_DOWN_MAX_LENGTH);
+        validateText(nextAction, NEXT_ACTION_MAX_LENGTH);
+
         this.whatWentWell = whatWentWell;
         this.whatBrokeDown = whatBrokeDown;
         this.nextAction = nextAction;
+    }
+
+    private static void validate(
+            UserId userId,
+            LocalDate reflectionDate,
+            String whatWentWell,
+            String whatBrokeDown,
+            String nextAction
+    ) {
+        if (userId == null || reflectionDate == null) {
+            throw new InvalidDailyReflectionException();
+        }
+
+        validateText(whatWentWell, WHAT_WENT_WELL_MAX_LENGTH);
+        validateText(whatBrokeDown, WHAT_BROKE_DOWN_MAX_LENGTH);
+        validateText(nextAction, NEXT_ACTION_MAX_LENGTH);
+    }
+
+    private static void validateText(String value, int maxLength) {
+        if (value == null || value.isBlank() || value.length() > maxLength) {
+            throw new InvalidDailyReflectionException();
+        }
     }
 }

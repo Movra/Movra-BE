@@ -4,6 +4,7 @@ import com.example.movra.bc.account.domain.user.vo.UserId;
 import com.example.movra.bc.feedback.daily_reflection.application.exception.DailyReflectionAlreadyExistsException;
 import com.example.movra.bc.feedback.daily_reflection.application.service.CreateDailyReflectionService;
 import com.example.movra.bc.feedback.daily_reflection.application.service.dto.request.CreateDailyReflectionRequest;
+import com.example.movra.bc.feedback.daily_reflection.domain.exception.InvalidDailyReflectionException;
 import com.example.movra.bc.feedback.daily_reflection.domain.repository.DailyReflectionRepository;
 import com.example.movra.sharedkernel.user.AuthenticatedUser;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.LocalDate;
 
@@ -44,40 +46,69 @@ class CreateDailyReflectionServiceTest {
     }
 
     @Test
-    @DisplayName("일일 회고 생성 성공")
+    @DisplayName("create succeeds")
     void create_success() {
-        // given
         givenCurrentUser();
         CreateDailyReflectionRequest request = new CreateDailyReflectionRequest(
                 reflectionDate,
-                "핵심 작업 하나는 시작했다",
-                "오후 집중이 무너졌다",
-                "내일은 오후 작업을 더 가볍게 시작한다"
+                "Started one important task",
+                "Lost focus in the afternoon",
+                "Start the afternoon task in smaller chunks"
         );
         given(dailyReflectionRepository.existsByUserIdAndReflectionDate(userId, reflectionDate)).willReturn(false);
 
-        // when
         createDailyReflectionService.create(request);
 
-        // then
-        then(dailyReflectionRepository).should().save(any());
+        then(dailyReflectionRepository).should().saveAndFlush(any());
     }
 
     @Test
-    @DisplayName("같은 날짜 회고가 이미 있으면 DailyReflectionAlreadyExistsException 발생")
+    @DisplayName("create throws when reflection already exists")
     void create_alreadyExists_throwsException() {
-        // given
         givenCurrentUser();
         CreateDailyReflectionRequest request = new CreateDailyReflectionRequest(
                 reflectionDate,
-                "잘한 점",
-                "실패한 점",
-                "다음 행동"
+                "One win",
+                "One breakdown",
+                "Next action"
         );
         given(dailyReflectionRepository.existsByUserIdAndReflectionDate(userId, reflectionDate)).willReturn(true);
 
-        // when & then
         assertThatThrownBy(() -> createDailyReflectionService.create(request))
                 .isInstanceOf(DailyReflectionAlreadyExistsException.class);
+    }
+
+    @Test
+    @DisplayName("create converts unique constraint violations to DailyReflectionAlreadyExistsException")
+    void create_duplicateAtWrite_throwsException() {
+        givenCurrentUser();
+        CreateDailyReflectionRequest request = new CreateDailyReflectionRequest(
+                reflectionDate,
+                "One win",
+                "One breakdown",
+                "Next action"
+        );
+        given(dailyReflectionRepository.existsByUserIdAndReflectionDate(userId, reflectionDate)).willReturn(false);
+        given(dailyReflectionRepository.saveAndFlush(any()))
+                .willThrow(new DataIntegrityViolationException("duplicate"));
+
+        assertThatThrownBy(() -> createDailyReflectionService.create(request))
+                .isInstanceOf(DailyReflectionAlreadyExistsException.class);
+    }
+
+    @Test
+    @DisplayName("create throws when reflection content is invalid")
+    void create_invalidContent_throwsException() {
+        givenCurrentUser();
+        CreateDailyReflectionRequest request = new CreateDailyReflectionRequest(
+                reflectionDate,
+                " ",
+                "One breakdown",
+                "Next action"
+        );
+        given(dailyReflectionRepository.existsByUserIdAndReflectionDate(userId, reflectionDate)).willReturn(false);
+
+        assertThatThrownBy(() -> createDailyReflectionService.create(request))
+                .isInstanceOf(InvalidDailyReflectionException.class);
     }
 }

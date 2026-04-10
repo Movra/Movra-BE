@@ -14,6 +14,8 @@ import lombok.*;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class TopPickDetail {
 
+    private static final int MAX_MEMO_LENGTH = 255;
+
     @EmbeddedId
     @AttributeOverride(name = "id", column = @Column(name = "top_pick_detail_id"))
     private TopPickDetailId topPickDetailId;
@@ -21,7 +23,7 @@ public class TopPickDetail {
     @Column(nullable = false)
     private int estimatedMinutes;
 
-    @Column(length = 255, nullable = false)
+    @Column(length = MAX_MEMO_LENGTH, nullable = false)
     private String memo;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -52,7 +54,7 @@ public class TopPickDetail {
     }
 
     private static void validateMemo(String memo) {
-        if (memo == null || memo.isBlank()) {
+        if (memo == null || memo.isBlank() || memo.length() > MAX_MEMO_LENGTH) {
             throw new InvalidTopPickMemoException();
         }
     }

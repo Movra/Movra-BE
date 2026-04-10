@@ -7,6 +7,7 @@ import com.example.movra.bc.feedback.daily_reflection.domain.DailyReflection;
 import com.example.movra.bc.feedback.daily_reflection.domain.repository.DailyReflectionRepository;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,14 +26,18 @@ public class CreateDailyReflectionService {
             throw new DailyReflectionAlreadyExistsException();
         }
 
-        dailyReflectionRepository.save(
-                DailyReflection.create(
-                        userId,
-                        request.reflectionDate(),
-                        request.whatWentWell(),
-                        request.whatBrokeDown(),
-                        request.nextAction()
-                )
-        );
+        try {
+            dailyReflectionRepository.saveAndFlush(
+                    DailyReflection.create(
+                            userId,
+                            request.reflectionDate(),
+                            request.whatWentWell(),
+                            request.whatBrokeDown(),
+                            request.nextAction()
+                    )
+            );
+        } catch (DataIntegrityViolationException e) {
+            throw new DailyReflectionAlreadyExistsException();
+        }
     }
 }
