@@ -28,4 +28,15 @@ public class DailyPlanQueryService {
 
         return DailyPlanResponse.from(dailyPlan);
     }
+
+    @Transactional
+    public DailyPlanResponse findOrCreateToday() {
+        UserId userId = currentUserQuery.currentUser().userId();
+        LocalDate today = LocalDate.now();
+
+        DailyPlan dailyPlan = dailyPlanRepository.findByUserIdAndPlanDate(userId, today)
+                .orElseGet(() -> dailyPlanRepository.save(DailyPlan.create(userId, today)));
+
+        return DailyPlanResponse.from(dailyPlan);
+    }
 }

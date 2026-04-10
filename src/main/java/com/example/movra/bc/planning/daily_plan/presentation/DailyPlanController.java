@@ -28,6 +28,11 @@ public class DailyPlanController {
         dailyPlanCreateService.create(request);
     }
 
+    @GetMapping("/today")
+    public DailyPlanResponse findToday() {
+        return dailyPlanQueryService.findOrCreateToday();
+    }
+
     @GetMapping
     public DailyPlanResponse findByPlanDate(@RequestParam LocalDate planDate) {
         return dailyPlanQueryService.findByPlanDate(planDate);

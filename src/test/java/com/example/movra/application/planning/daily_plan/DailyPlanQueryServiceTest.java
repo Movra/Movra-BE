@@ -21,6 +21,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
@@ -71,5 +72,40 @@ class DailyPlanQueryServiceTest {
         // when & then
         assertThatThrownBy(() -> dailyPlanQueryService.findByPlanDate(planDate))
                 .isInstanceOf(DailyPlanNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("오늘 계획이 존재하면 그대로 조회한다")
+    void findOrCreateToday_existing_success() {
+        // given
+        givenCurrentUser();
+        LocalDate today = LocalDate.now();
+        DailyPlan dailyPlan = DailyPlan.create(userId, today);
+        given(dailyPlanRepository.findByUserIdAndPlanDate(userId, today)).willReturn(Optional.of(dailyPlan));
+
+        // when
+        DailyPlanResponse response = dailyPlanQueryService.findOrCreateToday();
+
+        // then
+        assertThat(response.planDate()).isEqualTo(today);
+        then(dailyPlanRepository).should().findByUserIdAndPlanDate(userId, today);
+    }
+
+    @Test
+    @DisplayName("오늘 계획이 없으면 자동 생성 후 조회한다")
+    void findOrCreateToday_notFound_createSuccess() {
+        // given
+        givenCurrentUser();
+        LocalDate today = LocalDate.now();
+        given(dailyPlanRepository.findByUserIdAndPlanDate(userId, today)).willReturn(Optional.empty());
+        given(dailyPlanRepository.save(org.mockito.ArgumentMatchers.any(DailyPlan.class)))
+                .willAnswer(invocation -> invocation.getArgument(0));
+
+        // when
+        DailyPlanResponse response = dailyPlanQueryService.findOrCreateToday();
+
+        // then
+        assertThat(response.planDate()).isEqualTo(today);
+        then(dailyPlanRepository).should().save(org.mockito.ArgumentMatchers.any(DailyPlan.class));
     }
 }
