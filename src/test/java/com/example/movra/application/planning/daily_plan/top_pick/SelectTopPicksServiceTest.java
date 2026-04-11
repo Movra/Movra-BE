@@ -5,10 +5,12 @@ import com.example.movra.bc.planning.daily_plan.application.exception.DailyPlanN
 import com.example.movra.bc.planning.daily_plan.application.service.task.top_pick.SelectTopPicksService;
 import com.example.movra.bc.planning.daily_plan.application.service.task.top_pick.dto.request.TopPicksRequest;
 import com.example.movra.bc.planning.daily_plan.domain.DailyPlan;
-import com.example.movra.bc.planning.daily_plan.domain.exception.CoreSelectedLimitExceededException;
+import com.example.movra.bc.planning.daily_plan.domain.exception.InvalidTopPickEstimatedMinutesException;
+import com.example.movra.bc.planning.daily_plan.domain.exception.InvalidTopPickMemoException;
+import com.example.movra.bc.planning.daily_plan.domain.exception.TaskNotFoundException;
+import com.example.movra.bc.planning.daily_plan.domain.exception.TopPickLimitExceededException;
 import com.example.movra.bc.planning.daily_plan.domain.repository.DailyPlanRepository;
 import com.example.movra.bc.planning.daily_plan.domain.vo.DailyPlanId;
-import com.example.movra.bc.planning.daily_plan.domain.exception.TaskNotFoundException;
 import com.example.movra.sharedkernel.user.AuthenticatedUser;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,8 +28,8 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class SelectTopPicksServiceTest {
@@ -46,74 +48,127 @@ class SelectTopPicksServiceTest {
     @BeforeEach
     void setUp() {
         lenient().when(currentUserQuery.currentUser()).thenReturn(
-                AuthenticatedUser.builder().userId(userId).build());
+                AuthenticatedUser.builder().userId(userId).build()
+        );
     }
 
     private DailyPlan createDailyPlanWithTask() {
         DailyPlan dailyPlan = DailyPlan.create(userId, LocalDate.of(2026, 3, 17));
-        dailyPlan.addTask("Top Pick 대상");
+        dailyPlan.addTask("Top Pick target");
         return dailyPlan;
     }
 
     @Test
-    @DisplayName("Top Pick 선택 성공")
+    @DisplayName("select succeeds")
     void select_success() {
-        // given
         DailyPlan dailyPlan = createDailyPlanWithTask();
         UUID dailyPlanId = dailyPlan.getDailyPlanId().id();
         UUID taskId = dailyPlan.getTasks().get(0).getTaskId().id();
-        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId)).willReturn(Optional.of(dailyPlan));
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId))
+                .willReturn(Optional.of(dailyPlan));
 
-        // when
-        selectTopPicksService.select(new TopPicksRequest(30, "중요한 일"), dailyPlanId, taskId);
+        selectTopPicksService.select(new TopPicksRequest(30, "Important"), dailyPlanId, taskId);
 
-        // then
         assertThat(dailyPlan.getTasks().get(0).isTopPicked()).isTrue();
         then(dailyPlanRepository).should().save(dailyPlan);
     }
 
     @Test
-    @DisplayName("Top Pick 3개 초과 시 CoreSelectedLimitExceededException 발생")
+    @DisplayName("select throws when top pick limit is exceeded")
     void select_exceedsLimit_throwsException() {
-        // given
         DailyPlan dailyPlan = DailyPlan.create(userId, LocalDate.of(2026, 3, 17));
         for (int i = 0; i < 4; i++) {
-            dailyPlan.addTask("할 일 " + i);
+            dailyPlan.addTask("Task " + i);
         }
         for (int i = 0; i < 3; i++) {
-            dailyPlan.markAsTopPicked(dailyPlan.getTasks().get(i).getTaskId(), 30, "메모");
+            dailyPlan.markAsTopPicked(dailyPlan.getTasks().get(i).getTaskId(), 30, "Memo");
         }
         UUID dailyPlanId = dailyPlan.getDailyPlanId().id();
         UUID fourthTaskId = dailyPlan.getTasks().get(3).getTaskId().id();
-        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId)).willReturn(Optional.of(dailyPlan));
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId))
+                .willReturn(Optional.of(dailyPlan));
 
-        // when & then
-        assertThatThrownBy(() -> selectTopPicksService.select(new TopPicksRequest(30, "메모"), dailyPlanId, fourthTaskId))
-                .isInstanceOf(CoreSelectedLimitExceededException.class);
+        assertThatThrownBy(() -> selectTopPicksService.select(
+                new TopPicksRequest(30, "Memo"),
+                dailyPlanId,
+                fourthTaskId
+        )).isInstanceOf(TopPickLimitExceededException.class);
     }
 
     @Test
-    @DisplayName("존재하지 않는 DailyPlan에서 Top Pick 선택 시 DailyPlanNotFoundException 발생")
-    void select_dailyPlanNotFound_throwsException() {
-        // given
-        UUID dailyPlanId = UUID.randomUUID();
-        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId)).willReturn(Optional.empty());
-
-        // when & then
-        assertThatThrownBy(() -> selectTopPicksService.select(new TopPicksRequest(30, "메모"), dailyPlanId, UUID.randomUUID()))
-                .isInstanceOf(DailyPlanNotFoundException.class);
-    }
-
-    @Test
-    @DisplayName("존재하지 않는 Task를 Top Pick 선택 시 TaskNotFoundException 발생")
-    void select_taskNotFound_throwsException() {
-        // given
+    @DisplayName("select throws when estimated minutes are invalid")
+    void select_invalidEstimatedMinutes_throwsException() {
         DailyPlan dailyPlan = createDailyPlanWithTask();
         UUID dailyPlanId = dailyPlan.getDailyPlanId().id();
-        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId)).willReturn(Optional.of(dailyPlan));
+        UUID taskId = dailyPlan.getTasks().get(0).getTaskId().id();
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId))
+                .willReturn(Optional.of(dailyPlan));
 
-        // when & then
-        assertThatThrownBy(() -> selectTopPicksService.select(new TopPicksRequest(30, "메모"), dailyPlanId, UUID.randomUUID()))
-                .isInstanceOf(TaskNotFoundException.class);
+        assertThatThrownBy(() -> selectTopPicksService.select(
+                new TopPicksRequest(0, "Memo"),
+                dailyPlanId,
+                taskId
+        )).isInstanceOf(InvalidTopPickEstimatedMinutesException.class);
+    }
+
+    @Test
+    @DisplayName("select throws when memo is blank")
+    void select_blankMemo_throwsException() {
+        DailyPlan dailyPlan = createDailyPlanWithTask();
+        UUID dailyPlanId = dailyPlan.getDailyPlanId().id();
+        UUID taskId = dailyPlan.getTasks().get(0).getTaskId().id();
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId))
+                .willReturn(Optional.of(dailyPlan));
+
+        assertThatThrownBy(() -> selectTopPicksService.select(
+                new TopPicksRequest(30, " "),
+                dailyPlanId,
+                taskId
+        )).isInstanceOf(InvalidTopPickMemoException.class);
+    }
+
+    @Test
+    @DisplayName("select throws when memo is too long")
+    void select_tooLongMemo_throwsException() {
+        DailyPlan dailyPlan = createDailyPlanWithTask();
+        UUID dailyPlanId = dailyPlan.getDailyPlanId().id();
+        UUID taskId = dailyPlan.getTasks().get(0).getTaskId().id();
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId))
+                .willReturn(Optional.of(dailyPlan));
+
+        assertThatThrownBy(() -> selectTopPicksService.select(
+                new TopPicksRequest(30, "a".repeat(256)),
+                dailyPlanId,
+                taskId
+        )).isInstanceOf(InvalidTopPickMemoException.class);
+    }
+
+    @Test
+    @DisplayName("select throws when daily plan is missing")
+    void select_dailyPlanNotFound_throwsException() {
+        UUID dailyPlanId = UUID.randomUUID();
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> selectTopPicksService.select(
+                new TopPicksRequest(30, "Memo"),
+                dailyPlanId,
+                UUID.randomUUID()
+        )).isInstanceOf(DailyPlanNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("select throws when task is missing")
+    void select_taskNotFound_throwsException() {
+        DailyPlan dailyPlan = createDailyPlanWithTask();
+        UUID dailyPlanId = dailyPlan.getDailyPlanId().id();
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId))
+                .willReturn(Optional.of(dailyPlan));
+
+        assertThatThrownBy(() -> selectTopPicksService.select(
+                new TopPicksRequest(30, "Memo"),
+                dailyPlanId,
+                UUID.randomUUID()
+        )).isInstanceOf(TaskNotFoundException.class);
     }
 }

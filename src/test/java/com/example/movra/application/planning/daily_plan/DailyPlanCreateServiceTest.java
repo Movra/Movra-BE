@@ -13,14 +13,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.SQLException;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class DailyPlanCreateServiceTest {
@@ -43,29 +46,62 @@ class DailyPlanCreateServiceTest {
         );
     }
 
-    @Test
-    @DisplayName("일일 계획 생성 성공")
-    void create_success() {
-        // given
-        givenCurrentUser();
-        given(dailyPlanRepository.existsByUserIdAndPlanDate(userId, planDate)).willReturn(false);
+    private DataIntegrityViolationException duplicateKeyViolation() {
+        return new DataIntegrityViolationException(
+                "duplicate",
+                new SQLIntegrityConstraintViolationException("duplicate", "23000", 1062)
+        );
+    }
 
-        // when
-        dailyPlanCreateService.create(new DailyPlanRequest(planDate));
-
-        // then
-        then(dailyPlanRepository).should().save(any());
+    private DataIntegrityViolationException otherIntegrityViolation() {
+        return new DataIntegrityViolationException(
+                "integrity",
+                new SQLException("integrity", "23514", 23514)
+        );
     }
 
     @Test
-    @DisplayName("이미 존재하는 날짜에 일일 계획 생성 시 DailyPlanAlreadyExistsException 발생")
+    @DisplayName("create succeeds")
+    void create_success() {
+        givenCurrentUser();
+        given(dailyPlanRepository.existsByUserIdAndPlanDate(userId, planDate)).willReturn(false);
+
+        dailyPlanCreateService.create(new DailyPlanRequest(planDate));
+
+        then(dailyPlanRepository).should().saveAndFlush(any());
+    }
+
+    @Test
+    @DisplayName("create throws when daily plan already exists")
     void create_alreadyExists_throwsException() {
-        // given
         givenCurrentUser();
         given(dailyPlanRepository.existsByUserIdAndPlanDate(userId, planDate)).willReturn(true);
 
-        // when & then
         assertThatThrownBy(() -> dailyPlanCreateService.create(new DailyPlanRequest(planDate)))
                 .isInstanceOf(DailyPlanAlreadyExistsException.class);
+    }
+
+    @Test
+    @DisplayName("create converts unique constraint violations to DailyPlanAlreadyExistsException")
+    void create_duplicateAtWrite_throwsException() {
+        givenCurrentUser();
+        given(dailyPlanRepository.existsByUserIdAndPlanDate(userId, planDate)).willReturn(false);
+        given(dailyPlanRepository.saveAndFlush(any()))
+                .willThrow(duplicateKeyViolation());
+
+        assertThatThrownBy(() -> dailyPlanCreateService.create(new DailyPlanRequest(planDate)))
+                .isInstanceOf(DailyPlanAlreadyExistsException.class);
+    }
+
+    @Test
+    @DisplayName("create rethrows non-duplicate integrity violations")
+    void create_otherIntegrityViolation_rethrowsException() {
+        givenCurrentUser();
+        given(dailyPlanRepository.existsByUserIdAndPlanDate(userId, planDate)).willReturn(false);
+        given(dailyPlanRepository.saveAndFlush(any()))
+                .willThrow(otherIntegrityViolation());
+
+        assertThatThrownBy(() -> dailyPlanCreateService.create(new DailyPlanRequest(planDate)))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 }

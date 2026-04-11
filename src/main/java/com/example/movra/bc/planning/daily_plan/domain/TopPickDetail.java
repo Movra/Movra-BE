@@ -1,5 +1,7 @@
 package com.example.movra.bc.planning.daily_plan.domain;
 
+import com.example.movra.bc.planning.daily_plan.domain.exception.InvalidTopPickEstimatedMinutesException;
+import com.example.movra.bc.planning.daily_plan.domain.exception.InvalidTopPickMemoException;
 import com.example.movra.bc.planning.daily_plan.domain.vo.TopPickDetailId;
 import jakarta.persistence.*;
 import lombok.*;
@@ -12,6 +14,8 @@ import lombok.*;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class TopPickDetail {
 
+    private static final int MAX_MEMO_LENGTH = 255;
+
     @EmbeddedId
     @AttributeOverride(name = "id", column = @Column(name = "top_pick_detail_id"))
     private TopPickDetailId topPickDetailId;
@@ -19,7 +23,7 @@ public class TopPickDetail {
     @Column(nullable = false)
     private int estimatedMinutes;
 
-    @Column(length = 255, nullable = false)
+    @Column(length = MAX_MEMO_LENGTH, nullable = false)
     private String memo;
 
     @OneToOne(fetch = FetchType.LAZY)
@@ -27,12 +31,8 @@ public class TopPickDetail {
     private Task task;
 
     public static TopPickDetail create(int estimatedMinutes, String memo, Task task){
-        if (estimatedMinutes <= 0) {
-            throw new IllegalArgumentException("estimatedMinutes must be positive");
-        }
-        if (memo == null || memo.isBlank()) {
-            throw new IllegalArgumentException("memo must not be blank");
-        }
+        validateEstimatedMinutes(estimatedMinutes);
+        validateMemo(memo);
 
         return TopPickDetail.builder()
                 .topPickDetailId(TopPickDetailId.newId())
@@ -43,6 +43,19 @@ public class TopPickDetail {
     }
 
     void updateEstimatedMinutes(int newEstimatedMinutes) {
+        validateEstimatedMinutes(newEstimatedMinutes);
         this.estimatedMinutes = newEstimatedMinutes;
+    }
+
+    private static void validateEstimatedMinutes(int estimatedMinutes) {
+        if (estimatedMinutes <= 0) {
+            throw new InvalidTopPickEstimatedMinutesException();
+        }
+    }
+
+    private static void validateMemo(String memo) {
+        if (memo == null || memo.isBlank() || memo.length() > MAX_MEMO_LENGTH) {
+            throw new InvalidTopPickMemoException();
+        }
     }
 }
