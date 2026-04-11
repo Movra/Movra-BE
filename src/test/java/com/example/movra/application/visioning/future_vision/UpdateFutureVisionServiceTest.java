@@ -64,11 +64,12 @@ class UpdateFutureVisionServiceTest {
         given(futureVisionRepository.findByUserId(userId)).willReturn(Optional.of(futureVision));
 
         MultipartFile newWeeklyImage = mock(MultipartFile.class);
-        given(imageHelper.update("weekly.png", newWeeklyImage, ImageType.FUTURE)).willReturn("weekly-updated.png");
+        given(imageHelper.upload(newWeeklyImage, ImageType.FUTURE)).willReturn("weekly-updated.png");
 
         updateWeeklyVisionService.update(new UpdateWeeklyVisionRequest(newWeeklyImage));
 
         then(futureVisionPersister).should().saveFutureVision(futureVision);
+        then(imageHelper).should().cleanup("weekly.png");
     }
 
     @Test
@@ -78,11 +79,12 @@ class UpdateFutureVisionServiceTest {
         given(futureVisionRepository.findByUserId(userId)).willReturn(Optional.of(futureVision));
 
         MultipartFile newYearlyImage = mock(MultipartFile.class);
-        given(imageHelper.update("yearly.png", newYearlyImage, ImageType.FUTURE)).willReturn("yearly-updated.png");
+        given(imageHelper.upload(newYearlyImage, ImageType.FUTURE)).willReturn("yearly-updated.png");
 
         updateYearlyVisionService.update(new UpdateYearlyVisionRequest(newYearlyImage, "updated vision"));
 
         then(futureVisionPersister).should().saveFutureVision(futureVision);
+        then(imageHelper).should().cleanup("yearly.png");
     }
 
     @Test
