@@ -55,9 +55,6 @@ public enum ErrorCode {
     DAILY_REFLECTION_ALREADY_EXISTS(HttpStatus.CONFLICT, "Daily reflection already exists."),
     DAILY_REFLECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "Daily reflection was not found."),
     INVALID_DAILY_REFLECTION(HttpStatus.BAD_REQUEST, "Daily reflection content is invalid."),
-    BEHAVIOR_PROFILE_ALREADY_EXISTS(HttpStatus.CONFLICT, "Behavior profile already exists."),
-    BEHAVIOR_PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND, "Behavior profile was not found."),
-    INVALID_BEHAVIOR_PROFILE(HttpStatus.BAD_REQUEST, "Behavior profile is invalid."),
 
     ALREADY_JOINED(HttpStatus.CONFLICT, "Already joined this room."),
     PARTICIPANT_NOT_FOUND(HttpStatus.NOT_FOUND, "Participant was not found."),
