@@ -16,6 +16,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.SQLException;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -42,6 +44,20 @@ class CreateDailyReflectionServiceTest {
     private void givenCurrentUser() {
         lenient().when(currentUserQuery.currentUser()).thenReturn(
                 AuthenticatedUser.builder().userId(userId).build()
+        );
+    }
+
+    private DataIntegrityViolationException duplicateKeyViolation() {
+        return new DataIntegrityViolationException(
+                "duplicate",
+                new SQLIntegrityConstraintViolationException("duplicate", "23000", 1062)
+        );
+    }
+
+    private DataIntegrityViolationException otherIntegrityViolation() {
+        return new DataIntegrityViolationException(
+                "integrity",
+                new SQLException("integrity", "23514", 23514)
         );
     }
 
@@ -90,10 +106,28 @@ class CreateDailyReflectionServiceTest {
         );
         given(dailyReflectionRepository.existsByUserIdAndReflectionDate(userId, reflectionDate)).willReturn(false);
         given(dailyReflectionRepository.saveAndFlush(any()))
-                .willThrow(new DataIntegrityViolationException("duplicate"));
+                .willThrow(duplicateKeyViolation());
 
         assertThatThrownBy(() -> createDailyReflectionService.create(request))
                 .isInstanceOf(DailyReflectionAlreadyExistsException.class);
+    }
+
+    @Test
+    @DisplayName("create rethrows non-duplicate integrity violations")
+    void create_otherIntegrityViolation_rethrowsException() {
+        givenCurrentUser();
+        CreateDailyReflectionRequest request = new CreateDailyReflectionRequest(
+                reflectionDate,
+                "One win",
+                "One breakdown",
+                "Next action"
+        );
+        given(dailyReflectionRepository.existsByUserIdAndReflectionDate(userId, reflectionDate)).willReturn(false);
+        given(dailyReflectionRepository.saveAndFlush(any()))
+                .willThrow(otherIntegrityViolation());
+
+        assertThatThrownBy(() -> createDailyReflectionService.create(request))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     @Test

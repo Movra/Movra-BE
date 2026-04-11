@@ -5,6 +5,7 @@ import com.example.movra.bc.feedback.daily_reflection.application.exception.Dail
 import com.example.movra.bc.feedback.daily_reflection.application.service.dto.request.CreateDailyReflectionRequest;
 import com.example.movra.bc.feedback.daily_reflection.domain.DailyReflection;
 import com.example.movra.bc.feedback.daily_reflection.domain.repository.DailyReflectionRepository;
+import com.example.movra.sharedkernel.exception.DataIntegrityViolationUtils;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -37,7 +38,10 @@ public class CreateDailyReflectionService {
                     )
             );
         } catch (DataIntegrityViolationException e) {
-            throw new DailyReflectionAlreadyExistsException();
+            if (DataIntegrityViolationUtils.isDuplicateKeyViolation(e)) {
+                throw new DailyReflectionAlreadyExistsException();
+            }
+            throw e;
         }
     }
 }

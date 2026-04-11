@@ -15,6 +15,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.SQLException;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -41,6 +43,20 @@ class DailyPlanCreateServiceTest {
     private void givenCurrentUser() {
         lenient().when(currentUserQuery.currentUser()).thenReturn(
                 AuthenticatedUser.builder().userId(userId).build()
+        );
+    }
+
+    private DataIntegrityViolationException duplicateKeyViolation() {
+        return new DataIntegrityViolationException(
+                "duplicate",
+                new SQLIntegrityConstraintViolationException("duplicate", "23000", 1062)
+        );
+    }
+
+    private DataIntegrityViolationException otherIntegrityViolation() {
+        return new DataIntegrityViolationException(
+                "integrity",
+                new SQLException("integrity", "23514", 23514)
         );
     }
 
@@ -71,9 +87,21 @@ class DailyPlanCreateServiceTest {
         givenCurrentUser();
         given(dailyPlanRepository.existsByUserIdAndPlanDate(userId, planDate)).willReturn(false);
         given(dailyPlanRepository.saveAndFlush(any()))
-                .willThrow(new DataIntegrityViolationException("duplicate"));
+                .willThrow(duplicateKeyViolation());
 
         assertThatThrownBy(() -> dailyPlanCreateService.create(new DailyPlanRequest(planDate)))
                 .isInstanceOf(DailyPlanAlreadyExistsException.class);
+    }
+
+    @Test
+    @DisplayName("create rethrows non-duplicate integrity violations")
+    void create_otherIntegrityViolation_rethrowsException() {
+        givenCurrentUser();
+        given(dailyPlanRepository.existsByUserIdAndPlanDate(userId, planDate)).willReturn(false);
+        given(dailyPlanRepository.saveAndFlush(any()))
+                .willThrow(otherIntegrityViolation());
+
+        assertThatThrownBy(() -> dailyPlanCreateService.create(new DailyPlanRequest(planDate)))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 }

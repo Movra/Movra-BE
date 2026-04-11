@@ -16,6 +16,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataIntegrityViolationException;
 
+import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Optional;
 
@@ -45,6 +47,20 @@ class DailyPlanQueryServiceTest {
     private void givenCurrentUser() {
         lenient().when(currentUserQuery.currentUser()).thenReturn(
                 AuthenticatedUser.builder().userId(userId).build()
+        );
+    }
+
+    private DataIntegrityViolationException duplicateKeyViolation() {
+        return new DataIntegrityViolationException(
+                "duplicate",
+                new SQLIntegrityConstraintViolationException("duplicate", "23000", 1062)
+        );
+    }
+
+    private DataIntegrityViolationException otherIntegrityViolation() {
+        return new DataIntegrityViolationException(
+                "integrity",
+                new SQLException("integrity", "23514", 23514)
         );
     }
 
@@ -110,11 +126,24 @@ class DailyPlanQueryServiceTest {
         given(dailyPlanRepository.findByUserIdAndPlanDate(userId, today))
                 .willReturn(Optional.empty(), Optional.of(dailyPlan));
         given(dailyPlanRepository.saveAndFlush(any(DailyPlan.class)))
-                .willThrow(new DataIntegrityViolationException("duplicate"));
+                .willThrow(duplicateKeyViolation());
 
         DailyPlanResponse response = dailyPlanQueryService.findOrCreateToday();
 
         assertThat(response.planDate()).isEqualTo(today);
         then(dailyPlanRepository).should(times(2)).findByUserIdAndPlanDate(userId, today);
+    }
+
+    @Test
+    @DisplayName("findOrCreateToday rethrows non-duplicate integrity violations")
+    void findOrCreateToday_otherIntegrityViolation_rethrowsException() {
+        givenCurrentUser();
+        LocalDate today = LocalDate.now();
+        given(dailyPlanRepository.findByUserIdAndPlanDate(userId, today)).willReturn(Optional.empty());
+        given(dailyPlanRepository.saveAndFlush(any(DailyPlan.class)))
+                .willThrow(otherIntegrityViolation());
+
+        assertThatThrownBy(() -> dailyPlanQueryService.findOrCreateToday())
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 }

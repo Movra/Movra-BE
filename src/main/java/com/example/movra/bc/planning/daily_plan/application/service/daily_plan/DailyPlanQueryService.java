@@ -6,6 +6,7 @@ import com.example.movra.bc.planning.daily_plan.application.exception.DailyPlanN
 import com.example.movra.bc.planning.daily_plan.application.service.daily_plan.dto.response.DailyPlanResponse;
 import com.example.movra.bc.planning.daily_plan.domain.DailyPlan;
 import com.example.movra.bc.planning.daily_plan.domain.repository.DailyPlanRepository;
+import com.example.movra.sharedkernel.exception.DataIntegrityViolationUtils;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -46,6 +47,9 @@ public class DailyPlanQueryService {
         try {
             return dailyPlanRepository.saveAndFlush(DailyPlan.create(userId, today));
         } catch (DataIntegrityViolationException e) {
+            if (!DataIntegrityViolationUtils.isDuplicateKeyViolation(e)) {
+                throw e;
+            }
             return dailyPlanRepository.findByUserIdAndPlanDate(userId, today)
                     .orElseThrow(DailyPlanAlreadyExistsException::new);
         }
