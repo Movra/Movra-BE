@@ -41,10 +41,10 @@ public class FocusSession extends AbstractAggregateRoot {
     private Instant startedAt;
 
     @Column(name = "ended_at")
-    private Instant endedAt;
+    private Instant endedAt; //TODO -> NULL 가능
 
     @Column(name = "duration_seconds")
-    private Long durationSeconds;
+    private Long durationSeconds; //TODO -> 함수 종속성 문제
 
     public static FocusSession start(UserId userId, Instant startedAt) {
         if (userId == null) {
