@@ -3,7 +3,9 @@ package com.example.movra.bc.account.domain.user.repository;
 import com.example.movra.bc.account.domain.user.User;
 import com.example.movra.bc.account.domain.user.type.OauthProvider;
 import com.example.movra.bc.account.domain.user.vo.UserId;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -21,6 +23,10 @@ public interface UserRepository extends JpaRepository<User, UserId> {
     boolean existsByAuthCredentialEmailAndProvider(@Param("email") String email, @Param("provider") OauthProvider provider);
 
     Optional<User> findByAccountId(String accountId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT u FROM User u WHERE u.id = :userId")
+    Optional<User> findByIdForUpdate(@Param("userId") UserId userId);
 
     @Query("SELECT u FROM User u JOIN u.authCredentials c WHERE c.email = :email AND c.oauthProvider = :provider")
     Optional<User> findByAuthCredentialEmailAndProvider(@Param("email") String email, @Param("provider") OauthProvider provider);

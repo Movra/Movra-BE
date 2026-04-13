@@ -66,7 +66,11 @@ public enum ErrorCode {
     ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "Room was not found."),
 
     ALREADY_FOCUSING(HttpStatus.BAD_REQUEST, "Already focusing."),
-    NOT_FOCUSING(HttpStatus.BAD_REQUEST, "Not focusing.");
+    NOT_FOCUSING(HttpStatus.BAD_REQUEST, "Not focusing."),
+    FOCUS_SESSION_ALREADY_IN_PROGRESS(HttpStatus.CONFLICT, "Focus session already in progress."),
+    FOCUS_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "Focus session was not found."),
+    FOCUS_SESSION_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "Focus session already completed."),
+    INVALID_FOCUS_SESSION(HttpStatus.BAD_REQUEST, "Focus session is invalid.");
 
     private final HttpStatus httpStatus;
     private final String message;
