@@ -3,6 +3,7 @@ package com.example.movra.bc.focus.focus_session.domain;
 import com.example.movra.bc.account.domain.user.vo.UserId;
 import com.example.movra.bc.focus.focus_session.domain.event.FocusSessionCompletedEvent;
 import com.example.movra.bc.focus.focus_session.domain.exception.FocusSessionAlreadyCompletedException;
+import com.example.movra.bc.focus.focus_session.domain.exception.InvalidFocusSessionException;
 import com.example.movra.bc.focus.focus_session.domain.vo.FocusSessionId;
 import com.example.movra.sharedkernel.domain.AbstractAggregateRoot;
 import jakarta.persistence.AttributeOverride;
@@ -46,6 +47,14 @@ public class FocusSession extends AbstractAggregateRoot {
     private Long durationSeconds;
 
     public static FocusSession start(UserId userId, Instant startedAt) {
+        if (userId == null) {
+            throw new InvalidFocusSessionException();
+        }
+
+        if (startedAt == null) {
+            throw new InvalidFocusSessionException();
+        }
+
         return FocusSession.builder()
                 .id(FocusSessionId.newId())
                 .userId(userId)
@@ -58,8 +67,12 @@ public class FocusSession extends AbstractAggregateRoot {
             throw new FocusSessionAlreadyCompletedException();
         }
 
+        if (endedAt == null) {
+            throw new InvalidFocusSessionException();
+        }
+
         if (endedAt.isBefore(startedAt)) {
-            throw new IllegalArgumentException("endedAt must not be before startedAt");
+            throw new InvalidFocusSessionException();
         }
 
         this.endedAt = endedAt;
@@ -80,21 +93,9 @@ public class FocusSession extends AbstractAggregateRoot {
 
     public long elapsedSecondsAt(Instant now) {
         if (!isInProgress()) {
-            return durationSeconds == null ? 0L : durationSeconds;
+            return durationSeconds;
         }
 
         return Math.max(0L, Duration.between(startedAt, now).getSeconds());
-    }
-
-    public long elapsedSecondsWithin(Instant periodStart, Instant periodEnd, Instant now) {
-        Instant effectiveEnd = isInProgress() ? now : endedAt;
-        Instant overlapStart = startedAt.isAfter(periodStart) ? startedAt : periodStart;
-        Instant overlapEnd = effectiveEnd.isBefore(periodEnd) ? effectiveEnd : periodEnd;
-
-        if (!overlapEnd.isAfter(overlapStart)) {
-            return 0L;
-        }
-
-        return Duration.between(overlapStart, overlapEnd).getSeconds();
     }
 }

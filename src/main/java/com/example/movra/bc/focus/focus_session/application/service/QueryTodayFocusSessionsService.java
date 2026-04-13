@@ -1,6 +1,7 @@
 package com.example.movra.bc.focus.focus_session.application.service;
 
 import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.focus.focus_session.application.helper.FocusSessionTimeCalculator;
 import com.example.movra.bc.focus.focus_session.application.service.dto.response.FocusSessionResponse;
 import com.example.movra.bc.focus.focus_session.application.service.dto.response.TodayFocusSessionsResponse;
 import com.example.movra.bc.focus.focus_session.domain.FocusSession;
@@ -23,13 +24,14 @@ public class QueryTodayFocusSessionsService {
     private final FocusSessionRepository focusSessionRepository;
     private final CurrentUserQuery currentUserQuery;
     private final Clock clock;
+    private final FocusSessionTimeCalculator focusSessionTimeCalculator;
 
     @Transactional(readOnly = true)
     public TodayFocusSessionsResponse query() {
         UserId userId = currentUserQuery.currentUser().userId();
         Instant now = clock.instant();
         ZoneId zoneId = clock.getZone();
-        LocalDate today = LocalDate.now(clock);
+        LocalDate today = now.atZone(zoneId).toLocalDate();
         Instant startOfDay = today.atStartOfDay(zoneId).toInstant();
         Instant startOfNextDay = today.plusDays(1).atStartOfDay(zoneId).toInstant();
 
@@ -45,7 +47,12 @@ public class QueryTodayFocusSessionsService {
                 .toList();
 
         long totalFocusSeconds = focusSessions.stream()
-                .mapToLong(focusSession -> focusSession.elapsedSecondsWithin(startOfDay, startOfNextDay, now))
+                .mapToLong(focusSession -> focusSessionTimeCalculator.overlapSeconds(
+                        focusSession,
+                        startOfDay,
+                        startOfNextDay,
+                        now
+                ))
                 .sum();
 
         boolean focusing = focusSessions.stream().anyMatch(FocusSession::isInProgress);
