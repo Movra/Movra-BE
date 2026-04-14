@@ -2,6 +2,7 @@ package com.example.movra.application.account.device_token;
 
 import com.example.movra.bc.account.device_token.application.exception.DeviceTokenNotFoundException;
 import com.example.movra.bc.account.device_token.application.service.UnregisterDeviceTokenService;
+import com.example.movra.bc.account.device_token.application.service.dto.request.UnregisterDeviceTokenRequest;
 import com.example.movra.bc.account.device_token.domain.DeviceToken;
 import com.example.movra.bc.account.device_token.domain.repository.DeviceTokenRepository;
 import com.example.movra.bc.account.domain.user.vo.UserId;
@@ -55,7 +56,7 @@ class UnregisterDeviceTokenServiceTest {
         given(deviceTokenRepository.findByToken("token-abc")).willReturn(Optional.of(owned));
 
         // when
-        unregisterDeviceTokenService.unregister("token-abc");
+        unregisterDeviceTokenService.unregister(new UnregisterDeviceTokenRequest("token-abc"));
 
         // then
         verify(deviceTokenRepository).deleteByToken("token-abc");
@@ -69,7 +70,7 @@ class UnregisterDeviceTokenServiceTest {
         given(deviceTokenRepository.findByToken("missing")).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> unregisterDeviceTokenService.unregister("missing"))
+        assertThatThrownBy(() -> unregisterDeviceTokenService.unregister(new UnregisterDeviceTokenRequest("missing")))
                 .isInstanceOf(DeviceTokenNotFoundException.class);
         verify(deviceTokenRepository, never()).deleteByToken(org.mockito.ArgumentMatchers.anyString());
     }
@@ -84,7 +85,7 @@ class UnregisterDeviceTokenServiceTest {
         given(deviceTokenRepository.findByToken("token-abc")).willReturn(Optional.of(owned));
 
         // when & then
-        assertThatThrownBy(() -> unregisterDeviceTokenService.unregister("token-abc"))
+        assertThatThrownBy(() -> unregisterDeviceTokenService.unregister(new UnregisterDeviceTokenRequest("token-abc")))
                 .isInstanceOf(DeviceTokenNotFoundException.class);
         verify(deviceTokenRepository, never()).deleteByToken(org.mockito.ArgumentMatchers.anyString());
     }
