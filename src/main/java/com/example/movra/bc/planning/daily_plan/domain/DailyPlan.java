@@ -1,6 +1,6 @@
 package com.example.movra.bc.planning.daily_plan.domain;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.planning.daily_plan.domain.event.DailyPlanCreatedEvent;
 import com.example.movra.bc.planning.daily_plan.domain.event.TaskTopPickUnpickedEvent;
 import com.example.movra.bc.planning.daily_plan.domain.event.TaskTopPickedEvent;

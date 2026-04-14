@@ -1,8 +1,7 @@
 package com.example.movra.bc.study_room.room.domain;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.study_room.room.domain.vo.RoomId;
-import com.example.movra.bc.study_room.room.domain.vo.Visibility;
 import jakarta.persistence.Entity;
 import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;

@@ -1,6 +1,6 @@
 package com.example.movra.application.study_room.participant;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.study_room.participant.application.service.QueryRoomParticipantsService;
 import com.example.movra.bc.study_room.participant.application.service.dto.response.ParticipantResponse;
 import com.example.movra.bc.study_room.participant.domain.Participant;

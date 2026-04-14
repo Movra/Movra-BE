@@ -1,6 +1,6 @@
 package com.example.movra.bc.visioning.future_vision.domain;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.visioning.future_vision.domain.vo.FutureVisionId;
 import jakarta.persistence.*;
 import lombok.*;

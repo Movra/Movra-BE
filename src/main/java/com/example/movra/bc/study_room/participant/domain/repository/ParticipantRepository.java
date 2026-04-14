@@ -1,6 +1,6 @@
 package com.example.movra.bc.study_room.participant.domain.repository;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.study_room.participant.domain.Participant;
 import com.example.movra.bc.study_room.participant.domain.vo.ParticipantId;
 import com.example.movra.bc.study_room.room.domain.vo.RoomId;

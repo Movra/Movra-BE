@@ -1,6 +1,6 @@
 package com.example.movra.bc.focus.focus_session.application.service;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.focus.focus_session.application.helper.FocusSessionTimeCalculator;
 import com.example.movra.bc.focus.focus_session.application.service.dto.response.FocusSessionResponse;
 import com.example.movra.bc.focus.focus_session.application.service.dto.response.TodayFocusSessionsResponse;

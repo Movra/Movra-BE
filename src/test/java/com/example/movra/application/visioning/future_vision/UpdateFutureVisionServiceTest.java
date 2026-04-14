@@ -1,6 +1,6 @@
 package com.example.movra.application.visioning.future_vision;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.visioning.future_vision.application.service.UpdateWeeklyVisionService;
 import com.example.movra.bc.visioning.future_vision.application.service.UpdateYearlyVisionService;
 import com.example.movra.bc.visioning.future_vision.application.exception.FutureVisionNotFoundException;

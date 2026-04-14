@@ -1,8 +1,8 @@
 package com.example.movra.bc.focus.focus_session.application.service;
 
-import com.example.movra.bc.account.application.user.exception.UserNotFoundException;
-import com.example.movra.bc.account.domain.user.repository.UserRepository;
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.application.user.exception.UserNotFoundException;
+import com.example.movra.bc.account.user.domain.user.repository.UserRepository;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.focus.focus_session.application.exception.FocusSessionNotFoundException;
 import com.example.movra.bc.focus.focus_session.application.service.dto.response.FocusSessionResponse;
 import com.example.movra.bc.focus.focus_session.domain.FocusSession;

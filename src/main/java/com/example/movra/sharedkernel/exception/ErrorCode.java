@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
 
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error."),
+    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "Invalid request."),
 
     EXPIRED_JWT(HttpStatus.UNAUTHORIZED, "JWT token has expired."),
     INVALID_JWT(HttpStatus.UNAUTHORIZED, "Invalid JWT token."),
@@ -70,7 +71,9 @@ public enum ErrorCode {
     FOCUS_SESSION_ALREADY_IN_PROGRESS(HttpStatus.CONFLICT, "Focus session already in progress."),
     FOCUS_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "Focus session was not found."),
     FOCUS_SESSION_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "Focus session already completed."),
-    INVALID_FOCUS_SESSION(HttpStatus.BAD_REQUEST, "Focus session is invalid.");
+    INVALID_FOCUS_SESSION(HttpStatus.BAD_REQUEST, "Focus session is invalid."),
+
+    DEVICE_TOKEN_NOT_FOUND(HttpStatus.NOT_FOUND, "Device token was not found.");
 
     private final HttpStatus httpStatus;
     private final String message;

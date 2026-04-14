@@ -1,12 +1,12 @@
 package com.example.movra.config.security;
 
-import com.example.movra.bc.account.application.user.internal.TokenService;
-import com.example.movra.bc.account.infrastructure.user.security.oauth.CustomOauthService;
-import com.example.movra.bc.account.infrastructure.user.security.oauth.handler.OauthFailureHandler;
-import com.example.movra.bc.account.infrastructure.user.security.oauth.handler.OauthSuccessHandler;
+import com.example.movra.bc.account.user.application.user.internal.TokenService;
+import com.example.movra.bc.account.user.infrastructure.user.security.oauth.CustomOauthService;
+import com.example.movra.bc.account.user.infrastructure.user.security.oauth.handler.OauthFailureHandler;
+import com.example.movra.bc.account.user.infrastructure.user.security.oauth.handler.OauthSuccessHandler;
 import com.example.movra.config.exception.GlobalExceptionFilter;
-import com.example.movra.bc.account.infrastructure.user.security.jwt.JwtTokenFilter;
-import com.example.movra.bc.account.infrastructure.user.security.jwt.JwtTokenProvider;
+import com.example.movra.bc.account.user.infrastructure.user.security.jwt.JwtTokenFilter;
+import com.example.movra.bc.account.user.infrastructure.user.security.jwt.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

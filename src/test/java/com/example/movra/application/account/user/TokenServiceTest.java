@@ -1,11 +1,11 @@
 package com.example.movra.application.account.user;
 
-import com.example.movra.bc.account.application.user.exception.UserNotFoundException;
-import com.example.movra.bc.account.application.user.internal.TokenService;
-import com.example.movra.bc.account.domain.user.User;
-import com.example.movra.bc.account.domain.user.repository.UserRepository;
-import com.example.movra.bc.account.domain.user.vo.UserId;
-import com.example.movra.bc.account.infrastructure.user.security.jwt.JwtTokenProvider;
+import com.example.movra.bc.account.user.application.user.exception.UserNotFoundException;
+import com.example.movra.bc.account.user.application.user.internal.TokenService;
+import com.example.movra.bc.account.user.domain.user.User;
+import com.example.movra.bc.account.user.domain.user.repository.UserRepository;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.infrastructure.user.security.jwt.JwtTokenProvider;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

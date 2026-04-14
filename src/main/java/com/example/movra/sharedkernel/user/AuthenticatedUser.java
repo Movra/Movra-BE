@@ -1,6 +1,6 @@
 package com.example.movra.sharedkernel.user;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import lombok.Builder;
 
 @Builder

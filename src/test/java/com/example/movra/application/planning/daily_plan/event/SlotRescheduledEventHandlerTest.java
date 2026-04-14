@@ -1,6 +1,6 @@
 package com.example.movra.application.planning.daily_plan.event;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.planning.daily_plan.application.event.SlotRescheduledEventHandler;
 import com.example.movra.bc.planning.daily_plan.domain.DailyPlan;
 import com.example.movra.bc.planning.daily_plan.domain.Task;

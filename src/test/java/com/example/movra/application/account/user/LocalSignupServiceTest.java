@@ -1,12 +1,12 @@
 package com.example.movra.application.account.user;
 
-import com.example.movra.bc.account.application.user.LocalSignupService;
-import com.example.movra.bc.account.application.user.dto.request.LocalSignupRequest;
-import com.example.movra.bc.account.application.user.exception.DuplicateAccountIdException;
-import com.example.movra.bc.account.application.user.exception.DuplicateEmailException;
+import com.example.movra.bc.account.user.application.user.LocalSignupService;
+import com.example.movra.bc.account.user.application.user.dto.request.LocalSignupRequest;
+import com.example.movra.bc.account.user.application.user.exception.DuplicateAccountIdException;
+import com.example.movra.bc.account.user.application.user.exception.DuplicateEmailException;
 import com.example.movra.sharedkernel.file.storage.ImageHelper;
-import com.example.movra.bc.account.application.user.helper.UserPersister;
-import com.example.movra.bc.account.domain.user.repository.UserRepository;
+import com.example.movra.bc.account.user.application.user.helper.UserPersister;
+import com.example.movra.bc.account.user.domain.user.repository.UserRepository;
 import com.example.movra.sharedkernel.file.storage.type.ImageType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

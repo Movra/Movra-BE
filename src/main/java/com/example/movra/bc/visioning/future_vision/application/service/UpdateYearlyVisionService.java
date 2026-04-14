@@ -1,6 +1,6 @@
 package com.example.movra.bc.visioning.future_vision.application.service;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.visioning.future_vision.application.exception.FutureVisionNotFoundException;
 import com.example.movra.bc.visioning.future_vision.application.exception.FutureVisionUpdateFailedException;
 import com.example.movra.bc.visioning.future_vision.application.helper.FutureVisionPersister;

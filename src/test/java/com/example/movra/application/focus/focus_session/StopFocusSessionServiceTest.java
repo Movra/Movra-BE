@@ -1,8 +1,8 @@
 package com.example.movra.application.focus.focus_session;
 
-import com.example.movra.bc.account.domain.user.User;
-import com.example.movra.bc.account.domain.user.repository.UserRepository;
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.User;
+import com.example.movra.bc.account.user.domain.user.repository.UserRepository;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.focus.focus_session.application.exception.FocusSessionNotFoundException;
 import com.example.movra.bc.focus.focus_session.application.service.StopFocusSessionService;
 import com.example.movra.bc.focus.focus_session.application.service.dto.response.FocusSessionResponse;
@@ -19,7 +19,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;

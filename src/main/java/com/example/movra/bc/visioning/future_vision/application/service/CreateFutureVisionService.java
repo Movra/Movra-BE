@@ -1,6 +1,6 @@
 package com.example.movra.bc.visioning.future_vision.application.service;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.visioning.future_vision.application.exception.FutureVisionAlreadyExistsException;
 import com.example.movra.bc.visioning.future_vision.application.exception.FutureVisionCreationFailedException;
 import com.example.movra.bc.visioning.future_vision.application.helper.FutureVisionPersister;

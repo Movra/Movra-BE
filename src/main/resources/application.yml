@@ -93,3 +93,6 @@ server:
 app:
   time:
     zone: Asia/Seoul
+  fcm:
+    enabled: ${FCM_ENABLED:false}
+    credentials-path: ${FIREBASE_CREDENTIALS_PATH:classpath:firebase/service-account.json}

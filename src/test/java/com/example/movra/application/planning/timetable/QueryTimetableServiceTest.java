@@ -1,6 +1,6 @@
 package com.example.movra.application.planning.timetable;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.planning.daily_plan.application.exception.DailyPlanNotFoundException;
 import com.example.movra.bc.planning.daily_plan.domain.DailyPlan;
 import com.example.movra.bc.planning.daily_plan.domain.repository.DailyPlanRepository;
@@ -23,7 +23,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Optional;
-import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;

@@ -1,6 +1,6 @@
 package com.example.movra.bc.feedback.daily_reflection.domain.repository;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.feedback.daily_reflection.domain.DailyReflection;
 import com.example.movra.bc.feedback.daily_reflection.domain.vo.DailyReflectionId;
 import org.springframework.data.jpa.repository.JpaRepository;

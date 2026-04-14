@@ -1,6 +1,6 @@
 package com.example.movra.bc.study_room.participant.domain;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.study_room.participant.domain.event.FocusTimeRecordedEvent;
 import com.example.movra.bc.study_room.participant.domain.event.ParticipantLeftEvent;
 import com.example.movra.bc.study_room.participant.domain.exception.AlreadyFocusingException;
