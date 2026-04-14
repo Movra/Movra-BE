@@ -1,9 +1,12 @@
 package com.example.movra.bc.accountability.accountability_relation.domain.vo;
 
 
+import jakarta.persistence.Embeddable;
+
 import java.io.Serializable;
 import java.util.UUID;
 
+@Embeddable
 public record AccountabilityRelationId(
         UUID id
 ) implements Serializable {
