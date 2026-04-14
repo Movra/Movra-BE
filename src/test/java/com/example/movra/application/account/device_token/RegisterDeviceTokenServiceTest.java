@@ -4,7 +4,7 @@ import com.example.movra.bc.account.device_token.application.service.RegisterDev
 import com.example.movra.bc.account.device_token.application.service.dto.request.RegisterDeviceTokenRequest;
 import com.example.movra.bc.account.device_token.domain.DeviceToken;
 import com.example.movra.bc.account.device_token.domain.repository.DeviceTokenRepository;
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.sharedkernel.user.AuthenticatedUser;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import org.junit.jupiter.api.DisplayName;

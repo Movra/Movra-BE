@@ -1,6 +1,6 @@
 package com.example.movra.bc.study_room.room.domain;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.study_room.room.domain.event.ParticipantJoinedEvent;
 import com.example.movra.bc.study_room.room.domain.event.ParticipantKickedEvent;
 import com.example.movra.bc.study_room.room.domain.event.RoomCreatedEvent;

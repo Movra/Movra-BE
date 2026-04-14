@@ -1,6 +1,6 @@
 package com.example.movra.application.feedback.daily_reflection;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.feedback.daily_reflection.application.exception.DailyReflectionAlreadyExistsException;
 import com.example.movra.bc.feedback.daily_reflection.application.service.CreateDailyReflectionService;
 import com.example.movra.bc.feedback.daily_reflection.application.service.dto.request.CreateDailyReflectionRequest;

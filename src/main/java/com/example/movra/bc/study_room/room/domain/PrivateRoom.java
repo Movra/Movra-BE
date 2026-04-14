@@ -1,6 +1,6 @@
 package com.example.movra.bc.study_room.room.domain;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.study_room.room.domain.exception.InvalidInviteCodeException;
 import com.example.movra.bc.study_room.room.domain.exception.PrivateRoomRequiresInviteCodeException;
 import com.example.movra.bc.study_room.room.domain.vo.InviteCode;

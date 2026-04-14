@@ -1,12 +1,11 @@
 package com.example.movra.application.study_room.room;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.study_room.helper.StudyRoomReader;
 import com.example.movra.bc.study_room.participant.domain.repository.ParticipantRepository;
 import com.example.movra.bc.study_room.room.application.service.JoinRoomService;
 import com.example.movra.bc.study_room.room.application.service.dto.request.JoinRoomRequest;
 import com.example.movra.bc.study_room.room.domain.PrivateRoom;
-import com.example.movra.bc.study_room.room.domain.PublicRoom;
 import com.example.movra.bc.study_room.room.domain.Room;
 import com.example.movra.bc.study_room.room.domain.exception.AlreadyJoinedException;
 import com.example.movra.bc.study_room.room.domain.exception.InvalidInviteCodeException;

@@ -1,6 +1,6 @@
 package com.example.movra.bc.focus.focus_session.domain;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.focus.focus_session.domain.event.FocusSessionCompletedEvent;
 import com.example.movra.bc.focus.focus_session.domain.exception.FocusSessionAlreadyCompletedException;
 import com.example.movra.bc.focus.focus_session.domain.exception.InvalidFocusSessionException;

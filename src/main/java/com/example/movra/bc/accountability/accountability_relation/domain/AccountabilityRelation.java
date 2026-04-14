@@ -1,6 +1,6 @@
 package com.example.movra.bc.accountability.accountability_relation.domain;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.accountability.accountability_relation.domain.vo.AccountabilityInviteCode;
 import com.example.movra.bc.accountability.accountability_relation.domain.vo.AccountabilityRelationId;
 import com.example.movra.bc.accountability.accountability_relation.domain.vo.VisibilityPolicy;

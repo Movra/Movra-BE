@@ -1,6 +1,6 @@
 package com.example.movra.application.planning.daily_plan;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.planning.daily_plan.application.exception.DailyPlanNotFoundException;
 import com.example.movra.bc.planning.daily_plan.application.service.daily_plan.DailyPlanQueryService;
 import com.example.movra.bc.planning.daily_plan.application.service.daily_plan.dto.response.DailyPlanResponse;

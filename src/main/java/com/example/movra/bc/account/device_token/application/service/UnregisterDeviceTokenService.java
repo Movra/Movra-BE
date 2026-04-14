@@ -4,7 +4,7 @@ import com.example.movra.bc.account.device_token.application.exception.DeviceTok
 import com.example.movra.bc.account.device_token.application.service.dto.request.UnregisterDeviceTokenRequest;
 import com.example.movra.bc.account.device_token.domain.DeviceToken;
 import com.example.movra.bc.account.device_token.domain.repository.DeviceTokenRepository;
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

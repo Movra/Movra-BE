@@ -1,6 +1,6 @@
 package com.example.movra.application.planning.daily_plan.mind_sweep;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.planning.daily_plan.application.exception.DailyPlanNotFoundException;
 import com.example.movra.bc.planning.daily_plan.application.service.task.mind_sweep.QueryMindSweepService;
 import com.example.movra.bc.planning.daily_plan.application.service.task.mind_sweep.dto.response.MindSweepResponse;

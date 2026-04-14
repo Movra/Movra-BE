@@ -1,6 +1,6 @@
 package com.example.movra.bc.study_room.participant.application.service;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.study_room.participant.application.service.dto.response.MyParticipationResponse;
 import com.example.movra.bc.study_room.participant.domain.repository.ParticipantRepository;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;

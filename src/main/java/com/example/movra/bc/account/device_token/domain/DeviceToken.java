@@ -1,7 +1,7 @@
 package com.example.movra.bc.account.device_token.domain;
 
 import com.example.movra.bc.account.device_token.domain.vo.DeviceTokenId;
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;

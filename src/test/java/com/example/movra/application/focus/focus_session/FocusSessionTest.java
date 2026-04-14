@@ -1,6 +1,6 @@
 package com.example.movra.application.focus.focus_session;
 
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.focus.focus_session.domain.FocusSession;
 import com.example.movra.bc.focus.focus_session.domain.exception.InvalidFocusSessionException;
 import org.junit.jupiter.api.DisplayName;

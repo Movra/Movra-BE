@@ -2,7 +2,7 @@ package com.example.movra.sharedkernel.notification;
 
 import com.example.movra.bc.account.device_token.domain.DeviceToken;
 import com.example.movra.bc.account.device_token.domain.repository.DeviceTokenRepository;
-import com.example.movra.bc.account.domain.user.vo.UserId;
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.google.firebase.messaging.BatchResponse;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.MulticastMessage;
