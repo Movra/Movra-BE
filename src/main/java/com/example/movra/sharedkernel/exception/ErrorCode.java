@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
 
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error."),
+    INVALID_REQUEST(HttpStatus.BAD_REQUEST, "Invalid request."),
 
     EXPIRED_JWT(HttpStatus.UNAUTHORIZED, "JWT token has expired."),
     INVALID_JWT(HttpStatus.UNAUTHORIZED, "Invalid JWT token."),
