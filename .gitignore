@@ -42,6 +42,8 @@ tinking/**
 
 seaweedfs/s3_config.json
 
+src/main/resources/firebase/*.json
+
 .claude
 
 AGENTS.md
