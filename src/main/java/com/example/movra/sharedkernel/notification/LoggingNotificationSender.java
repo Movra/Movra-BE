@@ -12,7 +12,7 @@ public class LoggingNotificationSender implements NotificationSender {
 
     @Override
     public void send(UserId targetUserId, NotificationPayload payload) {
-        log.info("[LoggingNotificationSender] targetUserId={}, type={}, title={}, body={}, data={}",
-                targetUserId.id(), payload.type(), payload.title(), payload.body(), payload.data());
+        log.info("[LoggingNotificationSender] type={}, title={}, body={}, dataKeys={}",
+                payload.type(), payload.title(), payload.body(), payload.data().keySet());
     }
 }

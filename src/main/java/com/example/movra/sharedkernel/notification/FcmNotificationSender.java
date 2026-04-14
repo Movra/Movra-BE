@@ -15,8 +15,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
-
 @Slf4j
 @Component
 @ConditionalOnProperty(prefix = "app.fcm", name = "enabled", havingValue = "true")
@@ -42,7 +40,7 @@ public class FcmNotificationSender implements NotificationSender {
                         .setTitle(payload.title())
                         .setBody(payload.body())
                         .build())
-                .putAllData(payload.data() == null ? Map.of() : payload.data())
+                .putAllData(payload.data())
                 .putData("type", payload.type().name())
                 .build();
 
@@ -53,8 +51,8 @@ public class FcmNotificationSender implements NotificationSender {
                 for (int i = 0; i < responses.size(); i++) {
                     SendResponse sendResponse = responses.get(i);
                     if (!sendResponse.isSuccessful()) {
-                        log.warn("FCM send failed for token {}: {}",
-                                tokenValues.get(i), sendResponse.getException().getMessage());
+                        log.warn("FCM send failed for user {} at tokenIndex {}: {}",
+                                targetUserId.id(), i, sendResponse.getException().getMessage());
                     }
                 }
             }
