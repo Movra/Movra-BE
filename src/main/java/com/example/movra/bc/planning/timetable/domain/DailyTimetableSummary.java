@@ -79,6 +79,10 @@ public class DailyTimetableSummary extends AbstractAggregateRoot {
             Timetable timetable,
             Clock clock
     ) {
+        if (!timetable.getDailyPlanId().equals(dailyPlan.getDailyPlanId())) {
+            throw new IllegalArgumentException("Timetable must belong to the given DailyPlan.");
+        }
+
         Map<TaskId, Task> taskMap = dailyPlan.getTasks().stream()
                 .collect(Collectors.toMap(Task::getTaskId, Function.identity()));
 
