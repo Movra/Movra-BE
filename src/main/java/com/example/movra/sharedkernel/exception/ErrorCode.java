@@ -81,7 +81,9 @@ public enum ErrorCode {
     ACCOUNTABILITY_RELATION_NOT_FOUND(HttpStatus.NOT_FOUND, "감시 관계를 찾을 수 없습니다."),
     MONITORING_TARGET_NOT_ALLOWED(HttpStatus.FORBIDDEN, "허용되지 않은 모니터링 대상입니다."),
     NOT_SUBJECT_USER(HttpStatus.FORBIDDEN, "해당 관계의 주체 유저가 아닙니다."),
-    WATCHER_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 감시자가 존재합니다.");
+    WATCHER_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 감시자가 존재합니다."),
+
+    CANNOT_JOIN_OWN_ACCOUNTABILITY_RELATION(HttpStatus.BAD_REQUEST, "You cannot join your own accountability relation");
 
     private final HttpStatus httpStatus;
     private final String message;

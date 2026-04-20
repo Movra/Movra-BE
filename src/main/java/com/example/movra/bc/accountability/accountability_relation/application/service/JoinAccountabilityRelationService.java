@@ -25,8 +25,10 @@ public class JoinAccountabilityRelationService {
                 accountabilityRelationRepository.findByInviteCode_Code(request.inviteCode())
                         .orElseThrow(InvalidInviteCodeException::new);
 
-        accountabilityRelation.joinByInviteCode(request.inviteCode(), currentUserQuery.currentUser().userId(), clock);
-
-        accountabilityRelationRepository.save(accountabilityRelation);
+        accountabilityRelation.joinByInviteCode(
+                request.inviteCode(),
+                currentUserQuery.currentUser().userId(),
+                clock
+        );
     }
 }

@@ -1,11 +1,7 @@
 package com.example.movra.bc.accountability.accountability_relation.domain;
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
-import com.example.movra.bc.accountability.accountability_relation.domain.exception.InviteCodeExpiredException;
-import com.example.movra.bc.accountability.accountability_relation.domain.exception.InviteCodeNotGeneratedException;
-import com.example.movra.bc.accountability.accountability_relation.domain.exception.InvalidInviteCodeException;
-import com.example.movra.bc.accountability.accountability_relation.domain.exception.NotSubjectUserException;
-import com.example.movra.bc.accountability.accountability_relation.domain.exception.WatcherAlreadyExistsException;
+import com.example.movra.bc.accountability.accountability_relation.domain.exception.*;
 import com.example.movra.bc.accountability.accountability_relation.domain.type.MonitoringTarget;
 import com.example.movra.bc.accountability.accountability_relation.domain.vo.AccountabilityInviteCode;
 import com.example.movra.bc.accountability.accountability_relation.domain.vo.AccountabilityRelationId;
@@ -61,6 +57,7 @@ public class AccountabilityRelation extends AbstractAggregateRoot {
     public void joinByInviteCode(String inviteCode, UserId watcherUserId, Clock clock) {
         validateWatcherNotExists();
         validateInviteCode(inviteCode, clock);
+        validateWatcherIsNotSubject(watcherUserId);
         this.watcherUserId = watcherUserId;
     }
 
@@ -92,6 +89,12 @@ public class AccountabilityRelation extends AbstractAggregateRoot {
 
         if (!this.inviteCode.code().equals(inviteCode)) {
             throw new InvalidInviteCodeException();
+        }
+    }
+
+    private void validateWatcherIsNotSubject(UserId watcherUserId) {
+        if (this.subjectUserId.equals(watcherUserId)) {
+            throw new CannotJoinOwnAccountabilityRelationException();
         }
     }
 }
