@@ -84,7 +84,7 @@ public enum ErrorCode {
     NOT_SUBJECT_USER(HttpStatus.FORBIDDEN, "해당 관계의 주체 유저가 아닙니다."),
     WATCHER_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 감시자가 존재합니다."),
 
-    CANNOT_JOIN_OWN_ACCOUNTABILITY_RELATION(HttpStatus.BAD_REQUEST, "You cannot join your own accountability relation");
+    CANNOT_JOIN_OWN_ACCOUNTABILITY_RELATION(HttpStatus.BAD_REQUEST, "자신의 감시 관계에는 참여할 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;
