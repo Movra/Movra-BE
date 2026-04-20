@@ -1,0 +1,47 @@
+package com.example.movra.application.accountability.accountability_relation;
+
+import com.example.movra.bc.account.user.domain.user.vo.UserId;
+import com.example.movra.bc.accountability.accountability_relation.application.service.exception.AccountabilityRelationNotFoundException;
+import com.example.movra.bc.accountability.accountability_relation.application.service.invite.QueryInviteCodeStatusService;
+import com.example.movra.bc.accountability.accountability_relation.domain.repository.AccountabilityRelationRepository;
+import com.example.movra.sharedkernel.user.AuthenticatedUser;
+import com.example.movra.sharedkernel.user.CurrentUserQuery;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.Clock;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
+
+@ExtendWith(MockitoExtension.class)
+class QueryInviteCodeStatusServiceTest {
+
+    @InjectMocks
+    private QueryInviteCodeStatusService queryInviteCodeStatusService;
+
+    @Mock
+    private AccountabilityRelationRepository accountabilityRelationRepository;
+
+    @Mock
+    private CurrentUserQuery currentUserQuery;
+
+    @Mock
+    private Clock clock;
+
+    @Test
+    @DisplayName("query throws AccountabilityRelationNotFoundException when relation does not exist")
+    void query_relationNotFound_throwsException() {
+        UserId userId = UserId.newId();
+        given(currentUserQuery.currentUser()).willReturn(AuthenticatedUser.builder().userId(userId).build());
+        given(accountabilityRelationRepository.findBySubjectUserId(userId)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> queryInviteCodeStatusService.query())
+                .isInstanceOf(AccountabilityRelationNotFoundException.class);
+    }
+}
