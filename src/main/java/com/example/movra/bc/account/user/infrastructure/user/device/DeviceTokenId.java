@@ -1,7 +1,8 @@
-package com.example.movra.bc.account.device_token.domain.vo;
+package com.example.movra.bc.account.user.infrastructure.user.device;
 
 import jakarta.persistence.Embeddable;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.UUID;
 
@@ -9,8 +10,6 @@ import java.util.UUID;
 public record DeviceTokenId(
         UUID id
 ) implements Serializable {
-
-    private static final long serialVersionUID = 1L;
 
     public static DeviceTokenId newId() {
         return new DeviceTokenId(UUID.randomUUID());
