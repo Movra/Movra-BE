@@ -4,6 +4,7 @@ import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.planning.daily_plan.domain.DailyTopPicksSummary;
 import com.example.movra.bc.planning.daily_plan.domain.vo.DailyTopPicksSummaryId;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -18,4 +19,24 @@ public interface DailyTopPicksSummaryRepository extends JpaRepository<DailyTopPi
     Optional<DailyTopPicksSummary> findByUserIdAndDate(UserId userId, LocalDate date);
 
     List<DailyTopPicksSummary> findByUserIdAndDateBetween(UserId userId, LocalDate from, LocalDate to);
+
+    @Query("""
+        select distinct s
+        from DailyTopPicksSummary s
+        left join fetch s.items i
+        where s.userId = :userId
+          and s.date = :date
+        order by i.displayOrder asc
+    """)
+    Optional<DailyTopPicksSummary> findWithItemsByUserIdAndDate(UserId userId, LocalDate date);
+
+    @Query("""
+        select distinct s
+        from DailyTopPicksSummary s
+        left join fetch s.items i
+        where s.userId = :userId
+          and s.date between :from and :to
+        order by s.date asc, i.displayOrder asc
+    """)
+    List<DailyTopPicksSummary> findWithItemsByUserIdAndDateBetween(UserId userId, LocalDate from, LocalDate to);
 }

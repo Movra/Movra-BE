@@ -40,11 +40,23 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Focu
               AND fs.startedAt >= :dayStart
               AND fs.startedAt < :dayEnd
               AND fs.endedAt IS NOT NULL
+              AND fs.durationSeconds IS NOT NULL
             """)
     List<FocusSession> findCompletedByUserIdAndStartedAtIn(
             @Param("userId") UserId userId,
             @Param("dayStart") Instant dayStart,
             @Param("dayEnd") Instant dayEnd
+    );
+
+    @Query("""
+            SELECT DISTINCT fs.userId
+            FROM FocusSession fs
+            WHERE fs.startedAt < :periodEnd
+              AND (fs.endedAt IS NULL OR fs.endedAt > :periodStart)
+            """)
+    List<UserId> findDistinctUserIdsOverlappingPeriod(
+            @Param("periodStart") Instant periodStart,
+            @Param("periodEnd") Instant periodEnd
     );
 
     @Query("""

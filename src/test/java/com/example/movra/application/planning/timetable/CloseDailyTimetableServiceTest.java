@@ -1,33 +1,31 @@
 package com.example.movra.application.planning.timetable;
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
-import com.example.movra.bc.planning.daily_plan.application.service.query.DailyPlanLookupService;
-import com.example.movra.bc.planning.daily_plan.application.service.query.TaskCompletionQueryService;
-import com.example.movra.bc.planning.daily_plan.domain.vo.DailyPlanId;
-import com.example.movra.bc.planning.daily_plan.domain.vo.TaskId;
-import com.example.movra.bc.planning.timetable.application.service.CloseDailyTimetableService;
+import com.example.movra.bc.planning.daily_plan.domain.DailyPlan;
+import com.example.movra.bc.planning.daily_plan.domain.repository.DailyPlanRepository;
+import com.example.movra.bc.planning.timetable.application.service.support.DailyTimetableCloser;
 import com.example.movra.bc.planning.timetable.domain.DailyTimetableSummary;
-import com.example.movra.bc.planning.timetable.domain.Slot;
 import com.example.movra.bc.planning.timetable.domain.Timetable;
 import com.example.movra.bc.planning.timetable.domain.repository.DailyTimetableSummaryRepository;
 import com.example.movra.bc.planning.timetable.domain.repository.TimetableRepository;
-import com.example.movra.bc.planning.timetable.domain.type.ClosedBy;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
@@ -36,7 +34,7 @@ import static org.mockito.Mockito.verify;
 @ExtendWith(MockitoExtension.class)
 class CloseDailyTimetableServiceTest {
 
-    private CloseDailyTimetableService closeDailyTimetableService;
+    private DailyTimetableCloser closeDailyTimetableService;
 
     @Mock
     private DailyTimetableSummaryRepository dailyTimetableSummaryRepository;
@@ -45,86 +43,125 @@ class CloseDailyTimetableServiceTest {
     private TimetableRepository timetableRepository;
 
     @Mock
-    private DailyPlanLookupService dailyPlanLookupService;
-
-    @Mock
-    private TaskCompletionQueryService taskCompletionQueryService;
-
-    @Mock
-    private Timetable timetable;
-
-    @Mock
-    private Slot slotA;
-
-    @Mock
-    private Slot slotB;
+    private DailyPlanRepository dailyPlanRepository;
 
     private final Clock clock = Clock.fixed(Instant.parse("2026-04-15T00:00:00Z"), ZoneId.of("Asia/Seoul"));
     private final UserId userId = UserId.newId();
     private final LocalDate date = LocalDate.of(2026, 4, 14);
 
+    private DataIntegrityViolationException duplicateKeyViolation() {
+        return new DataIntegrityViolationException(
+                "duplicate",
+                new SQLIntegrityConstraintViolationException("duplicate", "23000", 1062)
+        );
+    }
+
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        closeDailyTimetableService = new CloseDailyTimetableService(
-                dailyTimetableSummaryRepository, timetableRepository,
-                dailyPlanLookupService, taskCompletionQueryService, clock);
+        closeDailyTimetableService = new DailyTimetableCloser(
+                dailyTimetableSummaryRepository, timetableRepository, dailyPlanRepository, clock
+        );
     }
 
     @Test
-    @DisplayName("close aggregates task completion from timetable slots")
+    @DisplayName("close snapshots timetable slots and task completion")
     void close_aggregatesSlots() {
-        // given
-        DailyPlanId planId = DailyPlanId.newId();
-        TaskId taskA = TaskId.newId();
-        TaskId taskB = TaskId.newId();
+        DailyPlan dailyPlan = createDailyPlan();
+        Timetable timetable = createTimetable(dailyPlan);
 
         given(dailyTimetableSummaryRepository.existsByUserIdAndDate(userId, date)).willReturn(false);
-        given(dailyPlanLookupService.findIdByUserAndDate(userId, date)).willReturn(Optional.of(planId));
-        given(timetableRepository.findByDailyPlanId(planId)).willReturn(Optional.of(timetable));
-        given(timetable.getSlots()).willReturn(List.of(slotA, slotB));
-        given(slotA.getTaskId()).willReturn(taskA);
-        given(slotB.getTaskId()).willReturn(taskB);
-        given(taskCompletionQueryService.findCompletionByTaskIds(List.of(taskA, taskB)))
-                .willReturn(Map.of(taskA, true, taskB, false));
+        given(dailyPlanRepository.findByUserIdAndPlanDate(userId, date)).willReturn(Optional.of(dailyPlan));
+        given(timetableRepository.findByDailyPlanId(dailyPlan.getDailyPlanId())).willReturn(Optional.of(timetable));
 
-        // when
-        closeDailyTimetableService.close(userId, date, ClosedBy.USER_ACTION);
+        closeDailyTimetableService.close(userId, date);
 
-        // then
         ArgumentCaptor<DailyTimetableSummary> captor = ArgumentCaptor.forClass(DailyTimetableSummary.class);
-        verify(dailyTimetableSummaryRepository).save(captor.capture());
+        verify(dailyTimetableSummaryRepository).saveAndFlush(captor.capture());
         DailyTimetableSummary saved = captor.getValue();
+        assertThat(saved.getDailyPlanId()).isEqualTo(dailyPlan.getDailyPlanId());
+        assertThat(saved.getUserId()).isEqualTo(userId);
+        assertThat(saved.getDate()).isEqualTo(date);
         assertThat(saved.getTotalCount()).isEqualTo(2);
         assertThat(saved.getCompletedCount()).isEqualTo(1);
+        assertThat(saved.getItems()).hasSize(2);
+        assertThat(saved.getItems().get(0).getContentSnapshot()).isEqualTo("Top Pick Task");
+        assertThat(saved.getItems().get(0).isCompletedSnapshot()).isTrue();
+        assertThat(saved.getItems().get(0).getStartTimeSnapshot()).isEqualTo(LocalTime.of(9, 0));
+        assertThat(saved.getItems().get(0).getEndTimeSnapshot()).isEqualTo(LocalTime.of(10, 0));
+        assertThat(saved.getItems().get(0).isTopPickSnapshot()).isTrue();
+        assertThat(saved.getItems().get(0).getDisplayOrder()).isEqualTo(1);
+        assertThat(saved.getItems().get(1).getContentSnapshot()).isEqualTo("General Task");
+        assertThat(saved.getItems().get(1).isCompletedSnapshot()).isFalse();
+        assertThat(saved.getItems().get(1).getStartTimeSnapshot()).isEqualTo(LocalTime.of(11, 0));
+        assertThat(saved.getItems().get(1).getEndTimeSnapshot()).isEqualTo(LocalTime.of(12, 0));
+        assertThat(saved.getItems().get(1).isTopPickSnapshot()).isFalse();
+        assertThat(saved.getItems().get(1).getDisplayOrder()).isEqualTo(2);
     }
 
     @Test
     @DisplayName("close is idempotent when a summary already exists")
     void close_idempotent() {
-        // given
         given(dailyTimetableSummaryRepository.existsByUserIdAndDate(userId, date)).willReturn(true);
 
-        // when
-        closeDailyTimetableService.close(userId, date, ClosedBy.USER_ACTION);
+        closeDailyTimetableService.close(userId, date);
 
-        // then
-        verify(dailyTimetableSummaryRepository, never()).save(any());
+        verify(dailyTimetableSummaryRepository, never()).saveAndFlush(any());
     }
 
     @Test
-    @DisplayName("close records zero counts when there is no timetable for the date")
-    void close_noTimetable() {
-        // given
+    @DisplayName("close skips when there is no daily plan")
+    void close_noDailyPlan() {
         given(dailyTimetableSummaryRepository.existsByUserIdAndDate(userId, date)).willReturn(false);
-        given(dailyPlanLookupService.findIdByUserAndDate(userId, date)).willReturn(Optional.empty());
+        given(dailyPlanRepository.findByUserIdAndPlanDate(userId, date)).willReturn(Optional.empty());
 
-        // when
-        closeDailyTimetableService.close(userId, date, ClosedBy.SCHEDULER);
+        closeDailyTimetableService.close(userId, date);
 
-        // then
-        ArgumentCaptor<DailyTimetableSummary> captor = ArgumentCaptor.forClass(DailyTimetableSummary.class);
-        verify(dailyTimetableSummaryRepository).save(captor.capture());
-        assertThat(captor.getValue().getTotalCount()).isZero();
-        assertThat(captor.getValue().getCompletedCount()).isZero();
+        verify(dailyTimetableSummaryRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    @DisplayName("close skips when there is no timetable for the date")
+    void close_noTimetable() {
+        DailyPlan dailyPlan = DailyPlan.create(userId, date);
+        given(dailyTimetableSummaryRepository.existsByUserIdAndDate(userId, date)).willReturn(false);
+        given(dailyPlanRepository.findByUserIdAndPlanDate(userId, date)).willReturn(Optional.of(dailyPlan));
+        given(timetableRepository.findByDailyPlanId(dailyPlan.getDailyPlanId())).willReturn(Optional.empty());
+
+        closeDailyTimetableService.close(userId, date);
+
+        verify(dailyTimetableSummaryRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    @DisplayName("close treats duplicate writes as idempotent success")
+    void close_duplicateAtWrite_isIgnored() {
+        DailyPlan dailyPlan = createDailyPlan();
+        Timetable timetable = createTimetable(dailyPlan);
+        given(dailyTimetableSummaryRepository.existsByUserIdAndDate(userId, date)).willReturn(false);
+        given(dailyPlanRepository.findByUserIdAndPlanDate(userId, date)).willReturn(Optional.of(dailyPlan));
+        given(timetableRepository.findByDailyPlanId(dailyPlan.getDailyPlanId())).willReturn(Optional.of(timetable));
+        given(dailyTimetableSummaryRepository.saveAndFlush(any()))
+                .willThrow(duplicateKeyViolation());
+
+        assertThatCode(() -> closeDailyTimetableService.close(userId, date))
+                .doesNotThrowAnyException();
+    }
+
+    private DailyPlan createDailyPlan() {
+        DailyPlan dailyPlan = DailyPlan.create(userId, date);
+        var topPickTask = dailyPlan.addTask("Top Pick Task");
+        dailyPlan.markAsTopPicked(topPickTask.getTaskId(), 60, "Deep work");
+        dailyPlan.completeTask(topPickTask.getTaskId());
+        dailyPlan.addTask("General Task");
+        return dailyPlan;
+    }
+
+    private Timetable createTimetable(DailyPlan dailyPlan) {
+        Timetable timetable = Timetable.create(dailyPlan.getDailyPlanId(), 1);
+        var topPickTask = dailyPlan.getTasks().get(0);
+        var generalTask = dailyPlan.getTasks().get(1);
+        timetable.assignTopPick(topPickTask.getTaskId(), LocalTime.of(9, 0), LocalTime.of(10, 0));
+        timetable.assignTask(generalTask.getTaskId(), LocalTime.of(11, 0), LocalTime.of(12, 0));
+        return timetable;
     }
 }
