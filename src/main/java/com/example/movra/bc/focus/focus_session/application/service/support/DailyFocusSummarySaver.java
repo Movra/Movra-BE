@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class DailyFocusSummarySaver {
 
+    private static final String IDEMPOTENCY_CONSTRAINT = "uk_daily_focus_summary_user_date";
+
     private final DailyFocusSummaryRepository dailyFocusSummaryRepository;
     private final RequiresNewInsertExecutor requiresNewInsertExecutor;
 
@@ -20,7 +22,7 @@ public class DailyFocusSummarySaver {
             requiresNewInsertExecutor.execute(() -> dailyFocusSummaryRepository.saveAndFlush(summary));
             return true;
         } catch (DataIntegrityViolationException e) {
-            if (DataIntegrityViolationUtils.isDuplicateKeyViolation(e)) {
+            if (DataIntegrityViolationUtils.isDuplicateKeyViolation(e, IDEMPOTENCY_CONSTRAINT)) {
                 return false;
             }
             throw e;
