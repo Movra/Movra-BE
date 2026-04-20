@@ -2,6 +2,7 @@ package com.example.movra.application.focus.focus_session;
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.focus.focus_session.application.service.support.DailyFocusCloser;
+import com.example.movra.bc.focus.focus_session.application.service.support.DailyFocusSummarySaver;
 import com.example.movra.bc.focus.focus_session.domain.DailyFocusSummary;
 import com.example.movra.bc.focus.focus_session.domain.FocusSession;
 import com.example.movra.bc.focus.focus_session.domain.repository.DailyFocusSummaryRepository;
@@ -12,9 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
 
-import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -40,21 +39,19 @@ class DailyFocusCloserTest {
     @Mock
     private FocusSessionRepository focusSessionRepository;
 
+    @Mock
+    private DailyFocusSummarySaver dailyFocusSummarySaver;
+
     private final ZoneId zoneId = ZoneId.of("Asia/Seoul");
     private final Clock clock = Clock.fixed(Instant.parse("2026-04-15T00:00:00Z"), zoneId);
     private final UserId userId = UserId.newId();
     private final LocalDate date = LocalDate.of(2026, 4, 14);
 
-    private DataIntegrityViolationException duplicateKeyViolation() {
-        return new DataIntegrityViolationException(
-                "duplicate",
-                new SQLIntegrityConstraintViolationException("duplicate", "23000", 1062)
-        );
-    }
-
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        dailyFocusCloser = new DailyFocusCloser(dailyFocusSummaryRepository, focusSessionRepository, clock);
+        dailyFocusCloser = new DailyFocusCloser(
+                dailyFocusSummaryRepository, focusSessionRepository, dailyFocusSummarySaver, clock
+        );
     }
 
     @Test
@@ -75,11 +72,12 @@ class DailyFocusCloserTest {
         );
         given(focusSessionRepository.findAllOverlappingPeriod(any(), any(), any()))
                 .willReturn(List.of(crossDayCompleted, sameDayCompleted, sameDayInProgress));
+        given(dailyFocusSummarySaver.save(any())).willReturn(true);
 
         dailyFocusCloser.close(userId, date);
 
         ArgumentCaptor<DailyFocusSummary> captor = ArgumentCaptor.forClass(DailyFocusSummary.class);
-        verify(dailyFocusSummaryRepository).saveAndFlush(captor.capture());
+        verify(dailyFocusSummarySaver).save(captor.capture());
         DailyFocusSummary saved = captor.getValue();
         assertThat(saved.getUserId()).isEqualTo(userId);
         assertThat(saved.getDate()).isEqualTo(date);
@@ -113,7 +111,7 @@ class DailyFocusCloserTest {
 
         dailyFocusCloser.close(userId, date);
 
-        verify(dailyFocusSummaryRepository, never()).saveAndFlush(any());
+        verify(dailyFocusSummarySaver, never()).save(any());
     }
 
     @Test
@@ -125,7 +123,7 @@ class DailyFocusCloserTest {
 
         dailyFocusCloser.close(userId, date);
 
-        verify(dailyFocusSummaryRepository, never()).saveAndFlush(any());
+        verify(dailyFocusSummarySaver, never()).save(any());
     }
 
     @Test
@@ -134,8 +132,7 @@ class DailyFocusCloserTest {
         given(dailyFocusSummaryRepository.existsByUserIdAndDate(userId, date)).willReturn(false);
         given(focusSessionRepository.findAllOverlappingPeriod(any(), any(), any()))
                 .willReturn(List.of(session(local(2026, 4, 14, 10, 0), local(2026, 4, 14, 10, 30))));
-        given(dailyFocusSummaryRepository.saveAndFlush(any()))
-                .willThrow(duplicateKeyViolation());
+        given(dailyFocusSummarySaver.save(any())).willReturn(false);
 
         assertThatCode(() -> dailyFocusCloser.close(userId, date))
                 .doesNotThrowAnyException();

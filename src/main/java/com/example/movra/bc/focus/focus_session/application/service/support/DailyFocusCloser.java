@@ -5,10 +5,8 @@ import com.example.movra.bc.focus.focus_session.domain.DailyFocusSummary;
 import com.example.movra.bc.focus.focus_session.domain.FocusSession;
 import com.example.movra.bc.focus.focus_session.domain.repository.DailyFocusSummaryRepository;
 import com.example.movra.bc.focus.focus_session.domain.repository.FocusSessionRepository;
-import com.example.movra.sharedkernel.exception.DataIntegrityViolationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,9 +22,10 @@ public class DailyFocusCloser {
 
     private final DailyFocusSummaryRepository dailyFocusSummaryRepository;
     private final FocusSessionRepository focusSessionRepository;
+    private final DailyFocusSummarySaver dailyFocusSummarySaver;
     private final Clock clock;
 
-    @Transactional
+    @Transactional(readOnly = true)
     public void close(UserId userId, LocalDate date) {
         if (dailyFocusSummaryRepository.existsByUserIdAndDate(userId, date)) {
             return;
@@ -47,14 +46,9 @@ public class DailyFocusCloser {
                 sessions, userId, date, dayStart, dayEnd, clock
         );
 
-        try {
-            dailyFocusSummaryRepository.saveAndFlush(summary);
-        } catch (DataIntegrityViolationException e) {
-            if (DataIntegrityViolationUtils.isDuplicateKeyViolation(e)) {
-                log.debug("DailyFocusSummary already exists for user={}, date={}", userId.id(), date);
-                return;
-            }
-            throw e;
+        boolean saved = dailyFocusSummarySaver.save(summary);
+        if (!saved) {
+            log.debug("DailyFocusSummary already exists for user={}, date={}", userId.id(), date);
         }
     }
 }

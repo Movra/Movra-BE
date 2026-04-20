@@ -1,6 +1,7 @@
 package com.example.movra.bc.planning.timetable.domain;
 
 import com.example.movra.bc.planning.timetable.domain.vo.DailyTimetableSummaryItemId;
+import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -25,7 +26,7 @@ import java.time.LocalTime;
 public class DailyTimetableSummaryItem {
 
     @EmbeddedId
-    @Column(name = "daily_timetable_summary_item_id")
+    @AttributeOverride(name = "id", column = @Column(name = "daily_timetable_summary_item_id"))
     private DailyTimetableSummaryItemId id;
 
     @ManyToOne(fetch = FetchType.LAZY)

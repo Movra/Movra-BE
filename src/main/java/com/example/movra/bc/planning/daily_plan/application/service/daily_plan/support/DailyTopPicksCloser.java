@@ -5,10 +5,8 @@ import com.example.movra.bc.planning.daily_plan.domain.DailyPlan;
 import com.example.movra.bc.planning.daily_plan.domain.DailyTopPicksSummary;
 import com.example.movra.bc.planning.daily_plan.domain.repository.DailyPlanRepository;
 import com.example.movra.bc.planning.daily_plan.domain.repository.DailyTopPicksSummaryRepository;
-import com.example.movra.sharedkernel.exception.DataIntegrityViolationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,9 +21,10 @@ public class DailyTopPicksCloser {
 
     private final DailyTopPicksSummaryRepository dailyTopPicksSummaryRepository;
     private final DailyPlanRepository dailyPlanRepository;
+    private final DailyTopPicksSummarySaver dailyTopPicksSummarySaver;
     private final Clock clock;
 
-    @Transactional
+    @Transactional(readOnly = true)
     public void close(UserId userId, LocalDate date) {
         if (dailyTopPicksSummaryRepository.existsByUserIdAndDate(userId, date)) {
             return;
@@ -41,14 +40,9 @@ public class DailyTopPicksCloser {
 
         DailyTopPicksSummary summary = DailyTopPicksSummary.close(dailyPlan, clock);
 
-        try {
-            dailyTopPicksSummaryRepository.saveAndFlush(summary);
-        } catch (DataIntegrityViolationException e) {
-            if (DataIntegrityViolationUtils.isDuplicateKeyViolation(e)) {
-                log.debug("DailyTopPicksSummary already exists for user={}, date={}", userId.id(), date);
-                return;
-            }
-            throw e;
+        boolean saved = dailyTopPicksSummarySaver.save(summary);
+        if (!saved) {
+            log.debug("DailyTopPicksSummary already exists for user={}, date={}", userId.id(), date);
         }
     }
 }

@@ -11,6 +11,7 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
@@ -58,6 +59,7 @@ public class DailyFocusSummary extends AbstractAggregateRoot {
 
     @Builder.Default
     @OneToMany(mappedBy = "summary", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("displayOrder ASC")
     private List<DailyFocusSummaryItem> items = new ArrayList<>();
 
     public static DailyFocusSummary close(

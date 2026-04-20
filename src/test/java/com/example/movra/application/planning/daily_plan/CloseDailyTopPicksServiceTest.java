@@ -2,6 +2,7 @@ package com.example.movra.application.planning.daily_plan;
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.planning.daily_plan.application.service.daily_plan.support.DailyTopPicksCloser;
+import com.example.movra.bc.planning.daily_plan.application.service.daily_plan.support.DailyTopPicksSummarySaver;
 import com.example.movra.bc.planning.daily_plan.domain.DailyPlan;
 import com.example.movra.bc.planning.daily_plan.domain.DailyTopPicksSummary;
 import com.example.movra.bc.planning.daily_plan.domain.repository.DailyPlanRepository;
@@ -12,9 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
 
-import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -40,20 +39,18 @@ class CloseDailyTopPicksServiceTest {
     @Mock
     private DailyPlanRepository dailyPlanRepository;
 
+    @Mock
+    private DailyTopPicksSummarySaver dailyTopPicksSummarySaver;
+
     private final Clock clock = Clock.fixed(Instant.parse("2026-04-15T00:00:00Z"), ZoneId.of("Asia/Seoul"));
     private final UserId userId = UserId.newId();
     private final LocalDate date = LocalDate.of(2026, 4, 14);
 
-    private DataIntegrityViolationException duplicateKeyViolation() {
-        return new DataIntegrityViolationException(
-                "duplicate",
-                new SQLIntegrityConstraintViolationException("duplicate", "23000", 1062)
-        );
-    }
-
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        closeDailyTopPicksService = new DailyTopPicksCloser(dailyTopPicksSummaryRepository, dailyPlanRepository, clock);
+        closeDailyTopPicksService = new DailyTopPicksCloser(
+                dailyTopPicksSummaryRepository, dailyPlanRepository, dailyTopPicksSummarySaver, clock
+        );
     }
 
     @Test
@@ -63,13 +60,14 @@ class CloseDailyTopPicksServiceTest {
         DailyPlan dailyPlan = createDailyPlan();
         given(dailyTopPicksSummaryRepository.existsByUserIdAndDate(userId, date)).willReturn(false);
         given(dailyPlanRepository.findByUserIdAndPlanDate(userId, date)).willReturn(Optional.of(dailyPlan));
+        given(dailyTopPicksSummarySaver.save(any())).willReturn(true);
 
         // when
         closeDailyTopPicksService.close(userId, date);
 
         // then
         ArgumentCaptor<DailyTopPicksSummary> captor = ArgumentCaptor.forClass(DailyTopPicksSummary.class);
-        verify(dailyTopPicksSummaryRepository).saveAndFlush(captor.capture());
+        verify(dailyTopPicksSummarySaver).save(captor.capture());
         DailyTopPicksSummary saved = captor.getValue();
         var expectedTopPicks = dailyPlan.getTasks().stream()
                 .filter(task -> task.isTopPicked())
@@ -103,7 +101,7 @@ class CloseDailyTopPicksServiceTest {
         closeDailyTopPicksService.close(userId, date);
 
         // then
-        verify(dailyTopPicksSummaryRepository, never()).saveAndFlush(any());
+        verify(dailyTopPicksSummarySaver, never()).save(any());
     }
 
     @Test
@@ -117,7 +115,7 @@ class CloseDailyTopPicksServiceTest {
         closeDailyTopPicksService.close(userId, date);
 
         // then
-        verify(dailyTopPicksSummaryRepository, never()).saveAndFlush(any());
+        verify(dailyTopPicksSummarySaver, never()).save(any());
     }
 
     @Test
@@ -127,8 +125,7 @@ class CloseDailyTopPicksServiceTest {
         DailyPlan dailyPlan = createDailyPlan();
         given(dailyTopPicksSummaryRepository.existsByUserIdAndDate(userId, date)).willReturn(false);
         given(dailyPlanRepository.findByUserIdAndPlanDate(userId, date)).willReturn(Optional.of(dailyPlan));
-        given(dailyTopPicksSummaryRepository.saveAndFlush(any()))
-                .willThrow(duplicateKeyViolation());
+        given(dailyTopPicksSummarySaver.save(any())).willReturn(false);
 
         // when / then
         assertThatCode(() -> closeDailyTopPicksService.close(userId, date))

@@ -4,6 +4,7 @@ import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.planning.daily_plan.domain.DailyPlan;
 import com.example.movra.bc.planning.daily_plan.domain.repository.DailyPlanRepository;
 import com.example.movra.bc.planning.timetable.application.service.support.DailyTimetableCloser;
+import com.example.movra.bc.planning.timetable.application.service.support.DailyTimetableSummarySaver;
 import com.example.movra.bc.planning.timetable.domain.DailyTimetableSummary;
 import com.example.movra.bc.planning.timetable.domain.Timetable;
 import com.example.movra.bc.planning.timetable.domain.repository.DailyTimetableSummaryRepository;
@@ -14,9 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
 
-import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -45,21 +44,17 @@ class CloseDailyTimetableServiceTest {
     @Mock
     private DailyPlanRepository dailyPlanRepository;
 
+    @Mock
+    private DailyTimetableSummarySaver dailyTimetableSummarySaver;
+
     private final Clock clock = Clock.fixed(Instant.parse("2026-04-15T00:00:00Z"), ZoneId.of("Asia/Seoul"));
     private final UserId userId = UserId.newId();
     private final LocalDate date = LocalDate.of(2026, 4, 14);
 
-    private DataIntegrityViolationException duplicateKeyViolation() {
-        return new DataIntegrityViolationException(
-                "duplicate",
-                new SQLIntegrityConstraintViolationException("duplicate", "23000", 1062)
-        );
-    }
-
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
         closeDailyTimetableService = new DailyTimetableCloser(
-                dailyTimetableSummaryRepository, timetableRepository, dailyPlanRepository, clock
+                dailyTimetableSummaryRepository, timetableRepository, dailyPlanRepository, dailyTimetableSummarySaver, clock
         );
     }
 
@@ -72,11 +67,12 @@ class CloseDailyTimetableServiceTest {
         given(dailyTimetableSummaryRepository.existsByUserIdAndDate(userId, date)).willReturn(false);
         given(dailyPlanRepository.findByUserIdAndPlanDate(userId, date)).willReturn(Optional.of(dailyPlan));
         given(timetableRepository.findByDailyPlanId(dailyPlan.getDailyPlanId())).willReturn(Optional.of(timetable));
+        given(dailyTimetableSummarySaver.save(any())).willReturn(true);
 
         closeDailyTimetableService.close(userId, date);
 
         ArgumentCaptor<DailyTimetableSummary> captor = ArgumentCaptor.forClass(DailyTimetableSummary.class);
-        verify(dailyTimetableSummaryRepository).saveAndFlush(captor.capture());
+        verify(dailyTimetableSummarySaver).save(captor.capture());
         DailyTimetableSummary saved = captor.getValue();
         assertThat(saved.getDailyPlanId()).isEqualTo(dailyPlan.getDailyPlanId());
         assertThat(saved.getUserId()).isEqualTo(userId);
@@ -105,7 +101,7 @@ class CloseDailyTimetableServiceTest {
 
         closeDailyTimetableService.close(userId, date);
 
-        verify(dailyTimetableSummaryRepository, never()).saveAndFlush(any());
+        verify(dailyTimetableSummarySaver, never()).save(any());
     }
 
     @Test
@@ -116,7 +112,7 @@ class CloseDailyTimetableServiceTest {
 
         closeDailyTimetableService.close(userId, date);
 
-        verify(dailyTimetableSummaryRepository, never()).saveAndFlush(any());
+        verify(dailyTimetableSummarySaver, never()).save(any());
     }
 
     @Test
@@ -129,7 +125,7 @@ class CloseDailyTimetableServiceTest {
 
         closeDailyTimetableService.close(userId, date);
 
-        verify(dailyTimetableSummaryRepository, never()).saveAndFlush(any());
+        verify(dailyTimetableSummarySaver, never()).save(any());
     }
 
     @Test
@@ -140,8 +136,7 @@ class CloseDailyTimetableServiceTest {
         given(dailyTimetableSummaryRepository.existsByUserIdAndDate(userId, date)).willReturn(false);
         given(dailyPlanRepository.findByUserIdAndPlanDate(userId, date)).willReturn(Optional.of(dailyPlan));
         given(timetableRepository.findByDailyPlanId(dailyPlan.getDailyPlanId())).willReturn(Optional.of(timetable));
-        given(dailyTimetableSummaryRepository.saveAndFlush(any()))
-                .willThrow(duplicateKeyViolation());
+        given(dailyTimetableSummarySaver.save(any())).willReturn(false);
 
         assertThatCode(() -> closeDailyTimetableService.close(userId, date))
                 .doesNotThrowAnyException();

@@ -56,6 +56,7 @@ public class DailyTopPicksSummary extends AbstractAggregateRoot {
 
     @Builder.Default
     @OneToMany(mappedBy = "summary", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("displayOrder ASC")
     private List<DailyTopPicksSummaryItem> items = new ArrayList<>();
 
 
