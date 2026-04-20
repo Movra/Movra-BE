@@ -1,6 +1,7 @@
 package com.example.movra.bc.accountability.accountability_relation.application.service.query;
 
 import com.example.movra.bc.accountability.accountability_relation.application.helper.WatcherAccountabilityRelationReader;
+import com.example.movra.bc.accountability.accountability_relation.application.helper.WatcherSummaryDateRangeValidator;
 import com.example.movra.bc.accountability.accountability_relation.domain.AccountabilityRelation;
 import com.example.movra.bc.accountability.accountability_relation.domain.type.MonitoringTarget;
 import com.example.movra.bc.planning.daily_plan.application.service.daily_plan.support.DailyTopPicksReader;
@@ -19,6 +20,7 @@ import java.util.Optional;
 public class QueryWatcherTopPicksService {
 
     private final WatcherAccountabilityRelationReader watcherAccountabilityRelationReader;
+    private final WatcherSummaryDateRangeValidator watcherSummaryDateRangeValidator;
     private final DailyTopPicksReader dailyTopPicksReader;
 
     public Optional<DailyTopPicksSummaryView> query(LocalDate date) {
@@ -31,6 +33,7 @@ public class QueryWatcherTopPicksService {
     public List<DailyTopPicksSummaryView> queryRange(LocalDate from, LocalDate to) {
         AccountabilityRelation relation = watcherAccountabilityRelationReader.getCurrentWatcherRelation();
         relation.ensureMonitoringTargetAllowed(MonitoringTarget.TOP_PICKS);
+        watcherSummaryDateRangeValidator.validate(from, to);
 
         return dailyTopPicksReader.findRange(relation.getSubjectUserId(), from, to);
     }

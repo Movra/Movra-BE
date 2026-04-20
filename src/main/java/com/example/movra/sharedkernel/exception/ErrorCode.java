@@ -45,6 +45,7 @@ public enum ErrorCode {
     SLOT_NOT_FOUND(HttpStatus.NOT_FOUND, "슬롯을 찾을 수 없습니다."),
     TIME_OVERLAP(HttpStatus.BAD_REQUEST, "다른 시간과 겹칩니다."),
     INVALID_TIME_RANGE(HttpStatus.BAD_REQUEST, "유효하지 않은 시간 범위입니다."),
+    INVALID_DATE_RANGE(HttpStatus.BAD_REQUEST, "유효하지 않은 날짜 범위입니다."),
     TOP_PICKS_NOT_FULLY_ASSIGNED(HttpStatus.BAD_REQUEST, "모든 상위 선택 작업을 먼저 배정해야 합니다."),
     TOP_PICK_SLOT_LIMIT_EXCEEDED(HttpStatus.BAD_REQUEST, "상위 선택 슬롯 제한을 초과했습니다."),
     NOT_TOP_PICKED_TASK(HttpStatus.BAD_REQUEST, "상위 선택된 작업만 예상 시간을 수정할 수 있습니다."),
