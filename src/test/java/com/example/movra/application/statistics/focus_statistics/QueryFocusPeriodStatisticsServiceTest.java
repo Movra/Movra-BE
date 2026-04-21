@@ -8,7 +8,6 @@ import com.example.movra.bc.statistics.focus_statistics.application.service.dto.
 import com.example.movra.bc.statistics.focus_statistics.application.service.support.FocusPeriodStatisticsCalculator;
 import com.example.movra.bc.statistics.focus_statistics.application.service.support.FocusStatisticsPeriodResolver;
 import com.example.movra.bc.statistics.focus_statistics.application.service.support.FocusStatisticsReadPort;
-import com.example.movra.bc.statistics.focus_statistics.application.service.support.FocusStatisticsTimeZoneResolver;
 import com.example.movra.bc.statistics.focus_statistics.application.service.support.FocusSessionOverlapCalculator;
 import com.example.movra.bc.statistics.focus_statistics.application.service.support.dto.FocusStatisticsPeriod;
 import com.example.movra.bc.statistics.focus_statistics.application.service.support.dto.FocusStatisticsSessionView;
@@ -48,9 +47,6 @@ class QueryFocusPeriodStatisticsServiceTest {
     @Mock
     private Clock clock;
 
-    @Mock
-    private FocusStatisticsTimeZoneResolver focusStatisticsTimeZoneResolver;
-
     private QueryFocusPeriodStatisticsService queryFocusPeriodStatisticsService;
 
     private final FocusStatisticsPeriodResolver focusStatisticsPeriodResolver = new FocusStatisticsPeriodResolver();
@@ -68,7 +64,6 @@ class QueryFocusPeriodStatisticsServiceTest {
         queryFocusPeriodStatisticsService = new QueryFocusPeriodStatisticsService(
                 currentUserQuery,
                 clock,
-                focusStatisticsTimeZoneResolver,
                 focusStatisticsPeriodResolver,
                 focusPeriodStatisticsCalculator
         );
@@ -78,7 +73,7 @@ class QueryFocusPeriodStatisticsServiceTest {
         lenient().when(currentUserQuery.currentUser()).thenReturn(
                 AuthenticatedUser.builder().userId(userId).build()
         );
-        lenient().when(focusStatisticsTimeZoneResolver.resolve(userId)).thenReturn(zoneId);
+        lenient().when(clock.getZone()).thenReturn(zoneId);
     }
 
     @Test
@@ -269,15 +264,15 @@ class QueryFocusPeriodStatisticsServiceTest {
     }
 
     @Test
-    @DisplayName("queryDaily uses resolved user zone for future boundary")
-    void queryDaily_usesResolvedUserZoneForFutureBoundary() {
+    @DisplayName("queryDaily uses configured app zone for future boundary")
+    void queryDaily_usesConfiguredAppZoneForFutureBoundary() {
         givenCurrentUser();
         LocalDate targetDate = LocalDate.of(2026, 4, 12);
         Instant now = Instant.parse("2026-04-11T15:30:00Z");
-        ZoneId userZone = ZoneId.of("UTC");
+        ZoneId appZone = ZoneId.of("UTC");
 
         given(clock.instant()).willReturn(now);
-        given(focusStatisticsTimeZoneResolver.resolve(userId)).willReturn(userZone);
+        given(clock.getZone()).willReturn(appZone);
 
         FocusPeriodStatisticsResponse response = queryFocusPeriodStatisticsService.queryDaily(targetDate);
 
@@ -285,7 +280,7 @@ class QueryFocusPeriodStatisticsServiceTest {
         assertThat(response.dataSource()).isEqualTo(FocusStatisticsDataSource.NONE);
         assertThat(response.totalFocusSeconds()).isZero();
         then(focusStatisticsReadPort).should(never()).findSummaryRange(eq(userId), eq(targetDate), eq(targetDate));
-        then(focusStatisticsReadPort).should(never()).findSessions(eq(userId), eq(focusStatisticsPeriodResolver.resolveDay(targetDate, userZone)));
+        then(focusStatisticsReadPort).should(never()).findSessions(eq(userId), eq(focusStatisticsPeriodResolver.resolveDay(targetDate, appZone)));
     }
 
     private FocusStatisticsSummaryView summary(LocalDate date, long totalSeconds, int sessionCount) {

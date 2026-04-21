@@ -7,7 +7,6 @@ import com.example.movra.bc.statistics.focus_statistics.application.service.dto.
 import com.example.movra.bc.statistics.focus_statistics.application.service.dto.response.FocusTimeOfDayStatisticsResponse;
 import com.example.movra.bc.statistics.focus_statistics.application.service.support.FocusStatisticsPeriodResolver;
 import com.example.movra.bc.statistics.focus_statistics.application.service.support.FocusStatisticsReadPort;
-import com.example.movra.bc.statistics.focus_statistics.application.service.support.FocusStatisticsTimeZoneResolver;
 import com.example.movra.bc.statistics.focus_statistics.application.service.support.FocusSessionOverlapCalculator;
 import com.example.movra.bc.statistics.focus_statistics.application.service.support.FocusTimeBucketCalculator;
 import com.example.movra.bc.statistics.focus_statistics.application.service.support.dto.FocusStatisticsPeriod;
@@ -32,7 +31,6 @@ public class QueryFocusTimeOfDayStatisticsService {
     private final FocusStatisticsReadPort focusStatisticsReadPort;
     private final CurrentUserQuery currentUserQuery;
     private final Clock clock;
-    private final FocusStatisticsTimeZoneResolver focusStatisticsTimeZoneResolver;
     private final FocusStatisticsPeriodResolver focusStatisticsPeriodResolver;
     private final FocusTimeBucketCalculator focusTimeBucketCalculator;
     private final FocusSessionOverlapCalculator focusSessionOverlapCalculator;
@@ -41,7 +39,7 @@ public class QueryFocusTimeOfDayStatisticsService {
     public FocusTimeOfDayStatisticsResponse query(LocalDate targetDate) {
         Instant now = clock.instant();
         UserId userId = currentUserQuery.currentUser().userId();
-        ZoneId zoneId = focusStatisticsTimeZoneResolver.resolve(userId);
+        ZoneId zoneId = clock.getZone();
         LocalDate today = now.atZone(zoneId).toLocalDate();
 
         if (targetDate.isAfter(today)) {

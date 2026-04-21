@@ -4,7 +4,6 @@ import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.statistics.focus_statistics.application.service.dto.response.FocusPeriodStatisticsResponse;
 import com.example.movra.bc.statistics.focus_statistics.application.service.support.FocusPeriodStatisticsCalculator;
 import com.example.movra.bc.statistics.focus_statistics.application.service.support.FocusStatisticsPeriodResolver;
-import com.example.movra.bc.statistics.focus_statistics.application.service.support.FocusStatisticsTimeZoneResolver;
 import com.example.movra.bc.statistics.focus_statistics.application.service.support.dto.FocusStatisticsPeriod;
 import com.example.movra.bc.statistics.focus_statistics.application.service.support.dto.FocusPeriodStatisticsResult;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
@@ -24,7 +23,6 @@ public class QueryFocusPeriodStatisticsService {
 
     private final CurrentUserQuery currentUserQuery;
     private final Clock clock;
-    private final FocusStatisticsTimeZoneResolver focusStatisticsTimeZoneResolver;
     private final FocusStatisticsPeriodResolver focusStatisticsPeriodResolver;
     private final FocusPeriodStatisticsCalculator focusPeriodStatisticsCalculator;
 
@@ -49,7 +47,7 @@ public class QueryFocusPeriodStatisticsService {
     ) {
         Instant now = clock.instant();
         UserId userId = currentUserQuery.currentUser().userId();
-        ZoneId zoneId = focusStatisticsTimeZoneResolver.resolve(userId);
+        ZoneId zoneId = clock.getZone();
         FocusStatisticsPeriod period = periodResolver.apply(targetDate, zoneId);
         FocusPeriodStatisticsResult result = focusPeriodStatisticsCalculator.calculate(userId, period, now, zoneId);
 
