@@ -83,6 +83,11 @@ class DailyFocusCloserTest {
         assertThat(saved.getDate()).isEqualTo(date);
         assertThat(saved.getSessionCount()).isEqualTo(3);
         assertThat(saved.getTotalSeconds()).isEqualTo(4200L);
+        assertThat(saved.getTotalSeconds()).isEqualTo(
+                saved.getItems().stream()
+                        .mapToLong(item -> item.getOverlapSeconds())
+                        .sum()
+        );
         assertThat(saved.getItems()).hasSize(3);
 
         var first = saved.getItems().get(0);
