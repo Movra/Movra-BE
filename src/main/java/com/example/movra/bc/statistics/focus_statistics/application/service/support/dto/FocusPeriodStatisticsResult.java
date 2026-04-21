@@ -16,6 +16,10 @@ public record FocusPeriodStatisticsResult(
 ) {
 
     public FocusPeriodStatisticsResult {
+        if (periodStartDate == null || periodEndDate == null) {
+            throw new IllegalArgumentException("period dates must not be null");
+        }
+
         if (periodEndDate.isBefore(periodStartDate)) {
             throw new IllegalArgumentException("periodEndDate must not be before periodStartDate");
         }
