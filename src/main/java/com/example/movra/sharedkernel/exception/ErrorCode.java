@@ -91,6 +91,7 @@ public enum ErrorCode {
     BEHAVIOR_PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND, "행동 프로필을 찾을 수 없습니다."),
     INVALID_BEHAVIOR_PROFILE(HttpStatus.BAD_REQUEST, "행동 프로필 내용이 유효하지 않습니다."),
 
+    INVALID_CHAT_MESSAGE(HttpStatus.BAD_REQUEST, "유효하지 않은 채팅 메시지입니다."),
     CHAT_NOT_ALLOWED(HttpStatus.FORBIDDEN, "현재 상태에서는 채팅을 보낼 수 없습니다.");
 
     private final HttpStatus httpStatus;

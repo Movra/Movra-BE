@@ -2,7 +2,9 @@ package com.example.movra.bc.study_room.chat.application.service;
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.study_room.chat.application.exception.ChatNotAllowedException;
+import com.example.movra.bc.study_room.chat.application.exception.InvalidChatMessageException;
 import com.example.movra.bc.study_room.chat.application.service.dto.ChatMessagePayload;
+import com.example.movra.bc.study_room.chat.application.service.dto.ChatMessageRequest;
 import com.example.movra.bc.study_room.helper.StudyRoomReader;
 import com.example.movra.bc.study_room.participant.domain.Participant;
 import com.example.movra.bc.study_room.participant.domain.type.SessionMode;
@@ -28,6 +30,8 @@ public class SendChatMessageService {
             throw new ChatNotAllowedException();
         }
 
+        validateContent(content);
+
         log.info("Chat message sent: roomId={}, userId={}, contentLength={}, timestamp={}",
                 roomId, senderId.id(), content.length(), Instant.now());
 
@@ -38,5 +42,11 @@ public class SendChatMessageService {
                 content,
                 Instant.now()
         );
+    }
+
+    private void validateContent(String content) {
+        if (content == null || content.isBlank() || content.length() > ChatMessageRequest.MAX_CONTENT_LENGTH) {
+            throw new InvalidChatMessageException();
+        }
     }
 }

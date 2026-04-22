@@ -29,6 +29,7 @@ public class KickParticipantService {
         room.kick(leaderId, targetId);
 
         Participant target = studyRoomReader.getParticipant(targetId, room.getId());
+        target.leaveAndRecordTime();
         participantRepository.delete(target);
     }
 }
