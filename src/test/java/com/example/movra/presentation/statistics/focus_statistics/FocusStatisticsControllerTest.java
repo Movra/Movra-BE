@@ -2,6 +2,7 @@ package com.example.movra.presentation.statistics.focus_statistics;
 
 import com.example.movra.bc.statistics.focus_statistics.application.service.QueryFocusPeriodStatisticsService;
 import com.example.movra.bc.statistics.focus_statistics.application.service.QueryFocusTimeOfDayStatisticsService;
+import com.example.movra.bc.statistics.focus_statistics.application.service.RecommendFocusTimingService;
 import com.example.movra.bc.statistics.focus_statistics.application.service.dto.response.FocusPeriodStatisticsResponse;
 import com.example.movra.bc.statistics.focus_statistics.application.service.dto.response.FocusStatisticsDataSource;
 import com.example.movra.bc.statistics.focus_statistics.application.service.dto.response.FocusStatisticsStatus;
@@ -39,6 +40,9 @@ class FocusStatisticsControllerTest {
     @Mock
     private QueryFocusTimeOfDayStatisticsService queryFocusTimeOfDayStatisticsService;
 
+    @Mock
+    private RecommendFocusTimingService recommendFocusTimingService;
+
     private MockMvc mockMvc;
 
     @BeforeEach
@@ -48,7 +52,8 @@ class FocusStatisticsControllerTest {
                 .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         FocusStatisticsController controller = new FocusStatisticsController(
                 queryFocusPeriodStatisticsService,
-                queryFocusTimeOfDayStatisticsService
+                queryFocusTimeOfDayStatisticsService,
+                recommendFocusTimingService
         );
 
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
