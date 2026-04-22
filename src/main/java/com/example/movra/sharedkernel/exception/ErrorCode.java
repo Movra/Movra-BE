@@ -69,6 +69,7 @@ public enum ErrorCode {
 
     ALREADY_FOCUSING(HttpStatus.BAD_REQUEST, "이미 집중 중입니다."),
     NOT_FOCUSING(HttpStatus.BAD_REQUEST, "현재 집중 중이 아닙니다."),
+    PARTICIPANT_ALREADY_ENDED(HttpStatus.BAD_REQUEST, "이미 퇴장한 참여자입니다."),
     FOCUS_SESSION_ALREADY_IN_PROGRESS(HttpStatus.CONFLICT, "이미 진행 중인 집중 세션이 있습니다."),
     FOCUS_SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "집중 세션을 찾을 수 없습니다."),
     FOCUS_SESSION_ALREADY_COMPLETED(HttpStatus.BAD_REQUEST, "이미 완료된 집중 세션입니다."),
@@ -84,7 +85,13 @@ public enum ErrorCode {
     NOT_SUBJECT_USER(HttpStatus.FORBIDDEN, "해당 관계의 주체 유저가 아닙니다."),
     WATCHER_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 감시자가 존재합니다."),
 
-    CANNOT_JOIN_OWN_ACCOUNTABILITY_RELATION(HttpStatus.BAD_REQUEST, "자신의 감시 관계에는 참여할 수 없습니다.");
+    CANNOT_JOIN_OWN_ACCOUNTABILITY_RELATION(HttpStatus.BAD_REQUEST, "자신의 감시 관계에는 참여할 수 없습니다."),
+
+    BEHAVIOR_PROFILE_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 행동 프로필입니다."),
+    BEHAVIOR_PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND, "행동 프로필을 찾을 수 없습니다."),
+    INVALID_BEHAVIOR_PROFILE(HttpStatus.BAD_REQUEST, "행동 프로필 내용이 유효하지 않습니다."),
+
+    CHAT_NOT_ALLOWED(HttpStatus.FORBIDDEN, "현재 상태에서는 채팅을 보낼 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;
