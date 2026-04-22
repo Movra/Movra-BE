@@ -83,7 +83,7 @@ class DailyTimetableSummarySaverIntegrationTest {
         DailyPlan dailyPlan = DailyPlan.create(userId, date);
         var topPickTask = dailyPlan.addTask("Top Pick Task");
         var generalTask = dailyPlan.addTask("General Task");
-        dailyPlan.markAsTopPicked(topPickTask.getTaskId(), 60, "Deep work");
+        dailyPlan.markAsTopPicked(topPickTask.getTaskId(), 60, "Deep work", DailyPlan.DEFAULT_MAX_TOP_PICKS);
         dailyPlan.completeTask(topPickTask.getTaskId());
         dailyPlan.completeTask(generalTask.getTaskId());
         return dailyPlan;

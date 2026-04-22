@@ -73,7 +73,7 @@ class QueryMindSweepServiceTest {
         DailyPlan dailyPlan = DailyPlan.create(userId, LocalDate.of(2026, 3, 17));
         dailyPlan.addTask("일반 할 일");
         dailyPlan.addTask("Top Pick 할 일");
-        dailyPlan.markAsTopPicked(dailyPlan.getTasks().get(1).getTaskId(), 30, "메모");
+        dailyPlan.markAsTopPicked(dailyPlan.getTasks().get(1).getTaskId(), 30, "메모", DailyPlan.DEFAULT_MAX_TOP_PICKS);
         UUID dailyPlanId = dailyPlan.getDailyPlanId().id();
         given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId)).willReturn(Optional.of(dailyPlan));
 

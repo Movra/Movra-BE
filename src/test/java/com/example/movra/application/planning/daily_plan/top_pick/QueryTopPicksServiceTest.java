@@ -54,7 +54,7 @@ class QueryTopPicksServiceTest {
         DailyPlan dailyPlan = DailyPlan.create(userId, LocalDate.of(2026, 3, 17));
         dailyPlan.addTask("Top Pick 할 일");
         dailyPlan.addTask("일반 할 일");
-        dailyPlan.markAsTopPicked(dailyPlan.getTasks().get(0).getTaskId(), 30, "중요");
+        dailyPlan.markAsTopPicked(dailyPlan.getTasks().get(0).getTaskId(), 30, "중요", DailyPlan.DEFAULT_MAX_TOP_PICKS);
         UUID dailyPlanId = dailyPlan.getDailyPlanId().id();
         given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId)).willReturn(Optional.of(dailyPlan));
 
