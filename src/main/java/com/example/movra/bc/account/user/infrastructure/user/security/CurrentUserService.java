@@ -17,7 +17,9 @@ public class CurrentUserService implements CurrentUserQuery {
     @Override
     public AuthenticatedUser currentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !(authentication.getPrincipal() instanceof AuthDetails authDetails)) {
+        if (authentication == null
+                || !authentication.isAuthenticated()
+                || !(authentication.getPrincipal() instanceof AuthDetails authDetails)) {
             throw new InvalidJwtException();
         }
 
