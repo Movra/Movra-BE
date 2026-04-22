@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -110,5 +111,36 @@ class UpdateDailyReflectionServiceTest {
                 UUID.randomUUID(),
                 new UpdateDailyReflectionRequest(" ", "Updated breakdown", "Updated if condition", "Updated then action")
         )).isInstanceOf(InvalidDailyReflectionException.class);
+    }
+
+    @Test
+    @DisplayName("update syncs legacy next_action during migration")
+    void update_legacyNextAction_syncsWithThenAction() {
+        givenCurrentUser();
+        DailyReflection dailyReflection = DailyReflection.create(
+                userId,
+                LocalDate.of(2026, 4, 10),
+                "Existing win",
+                "Existing breakdown",
+                "Existing if condition",
+                "Existing then action"
+        );
+        ReflectionTestUtils.setField(dailyReflection, "ifCondition", null);
+        ReflectionTestUtils.setField(dailyReflection, "thenAction", null);
+        ReflectionTestUtils.setField(dailyReflection, "legacyNextAction", "Legacy next action");
+        UpdateDailyReflectionRequest request = new UpdateDailyReflectionRequest(
+                "Updated win",
+                "Updated breakdown",
+                "Updated if condition",
+                "Updated then action"
+        );
+        given(dailyReflectionRepository.findByIdAndUserId(any(DailyReflectionId.class), any(UserId.class)))
+                .willReturn(Optional.of(dailyReflection));
+
+        updateDailyReflectionService.update(UUID.randomUUID(), request);
+
+        assertThat(dailyReflection.getThenAction()).isEqualTo("Updated then action");
+        assertThat(ReflectionTestUtils.getField(dailyReflection, "legacyNextAction"))
+                .isEqualTo("Updated then action");
     }
 }

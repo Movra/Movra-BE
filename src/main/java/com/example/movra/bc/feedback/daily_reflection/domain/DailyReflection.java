@@ -50,11 +50,15 @@ public class DailyReflection {
     @Column(name = "what_broke_down", nullable = false, length = WHAT_BROKE_DOWN_MAX_LENGTH)
     private String whatBrokeDown;
 
-    @Column(name = "if_condition", nullable = false, length = IF_CONDITION_MAX_LENGTH)
+    // Keep these nullable during the transition from next_action to if/then fields.
+    @Column(name = "if_condition", length = IF_CONDITION_MAX_LENGTH)
     private String ifCondition;
 
-    @Column(name = "then_action", nullable = false, length = THEN_ACTION_MAX_LENGTH)
+    @Column(name = "then_action", length = THEN_ACTION_MAX_LENGTH)
     private String thenAction;
+
+    @Column(name = "next_action", length = THEN_ACTION_MAX_LENGTH)
+    private String legacyNextAction;
 
     public static DailyReflection create(
             UserId userId,
@@ -74,6 +78,7 @@ public class DailyReflection {
                 .whatBrokeDown(whatBrokeDown)
                 .ifCondition(ifCondition)
                 .thenAction(thenAction)
+                .legacyNextAction(thenAction)
                 .build();
     }
 
@@ -87,6 +92,19 @@ public class DailyReflection {
         this.whatBrokeDown = whatBrokeDown;
         this.ifCondition = ifCondition;
         this.thenAction = thenAction;
+        this.legacyNextAction = thenAction;
+    }
+
+    public String getIfCondition() {
+        return ifCondition != null ? ifCondition : "";
+    }
+
+    public String getThenAction() {
+        if (thenAction != null) {
+            return thenAction;
+        }
+
+        return legacyNextAction != null ? legacyNextAction : "";
     }
 
     private static void validate(
