@@ -5,6 +5,7 @@ import com.example.movra.bc.study_room.participant.domain.event.FocusTimeRecorde
 import com.example.movra.bc.study_room.participant.domain.event.ParticipantLeftEvent;
 import com.example.movra.bc.study_room.participant.domain.exception.AlreadyFocusingException;
 import com.example.movra.bc.study_room.participant.domain.exception.NotFocusingException;
+import com.example.movra.bc.study_room.participant.domain.exception.ParticipantAlreadyEndedException;
 import com.example.movra.bc.study_room.participant.domain.type.SessionMode;
 import com.example.movra.bc.study_room.participant.domain.vo.ParticipantId;
 import com.example.movra.bc.study_room.room.domain.vo.RoomId;
@@ -68,13 +69,15 @@ public class Participant extends AbstractAggregateRoot {
                 .id(ParticipantId.newId())
                 .userId(userId)
                 .roomId(roomId)
-                .sessionMode(SessionMode.REST)
+                .sessionMode(SessionMode.WAITING)
                 .focusTimer(FocusTimer.init())
                 .joinedAt(LocalDateTime.now())
                 .build();
     }
 
     public void startFocus() {
+        validateNotEnded();
+
         if (isFocusing()) {
             throw new AlreadyFocusingException();
         }
@@ -84,18 +87,27 @@ public class Participant extends AbstractAggregateRoot {
     }
 
     public void takeBreak() {
-        if (!isFocusing()) {
+        validateNotEnded();
+
+        if (!isFocusing() && sessionMode != SessionMode.WAITING) {
             throw new NotFocusingException();
         }
 
+        if (isFocusing()) {
+            this.focusTimer = focusTimer.pause();
+        }
+
         this.sessionMode = SessionMode.REST;
-        this.focusTimer = focusTimer.pause();
     }
 
     public Duration leaveAndRecordTime() {
+        validateNotEnded();
+
         Duration totalFocusTime = isFocusing()
                 ? focusTimer.totalElapsedUntilNow()
                 : focusTimer.totalElapsed();
+
+        this.sessionMode = SessionMode.ENDED;
 
         registerEvent(new ParticipantLeftEvent(roomId.id(), id.id(), userId.id()));
         registerEvent(new FocusTimeRecordedEvent(
@@ -108,7 +120,17 @@ public class Participant extends AbstractAggregateRoot {
         return totalFocusTime;
     }
 
+    public boolean isEnded() {
+        return sessionMode == SessionMode.ENDED;
+    }
+
     private boolean isFocusing() {
         return sessionMode == SessionMode.FOCUS;
+    }
+
+    private void validateNotEnded() {
+        if (isEnded()) {
+            throw new ParticipantAlreadyEndedException();
+        }
     }
 }
