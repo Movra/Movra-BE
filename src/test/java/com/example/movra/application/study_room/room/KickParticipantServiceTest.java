@@ -91,6 +91,24 @@ class KickParticipantServiceTest {
     }
 
     @Test
+    @DisplayName("이미 종료된 참여자도 강퇴 시 삭제는 계속 진행된다")
+    void kick_endedParticipant_deletesWithoutRecordingAgain() {
+        givenCurrentUser(leaderId);
+        UserId targetId = UserId.newId();
+        Room room = Room.create("?ㅽ꽣?붾８", leaderId, Visibility.PUBLIC);
+        Participant target = Participant.enter(targetId, room.getId());
+        target.leaveAndRecordTime();
+
+        given(studyRoomReader.getRoom(any())).willReturn(room);
+        given(studyRoomReader.getParticipant(targetId, room.getId())).willReturn(target);
+
+        kickParticipantService.kick(room.getId().id(), targetId.id());
+
+        assertThat(target.isEnded()).isTrue();
+        then(participantRepository).should().delete(target);
+    }
+
+    @Test
     @DisplayName("리더가 아닌 사용자가 강퇴 시 NotLeaderException 발생")
     void kick_notLeader_throwsException() {
         // given

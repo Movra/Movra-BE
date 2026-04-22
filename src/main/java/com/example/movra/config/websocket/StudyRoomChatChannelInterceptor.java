@@ -6,6 +6,7 @@ import com.example.movra.bc.account.user.infrastructure.user.security.auth.AuthD
 import com.example.movra.bc.account.user.infrastructure.user.security.jwt.JwtProperties;
 import com.example.movra.bc.account.user.infrastructure.user.security.jwt.JwtTokenProvider;
 import com.example.movra.bc.account.user.infrastructure.user.security.jwt.exception.InvalidJwtException;
+import com.example.movra.bc.study_room.chat.application.exception.InvalidChatDestinationException;
 import com.example.movra.bc.study_room.participant.application.exception.ParticipantNotFoundException;
 import com.example.movra.bc.study_room.participant.domain.repository.ParticipantRepository;
 import com.example.movra.bc.study_room.room.domain.vo.RoomId;
@@ -30,8 +31,10 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class StudyRoomChatChannelInterceptor implements ChannelInterceptor {
 
-    private static final Pattern CHAT_DESTINATION_PATTERN =
-            Pattern.compile("^/(app|topic)/rooms/([0-9a-fA-F\\-]{36})/chat$");
+    private static final Pattern CHAT_SEND_DESTINATION_PATTERN =
+            Pattern.compile("^/app/rooms/([0-9a-fA-F\\-]{36})/chat$");
+    private static final Pattern CHAT_SUBSCRIBE_DESTINATION_PATTERN =
+            Pattern.compile("^/topic/rooms/([0-9a-fA-F\\-]{36})/chat$");
 
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtProperties jwtProperties;
@@ -50,8 +53,12 @@ public class StudyRoomChatChannelInterceptor implements ChannelInterceptor {
             return message;
         }
 
-        if (accessor.getCommand() == StompCommand.SEND || accessor.getCommand() == StompCommand.SUBSCRIBE) {
-            authorizeChatAccess(accessor);
+        if (accessor.getCommand() == StompCommand.SEND) {
+            authorizeSend(accessor);
+        }
+
+        if (accessor.getCommand() == StompCommand.SUBSCRIBE) {
+            authorizeSubscribe(accessor);
         }
 
         return message;
@@ -73,29 +80,50 @@ public class StudyRoomChatChannelInterceptor implements ChannelInterceptor {
         accessor.setUser(authentication);
     }
 
-    private void authorizeChatAccess(StompHeaderAccessor accessor) {
-        UUID roomId = extractChatRoomId(accessor.getDestination());
+    private void authorizeSend(StompHeaderAccessor accessor) {
+        if (extractChatRoomId(accessor.getDestination(), CHAT_SUBSCRIBE_DESTINATION_PATTERN) != null) {
+            throw new InvalidChatDestinationException();
+        }
+
+        UUID roomId = extractChatRoomId(accessor.getDestination(), CHAT_SEND_DESTINATION_PATTERN);
         if (roomId == null) {
             return;
         }
 
-        UserId userId = extractUserId(accessor.getUser());
+        authorizeParticipant(accessor.getUser(), roomId);
+    }
+
+    private void authorizeSubscribe(StompHeaderAccessor accessor) {
+        if (extractChatRoomId(accessor.getDestination(), CHAT_SEND_DESTINATION_PATTERN) != null) {
+            throw new InvalidChatDestinationException();
+        }
+
+        UUID roomId = extractChatRoomId(accessor.getDestination(), CHAT_SUBSCRIBE_DESTINATION_PATTERN);
+        if (roomId == null) {
+            return;
+        }
+
+        authorizeParticipant(accessor.getUser(), roomId);
+    }
+
+    private void authorizeParticipant(Principal principal, UUID roomId) {
+        UserId userId = extractUserId(principal);
         if (!participantRepository.existsByUserIdAndRoomId(userId, RoomId.of(roomId))) {
             throw new ParticipantNotFoundException();
         }
     }
 
-    private UUID extractChatRoomId(String destination) {
+    private UUID extractChatRoomId(String destination, Pattern pattern) {
         if (destination == null) {
             return null;
         }
 
-        Matcher matcher = CHAT_DESTINATION_PATTERN.matcher(destination);
+        Matcher matcher = pattern.matcher(destination);
         if (!matcher.matches()) {
             return null;
         }
 
-        return UUID.fromString(matcher.group(2));
+        return UUID.fromString(matcher.group(1));
     }
 
     private UserId extractUserId(Principal principal) {

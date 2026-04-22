@@ -6,6 +6,7 @@ import com.example.movra.bc.account.user.infrastructure.user.security.auth.AuthD
 import com.example.movra.bc.account.user.infrastructure.user.security.jwt.JwtProperties;
 import com.example.movra.bc.account.user.infrastructure.user.security.jwt.JwtTokenProvider;
 import com.example.movra.bc.account.user.infrastructure.user.security.jwt.exception.InvalidJwtException;
+import com.example.movra.bc.study_room.chat.application.exception.InvalidChatDestinationException;
 import com.example.movra.bc.study_room.participant.application.exception.ParticipantNotFoundException;
 import com.example.movra.bc.study_room.participant.domain.repository.ParticipantRepository;
 import com.example.movra.bc.study_room.room.domain.vo.RoomId;
@@ -135,6 +136,24 @@ class StudyRoomChatChannelInterceptorTest {
         Message<?> intercepted = interceptor.preSend(message, null);
 
         assertThat(intercepted).isSameAs(message);
+    }
+
+    @Test
+    @DisplayName("SEND to broker topic is rejected even for authenticated participants")
+    void preSend_sendToTopicDestination_throwsException() {
+        StudyRoomChatChannelInterceptor interceptor = new StudyRoomChatChannelInterceptor(
+                jwtTokenProvider,
+                jwtProperties,
+                tokenService,
+                participantRepository
+        );
+        User user = User.createLocalUser("tester", "tester", "image", "tester@example.com", "pw");
+        UUID roomId = UUID.randomUUID();
+        Principal principal = authenticatedPrincipal(user);
+        Message<byte[]> message = destinationMessage(StompCommand.SEND, "/topic/rooms/" + roomId + "/chat", principal);
+
+        assertThatThrownBy(() -> interceptor.preSend(message, null))
+                .isInstanceOf(InvalidChatDestinationException.class);
     }
 
     private Message<byte[]> connectMessage(String authorizationHeader) {

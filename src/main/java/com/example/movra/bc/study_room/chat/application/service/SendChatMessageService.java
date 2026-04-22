@@ -31,16 +31,17 @@ public class SendChatMessageService {
         }
 
         validateContent(content);
+        Instant sentAt = Instant.now();
 
-        log.info("Chat message sent: roomId={}, userId={}, contentLength={}, timestamp={}",
-                roomId, senderId.id(), content.length(), Instant.now());
+        log.debug("Chat message sent: roomId={}, contentLength={}, timestamp={}",
+                roomId, content.length(), sentAt);
 
         return new ChatMessagePayload(
                 roomId,
                 senderId.id(),
                 senderName,
                 content,
-                Instant.now()
+                sentAt
         );
     }
 
