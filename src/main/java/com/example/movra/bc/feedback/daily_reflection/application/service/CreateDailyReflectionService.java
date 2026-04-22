@@ -34,7 +34,8 @@ public class CreateDailyReflectionService {
                             request.reflectionDate(),
                             request.whatWentWell(),
                             request.whatBrokeDown(),
-                            request.nextAction()
+                            request.ifCondition(),
+                            request.thenAction()
                     )
             );
         } catch (DataIntegrityViolationException e) {

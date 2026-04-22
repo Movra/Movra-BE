@@ -20,6 +20,10 @@ public record CreateDailyReflectionRequest(
 
         @NotBlank
         @Size(max = 500)
-        String nextAction
+        String ifCondition,
+
+        @NotBlank
+        @Size(max = 500)
+        String thenAction
 ) {
 }

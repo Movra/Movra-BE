@@ -57,12 +57,14 @@ class UpdateDailyReflectionServiceTest {
                 LocalDate.of(2026, 4, 10),
                 "Existing win",
                 "Existing breakdown",
-                "Existing next action"
+                "Existing if condition",
+                "Existing then action"
         );
         UpdateDailyReflectionRequest request = new UpdateDailyReflectionRequest(
                 "Updated win",
                 "Updated breakdown",
-                "Updated next action"
+                "Updated if condition",
+                "Updated then action"
         );
         given(dailyReflectionRepository.findByIdAndUserId(any(DailyReflectionId.class), any(UserId.class)))
                 .willReturn(Optional.of(dailyReflection));
@@ -71,7 +73,8 @@ class UpdateDailyReflectionServiceTest {
 
         assertThat(dailyReflection.getWhatWentWell()).isEqualTo("Updated win");
         assertThat(dailyReflection.getWhatBrokeDown()).isEqualTo("Updated breakdown");
-        assertThat(dailyReflection.getNextAction()).isEqualTo("Updated next action");
+        assertThat(dailyReflection.getIfCondition()).isEqualTo("Updated if condition");
+        assertThat(dailyReflection.getThenAction()).isEqualTo("Updated then action");
         then(dailyReflectionRepository).should().save(dailyReflection);
     }
 
@@ -84,7 +87,7 @@ class UpdateDailyReflectionServiceTest {
 
         assertThatThrownBy(() -> updateDailyReflectionService.update(
                 UUID.randomUUID(),
-                new UpdateDailyReflectionRequest("One win", "One breakdown", "Next action")
+                new UpdateDailyReflectionRequest("One win", "One breakdown", "If condition", "Then action")
         )).isInstanceOf(DailyReflectionNotFoundException.class);
     }
 
@@ -97,14 +100,15 @@ class UpdateDailyReflectionServiceTest {
                 LocalDate.of(2026, 4, 10),
                 "Existing win",
                 "Existing breakdown",
-                "Existing next action"
+                "Existing if condition",
+                "Existing then action"
         );
         given(dailyReflectionRepository.findByIdAndUserId(any(DailyReflectionId.class), any(UserId.class)))
                 .willReturn(Optional.of(dailyReflection));
 
         assertThatThrownBy(() -> updateDailyReflectionService.update(
                 UUID.randomUUID(),
-                new UpdateDailyReflectionRequest(" ", "Updated breakdown", "Updated next action")
+                new UpdateDailyReflectionRequest(" ", "Updated breakdown", "Updated if condition", "Updated then action")
         )).isInstanceOf(InvalidDailyReflectionException.class);
     }
 }

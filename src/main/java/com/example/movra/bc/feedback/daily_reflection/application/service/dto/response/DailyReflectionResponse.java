@@ -12,7 +12,8 @@ public record DailyReflectionResponse(
         LocalDate reflectionDate,
         String whatWentWell,
         String whatBrokeDown,
-        String nextAction
+        String ifCondition,
+        String thenAction
 ) {
 
     public static DailyReflectionResponse from(DailyReflection dailyReflection) {
@@ -21,7 +22,8 @@ public record DailyReflectionResponse(
                 .reflectionDate(dailyReflection.getReflectionDate())
                 .whatWentWell(dailyReflection.getWhatWentWell())
                 .whatBrokeDown(dailyReflection.getWhatBrokeDown())
-                .nextAction(dailyReflection.getNextAction())
+                .ifCondition(dailyReflection.getIfCondition())
+                .thenAction(dailyReflection.getThenAction())
                 .build();
     }
 }

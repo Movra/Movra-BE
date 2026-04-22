@@ -69,6 +69,7 @@ class CreateDailyReflectionServiceTest {
                 reflectionDate,
                 "Started one important task",
                 "Lost focus in the afternoon",
+                "If I lose focus in the afternoon",
                 "Start the afternoon task in smaller chunks"
         );
         given(dailyReflectionRepository.existsByUserIdAndReflectionDate(userId, reflectionDate)).willReturn(false);
@@ -86,7 +87,8 @@ class CreateDailyReflectionServiceTest {
                 reflectionDate,
                 "One win",
                 "One breakdown",
-                "Next action"
+                "If condition",
+                "Then action"
         );
         given(dailyReflectionRepository.existsByUserIdAndReflectionDate(userId, reflectionDate)).willReturn(true);
 
@@ -102,7 +104,8 @@ class CreateDailyReflectionServiceTest {
                 reflectionDate,
                 "One win",
                 "One breakdown",
-                "Next action"
+                "If condition",
+                "Then action"
         );
         given(dailyReflectionRepository.existsByUserIdAndReflectionDate(userId, reflectionDate)).willReturn(false);
         given(dailyReflectionRepository.saveAndFlush(any()))
@@ -120,7 +123,8 @@ class CreateDailyReflectionServiceTest {
                 reflectionDate,
                 "One win",
                 "One breakdown",
-                "Next action"
+                "If condition",
+                "Then action"
         );
         given(dailyReflectionRepository.existsByUserIdAndReflectionDate(userId, reflectionDate)).willReturn(false);
         given(dailyReflectionRepository.saveAndFlush(any()))
@@ -138,7 +142,8 @@ class CreateDailyReflectionServiceTest {
                 reflectionDate,
                 " ",
                 "One breakdown",
-                "Next action"
+                "If condition",
+                "Then action"
         );
         given(dailyReflectionRepository.existsByUserIdAndReflectionDate(userId, reflectionDate)).willReturn(false);
 

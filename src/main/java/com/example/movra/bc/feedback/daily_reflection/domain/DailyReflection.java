@@ -30,7 +30,8 @@ public class DailyReflection {
 
     private static final int WHAT_WENT_WELL_MAX_LENGTH = 500;
     private static final int WHAT_BROKE_DOWN_MAX_LENGTH = 1000;
-    private static final int NEXT_ACTION_MAX_LENGTH = 500;
+    private static final int IF_CONDITION_MAX_LENGTH = 500;
+    private static final int THEN_ACTION_MAX_LENGTH = 500;
 
     @EmbeddedId
     @AttributeOverride(name = "id", column = @Column(name = "daily_reflection_id"))
@@ -49,17 +50,21 @@ public class DailyReflection {
     @Column(name = "what_broke_down", nullable = false, length = WHAT_BROKE_DOWN_MAX_LENGTH)
     private String whatBrokeDown;
 
-    @Column(name = "next_action", nullable = false, length = NEXT_ACTION_MAX_LENGTH)
-    private String nextAction;
+    @Column(name = "if_condition", nullable = false, length = IF_CONDITION_MAX_LENGTH)
+    private String ifCondition;
+
+    @Column(name = "then_action", nullable = false, length = THEN_ACTION_MAX_LENGTH)
+    private String thenAction;
 
     public static DailyReflection create(
             UserId userId,
             LocalDate reflectionDate,
             String whatWentWell,
             String whatBrokeDown,
-            String nextAction
+            String ifCondition,
+            String thenAction
     ) {
-        validate(userId, reflectionDate, whatWentWell, whatBrokeDown, nextAction);
+        validate(userId, reflectionDate, whatWentWell, whatBrokeDown, ifCondition, thenAction);
 
         return DailyReflection.builder()
                 .id(DailyReflectionId.newId())
@@ -67,18 +72,21 @@ public class DailyReflection {
                 .reflectionDate(reflectionDate)
                 .whatWentWell(whatWentWell)
                 .whatBrokeDown(whatBrokeDown)
-                .nextAction(nextAction)
+                .ifCondition(ifCondition)
+                .thenAction(thenAction)
                 .build();
     }
 
-    public void update(String whatWentWell, String whatBrokeDown, String nextAction) {
+    public void update(String whatWentWell, String whatBrokeDown, String ifCondition, String thenAction) {
         validateText(whatWentWell, WHAT_WENT_WELL_MAX_LENGTH);
         validateText(whatBrokeDown, WHAT_BROKE_DOWN_MAX_LENGTH);
-        validateText(nextAction, NEXT_ACTION_MAX_LENGTH);
+        validateText(ifCondition, IF_CONDITION_MAX_LENGTH);
+        validateText(thenAction, THEN_ACTION_MAX_LENGTH);
 
         this.whatWentWell = whatWentWell;
         this.whatBrokeDown = whatBrokeDown;
-        this.nextAction = nextAction;
+        this.ifCondition = ifCondition;
+        this.thenAction = thenAction;
     }
 
     private static void validate(
@@ -86,7 +94,8 @@ public class DailyReflection {
             LocalDate reflectionDate,
             String whatWentWell,
             String whatBrokeDown,
-            String nextAction
+            String ifCondition,
+            String thenAction
     ) {
         if (userId == null || reflectionDate == null) {
             throw new InvalidDailyReflectionException();
@@ -94,7 +103,8 @@ public class DailyReflection {
 
         validateText(whatWentWell, WHAT_WENT_WELL_MAX_LENGTH);
         validateText(whatBrokeDown, WHAT_BROKE_DOWN_MAX_LENGTH);
-        validateText(nextAction, NEXT_ACTION_MAX_LENGTH);
+        validateText(ifCondition, IF_CONDITION_MAX_LENGTH);
+        validateText(thenAction, THEN_ACTION_MAX_LENGTH);
     }
 
     private static void validateText(String value, int maxLength) {

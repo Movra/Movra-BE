@@ -54,7 +54,8 @@ class QueryDailyReflectionServiceTest {
                 reflectionDate,
                 "시작은 빨랐다",
                 "오후에 집중이 흔들렸다",
-                "내일은 첫 작업을 10분 단위로 쪼갠다"
+                "오후에 또 집중이 흔들리면",
+                "첫 작업을 10분 단위로 쪼갠다"
         );
         given(dailyReflectionRepository.findByUserIdAndReflectionDate(userId, reflectionDate))
                 .willReturn(Optional.of(dailyReflection));
