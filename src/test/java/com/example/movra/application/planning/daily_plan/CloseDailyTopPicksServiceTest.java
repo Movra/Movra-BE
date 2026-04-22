@@ -137,8 +137,8 @@ class CloseDailyTopPicksServiceTest {
         var topPickDone = dailyPlan.addTask("Top Pick Done");
         var topPickPending = dailyPlan.addTask("Top Pick Pending");
         dailyPlan.addTask("General Task");
-        dailyPlan.markAsTopPicked(topPickDone.getTaskId(), 30, "Done memo");
-        dailyPlan.markAsTopPicked(topPickPending.getTaskId(), 45, "Pending memo");
+        dailyPlan.markAsTopPicked(topPickDone.getTaskId(), 30, "Done memo", DailyPlan.DEFAULT_MAX_TOP_PICKS);
+        dailyPlan.markAsTopPicked(topPickPending.getTaskId(), 45, "Pending memo", DailyPlan.DEFAULT_MAX_TOP_PICKS);
         dailyPlan.completeTask(topPickDone.getTaskId());
         return dailyPlan;
     }

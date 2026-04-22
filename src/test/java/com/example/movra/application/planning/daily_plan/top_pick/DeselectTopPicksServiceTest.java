@@ -50,7 +50,7 @@ class DeselectTopPicksServiceTest {
     private DailyPlan createDailyPlanWithTopPick() {
         DailyPlan dailyPlan = DailyPlan.create(userId, LocalDate.of(2026, 3, 17));
         dailyPlan.addTask("Top Pick된 할 일");
-        dailyPlan.markAsTopPicked(dailyPlan.getTasks().get(0).getTaskId(), 30, "메모");
+        dailyPlan.markAsTopPicked(dailyPlan.getTasks().get(0).getTaskId(), 30, "메모", DailyPlan.DEFAULT_MAX_TOP_PICKS);
         return dailyPlan;
     }
 

@@ -5,6 +5,7 @@ import com.example.movra.bc.study_room.helper.StudyRoomReader;
 import com.example.movra.bc.study_room.participant.application.service.StartFocusService;
 import com.example.movra.bc.study_room.participant.domain.Participant;
 import com.example.movra.bc.study_room.participant.domain.exception.AlreadyFocusingException;
+import com.example.movra.bc.study_room.participant.domain.exception.ParticipantAlreadyEndedException;
 import com.example.movra.bc.study_room.participant.domain.type.SessionMode;
 import com.example.movra.bc.study_room.room.domain.vo.RoomId;
 import com.example.movra.sharedkernel.user.AuthenticatedUser;
@@ -58,6 +59,23 @@ class StartFocusServiceTest {
     }
 
     @Test
+    @DisplayName("휴식 중일 때 집중 시작 성공")
+    void start_fromRest_success() {
+        // given
+        givenCurrentUser();
+        Participant participant = Participant.enter(userId, roomId);
+        participant.startFocus();
+        participant.takeBreak();
+        given(studyRoomReader.getParticipant(userId, roomId)).willReturn(participant);
+
+        // when
+        startFocusService.start(roomId.id());
+
+        // then
+        assertThat(participant.getSessionMode()).isEqualTo(SessionMode.FOCUS);
+    }
+
+    @Test
     @DisplayName("이미 집중 중일 때 집중 시작 시 AlreadyFocusingException 발생")
     void start_alreadyFocusing_throwsException() {
         // given
@@ -69,5 +87,19 @@ class StartFocusServiceTest {
         // when & then
         assertThatThrownBy(() -> startFocusService.start(roomId.id()))
                 .isInstanceOf(AlreadyFocusingException.class);
+    }
+
+    @Test
+    @DisplayName("퇴장 완료 상태에서 집중 시작 시 ParticipantAlreadyEndedException 발생")
+    void start_ended_throwsException() {
+        // given
+        givenCurrentUser();
+        Participant participant = Participant.enter(userId, roomId);
+        participant.leaveAndRecordTime();
+        given(studyRoomReader.getParticipant(userId, roomId)).willReturn(participant);
+
+        // when & then
+        assertThatThrownBy(() -> startFocusService.start(roomId.id()))
+                .isInstanceOf(ParticipantAlreadyEndedException.class);
     }
 }

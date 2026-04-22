@@ -48,7 +48,7 @@ class DailyTopPicksSummarySaverIntegrationTest {
 
         DailyPlan dailyPlan = DailyPlan.create(userId, date);
         var task = dailyPlan.addTask("Top Pick Task");
-        dailyPlan.markAsTopPicked(task.getTaskId(), 30, "Memo");
+        dailyPlan.markAsTopPicked(task.getTaskId(), 30, "Memo", DailyPlan.DEFAULT_MAX_TOP_PICKS);
 
         DailyTopPicksSummary first = DailyTopPicksSummary.close(dailyPlan, clock);
         DailyTopPicksSummary duplicate = DailyTopPicksSummary.close(dailyPlan, clock);
@@ -67,7 +67,7 @@ class DailyTopPicksSummarySaverIntegrationTest {
 
         DailyPlan dailyPlan = DailyPlan.create(userId, date);
         var task = dailyPlan.addTask("Top Pick Task");
-        dailyPlan.markAsTopPicked(task.getTaskId(), 30, "Memo");
+        dailyPlan.markAsTopPicked(task.getTaskId(), 30, "Memo", DailyPlan.DEFAULT_MAX_TOP_PICKS);
 
         DailyTopPicksSummary first = DailyTopPicksSummary.close(dailyPlan, clock);
         DailyTopPicksSummary conflicting = DailyTopPicksSummary.close(dailyPlan, clock);

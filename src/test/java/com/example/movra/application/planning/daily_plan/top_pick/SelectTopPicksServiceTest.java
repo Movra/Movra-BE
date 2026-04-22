@@ -1,6 +1,12 @@
 package com.example.movra.application.planning.daily_plan.top_pick;
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
+import com.example.movra.bc.personalization.behavior_profile.domain.BehaviorProfile;
+import com.example.movra.bc.personalization.behavior_profile.domain.repository.BehaviorProfileRepository;
+import com.example.movra.bc.personalization.behavior_profile.domain.type.CoachingMode;
+import com.example.movra.bc.personalization.behavior_profile.domain.type.ExecutionDifficulty;
+import com.example.movra.bc.personalization.behavior_profile.domain.type.RecoveryStyle;
+import com.example.movra.bc.personalization.behavior_profile.domain.type.SocialPreference;
 import com.example.movra.bc.planning.daily_plan.application.exception.DailyPlanNotFoundException;
 import com.example.movra.bc.planning.daily_plan.application.service.task.top_pick.SelectTopPicksService;
 import com.example.movra.bc.planning.daily_plan.application.service.task.top_pick.dto.request.TopPicksRequest;
@@ -41,6 +47,9 @@ class SelectTopPicksServiceTest {
     private DailyPlanRepository dailyPlanRepository;
 
     @Mock
+    private BehaviorProfileRepository behaviorProfileRepository;
+
+    @Mock
     private CurrentUserQuery currentUserQuery;
 
     private final UserId userId = UserId.newId();
@@ -50,6 +59,8 @@ class SelectTopPicksServiceTest {
         lenient().when(currentUserQuery.currentUser()).thenReturn(
                 AuthenticatedUser.builder().userId(userId).build()
         );
+        lenient().when(behaviorProfileRepository.findByUserId(userId))
+                .thenReturn(Optional.empty());
     }
 
     private DailyPlan createDailyPlanWithTask() {
@@ -81,7 +92,7 @@ class SelectTopPicksServiceTest {
             dailyPlan.addTask("Task " + i);
         }
         for (int i = 0; i < 3; i++) {
-            dailyPlan.markAsTopPicked(dailyPlan.getTasks().get(i).getTaskId(), 30, "Memo");
+            dailyPlan.markAsTopPicked(dailyPlan.getTasks().get(i).getTaskId(), 30, "Memo", DailyPlan.DEFAULT_MAX_TOP_PICKS);
         }
         UUID dailyPlanId = dailyPlan.getDailyPlanId().id();
         UUID fourthTaskId = dailyPlan.getTasks().get(3).getTaskId().id();
@@ -170,5 +181,52 @@ class SelectTopPicksServiceTest {
                 dailyPlanId,
                 UUID.randomUUID()
         )).isInstanceOf(TaskNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("LOW difficulty limits top picks to 1")
+    void select_lowDifficulty_limitedTo1() {
+        DailyPlan dailyPlan = DailyPlan.create(userId, LocalDate.of(2026, 3, 17));
+        dailyPlan.addTask("Task 0");
+        dailyPlan.addTask("Task 1");
+        dailyPlan.markAsTopPicked(dailyPlan.getTasks().get(0).getTaskId(), 30, "Memo", 1);
+        UUID dailyPlanId = dailyPlan.getDailyPlanId().id();
+        UUID secondTaskId = dailyPlan.getTasks().get(1).getTaskId().id();
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId))
+                .willReturn(Optional.of(dailyPlan));
+        BehaviorProfile profile = BehaviorProfile.create(
+                userId, ExecutionDifficulty.LOW, SocialPreference.MEDIUM,
+                RecoveryStyle.QUICK_RESTART, 9, 18, CoachingMode.NEUTRAL
+        );
+        given(behaviorProfileRepository.findByUserId(userId))
+                .willReturn(Optional.of(profile));
+
+        assertThatThrownBy(() -> selectTopPicksService.select(
+                new TopPicksRequest(30, "Memo"),
+                dailyPlanId,
+                secondTaskId
+        )).isInstanceOf(TopPickLimitExceededException.class);
+    }
+
+    @Test
+    @DisplayName("No behavior profile uses default limit of 3")
+    void select_noBehaviorProfile_defaultLimit3() {
+        DailyPlan dailyPlan = DailyPlan.create(userId, LocalDate.of(2026, 3, 17));
+        for (int i = 0; i < 4; i++) {
+            dailyPlan.addTask("Task " + i);
+        }
+        for (int i = 0; i < 2; i++) {
+            dailyPlan.markAsTopPicked(dailyPlan.getTasks().get(i).getTaskId(), 30, "Memo", DailyPlan.DEFAULT_MAX_TOP_PICKS);
+        }
+        UUID dailyPlanId = dailyPlan.getDailyPlanId().id();
+        UUID thirdTaskId = dailyPlan.getTasks().get(2).getTaskId().id();
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(DailyPlanId.of(dailyPlanId), userId))
+                .willReturn(Optional.of(dailyPlan));
+        given(behaviorProfileRepository.findByUserId(userId))
+                .willReturn(Optional.empty());
+
+        selectTopPicksService.select(new TopPicksRequest(30, "Memo"), dailyPlanId, thirdTaskId);
+
+        assertThat(dailyPlan.getTasks().get(2).isTopPicked()).isTrue();
     }
 }

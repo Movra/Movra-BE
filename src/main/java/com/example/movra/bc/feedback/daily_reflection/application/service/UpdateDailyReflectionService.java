@@ -30,7 +30,8 @@ public class UpdateDailyReflectionService {
         dailyReflection.update(
                 request.whatWentWell(),
                 request.whatBrokeDown(),
-                request.nextAction()
+                request.ifCondition(),
+                request.thenAction()
         );
 
         dailyReflectionRepository.save(dailyReflection);

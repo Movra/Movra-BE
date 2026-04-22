@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -54,7 +55,8 @@ class QueryDailyReflectionServiceTest {
                 reflectionDate,
                 "시작은 빨랐다",
                 "오후에 집중이 흔들렸다",
-                "내일은 첫 작업을 10분 단위로 쪼갠다"
+                "오후에 또 집중이 흔들리면",
+                "첫 작업을 10분 단위로 쪼갠다"
         );
         given(dailyReflectionRepository.findByUserIdAndReflectionDate(userId, reflectionDate))
                 .willReturn(Optional.of(dailyReflection));
@@ -78,5 +80,29 @@ class QueryDailyReflectionServiceTest {
         // when & then
         assertThatThrownBy(() -> queryDailyReflectionService.query(reflectionDate))
                 .isInstanceOf(DailyReflectionNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("legacy next_action data remains readable during migration")
+    void query_legacyNextAction_returnsFallbackFields() {
+        givenCurrentUser();
+        DailyReflection dailyReflection = DailyReflection.create(
+                userId,
+                reflectionDate,
+                "Started one important task",
+                "Lost focus in the afternoon",
+                "temporary if condition",
+                "temporary then action"
+        );
+        ReflectionTestUtils.setField(dailyReflection, "ifCondition", null);
+        ReflectionTestUtils.setField(dailyReflection, "thenAction", null);
+        ReflectionTestUtils.setField(dailyReflection, "legacyNextAction", "Start the afternoon task in smaller chunks");
+        given(dailyReflectionRepository.findByUserIdAndReflectionDate(userId, reflectionDate))
+                .willReturn(Optional.of(dailyReflection));
+
+        DailyReflectionResponse response = queryDailyReflectionService.query(reflectionDate);
+
+        assertThat(response.ifCondition()).isEmpty();
+        assertThat(response.thenAction()).isEqualTo("Start the afternoon task in smaller chunks");
     }
 }

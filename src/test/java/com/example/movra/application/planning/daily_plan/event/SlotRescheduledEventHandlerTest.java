@@ -73,7 +73,7 @@ class SlotRescheduledEventHandlerTest {
     private DailyPlan createDailyPlanWithTopPick() {
         DailyPlan dailyPlan = DailyPlan.create(UserId.newId(), LocalDate.of(2026, 4, 10));
         Task task = dailyPlan.addTask("집중 작업");
-        dailyPlan.markAsTopPicked(task.getTaskId(), 30, "중요 작업");
+        dailyPlan.markAsTopPicked(task.getTaskId(), 30, "중요 작업", DailyPlan.DEFAULT_MAX_TOP_PICKS);
         return dailyPlan;
     }
 }

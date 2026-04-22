@@ -5,6 +5,7 @@ import com.example.movra.bc.study_room.helper.StudyRoomReader;
 import com.example.movra.bc.study_room.participant.application.service.TakeBreakService;
 import com.example.movra.bc.study_room.participant.domain.Participant;
 import com.example.movra.bc.study_room.participant.domain.exception.NotFocusingException;
+import com.example.movra.bc.study_room.participant.domain.exception.ParticipantAlreadyEndedException;
 import com.example.movra.bc.study_room.participant.domain.type.SessionMode;
 import com.example.movra.bc.study_room.room.domain.vo.RoomId;
 import com.example.movra.sharedkernel.user.AuthenticatedUser;
@@ -59,15 +60,46 @@ class TakeBreakServiceTest {
     }
 
     @Test
-    @DisplayName("집중 중이 아닐 때 휴식 전환 시 NotFocusingException 발생")
-    void takeBreak_notFocusing_throwsException() {
+    @DisplayName("대기 중일 때 휴식 전환 성공")
+    void takeBreak_waiting_success() {
         // given
         givenCurrentUser();
         Participant participant = Participant.enter(userId, roomId);
         given(studyRoomReader.getParticipant(userId, roomId)).willReturn(participant);
 
+        // when
+        takeBreakService.takeBreak(roomId.id());
+
+        // then
+        assertThat(participant.getSessionMode()).isEqualTo(SessionMode.REST);
+    }
+
+    @Test
+    @DisplayName("이미 휴식 중일 때 휴식 전환 시 NotFocusingException 발생")
+    void takeBreak_alreadyResting_throwsException() {
+        // given
+        givenCurrentUser();
+        Participant participant = Participant.enter(userId, roomId);
+        participant.startFocus();
+        participant.takeBreak();
+        given(studyRoomReader.getParticipant(userId, roomId)).willReturn(participant);
+
         // when & then
         assertThatThrownBy(() -> takeBreakService.takeBreak(roomId.id()))
                 .isInstanceOf(NotFocusingException.class);
+    }
+
+    @Test
+    @DisplayName("퇴장 완료 상태에서 휴식 전환 시 ParticipantAlreadyEndedException 발생")
+    void takeBreak_ended_throwsException() {
+        // given
+        givenCurrentUser();
+        Participant participant = Participant.enter(userId, roomId);
+        participant.leaveAndRecordTime();
+        given(studyRoomReader.getParticipant(userId, roomId)).willReturn(participant);
+
+        // when & then
+        assertThatThrownBy(() -> takeBreakService.takeBreak(roomId.id()))
+                .isInstanceOf(ParticipantAlreadyEndedException.class);
     }
 }

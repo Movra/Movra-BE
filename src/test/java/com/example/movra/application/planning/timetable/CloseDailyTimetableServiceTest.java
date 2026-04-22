@@ -145,7 +145,7 @@ class CloseDailyTimetableServiceTest {
     private DailyPlan createDailyPlan() {
         DailyPlan dailyPlan = DailyPlan.create(userId, date);
         var topPickTask = dailyPlan.addTask("Top Pick Task");
-        dailyPlan.markAsTopPicked(topPickTask.getTaskId(), 60, "Deep work");
+        dailyPlan.markAsTopPicked(topPickTask.getTaskId(), 60, "Deep work", DailyPlan.DEFAULT_MAX_TOP_PICKS);
         dailyPlan.completeTask(topPickTask.getTaskId());
         dailyPlan.addTask("General Task");
         return dailyPlan;

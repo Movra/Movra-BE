@@ -30,7 +30,7 @@ import java.util.List;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class DailyPlan extends AbstractAggregateRoot {
 
-    private static final int MAX_TOP_PICKS = 3;
+    public static final int DEFAULT_MAX_TOP_PICKS = 3;
 
     @EmbeddedId
     @AttributeOverride(name = "id", column = @Column(name = "daily_plan_id"))
@@ -89,7 +89,7 @@ public class DailyPlan extends AbstractAggregateRoot {
         findTask(taskId).unComplete();
     }
 
-    public void markAsTopPicked(TaskId taskId, int estimatedMinutes, String memo) {
+    public void markAsTopPicked(TaskId taskId, int estimatedMinutes, String memo, int maxTopPicks) {
         Task task = findTask(taskId);
 
         if (task.isTopPicked()) {
@@ -98,7 +98,7 @@ public class DailyPlan extends AbstractAggregateRoot {
 
         long count = tasks.stream().filter(Task::isTopPicked).count();
 
-        if (count >= MAX_TOP_PICKS) {
+        if (count >= maxTopPicks) {
             throw new TopPickLimitExceededException();
         }
 
