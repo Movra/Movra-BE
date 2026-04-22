@@ -158,4 +158,32 @@ class UpdateBehaviorProfileServiceTest {
                 )
         )).isInstanceOf(InvalidBehaviorProfileException.class);
     }
+
+    @Test
+    @DisplayName("update throws when preferred focus hour is null")
+    void update_nullHour_throwsException() {
+        givenCurrentUser();
+        BehaviorProfile behaviorProfile = BehaviorProfile.create(
+                userId,
+                ExecutionDifficulty.MEDIUM,
+                SocialPreference.MEDIUM,
+                RecoveryStyle.NEEDS_REFLECTION,
+                9,
+                18,
+                CoachingMode.NEUTRAL
+        );
+        given(behaviorProfileRepository.findByUserId(userId))
+                .willReturn(Optional.of(behaviorProfile));
+
+        assertThatThrownBy(() -> updateBehaviorProfileService.update(
+                new UpdateBehaviorProfileRequest(
+                        ExecutionDifficulty.MEDIUM,
+                        SocialPreference.MEDIUM,
+                        RecoveryStyle.NEEDS_REFLECTION,
+                        9,
+                        null,
+                        CoachingMode.NEUTRAL
+                )
+        )).isInstanceOf(InvalidBehaviorProfileException.class);
+    }
 }

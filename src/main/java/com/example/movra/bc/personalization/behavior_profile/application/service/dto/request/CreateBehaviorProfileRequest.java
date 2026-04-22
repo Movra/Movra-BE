@@ -18,11 +18,13 @@ public record CreateBehaviorProfileRequest(
         @NotNull
         RecoveryStyle recoveryStyle,
 
+        @NotNull
         @Min(0) @Max(23)
-        int preferredFocusStartHour,
+        Integer preferredFocusStartHour,
 
+        @NotNull
         @Min(0) @Max(23)
-        int preferredFocusEndHour,
+        Integer preferredFocusEndHour,
 
         @NotNull
         CoachingMode coachingMode

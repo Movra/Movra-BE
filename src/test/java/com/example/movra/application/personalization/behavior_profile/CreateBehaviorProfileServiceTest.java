@@ -154,4 +154,22 @@ class CreateBehaviorProfileServiceTest {
         assertThatThrownBy(() -> createBehaviorProfileService.create(request))
                 .isInstanceOf(InvalidBehaviorProfileException.class);
     }
+
+    @Test
+    @DisplayName("create throws when preferred focus hour is null")
+    void create_nullHour_throwsException() {
+        givenCurrentUser();
+        given(behaviorProfileRepository.existsByUserId(userId)).willReturn(false);
+        CreateBehaviorProfileRequest request = new CreateBehaviorProfileRequest(
+                ExecutionDifficulty.MEDIUM,
+                SocialPreference.MEDIUM,
+                RecoveryStyle.NEEDS_REFLECTION,
+                null,
+                18,
+                CoachingMode.NEUTRAL
+        );
+
+        assertThatThrownBy(() -> createBehaviorProfileService.create(request))
+                .isInstanceOf(InvalidBehaviorProfileException.class);
+    }
 }

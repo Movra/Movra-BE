@@ -71,8 +71,8 @@ public class BehaviorProfile extends AbstractAggregateRoot {
             ExecutionDifficulty executionDifficulty,
             SocialPreference socialPreference,
             RecoveryStyle recoveryStyle,
-            int preferredFocusStartHour,
-            int preferredFocusEndHour,
+            Integer preferredFocusStartHour,
+            Integer preferredFocusEndHour,
             CoachingMode coachingMode
     ) {
         validate(userId, executionDifficulty, socialPreference, recoveryStyle,
@@ -94,8 +94,8 @@ public class BehaviorProfile extends AbstractAggregateRoot {
             ExecutionDifficulty executionDifficulty,
             SocialPreference socialPreference,
             RecoveryStyle recoveryStyle,
-            int preferredFocusStartHour,
-            int preferredFocusEndHour,
+            Integer preferredFocusStartHour,
+            Integer preferredFocusEndHour,
             CoachingMode coachingMode
     ) {
         validateFields(executionDifficulty, socialPreference, recoveryStyle,
@@ -114,8 +114,8 @@ public class BehaviorProfile extends AbstractAggregateRoot {
             ExecutionDifficulty executionDifficulty,
             SocialPreference socialPreference,
             RecoveryStyle recoveryStyle,
-            int preferredFocusStartHour,
-            int preferredFocusEndHour,
+            Integer preferredFocusStartHour,
+            Integer preferredFocusEndHour,
             CoachingMode coachingMode
     ) {
         if (userId == null) {
@@ -130,12 +130,13 @@ public class BehaviorProfile extends AbstractAggregateRoot {
             ExecutionDifficulty executionDifficulty,
             SocialPreference socialPreference,
             RecoveryStyle recoveryStyle,
-            int preferredFocusStartHour,
-            int preferredFocusEndHour,
+            Integer preferredFocusStartHour,
+            Integer preferredFocusEndHour,
             CoachingMode coachingMode
     ) {
         if (executionDifficulty == null || socialPreference == null
-                || recoveryStyle == null || coachingMode == null) {
+                || recoveryStyle == null || coachingMode == null
+                || preferredFocusStartHour == null || preferredFocusEndHour == null) {
             throw new InvalidBehaviorProfileException();
         }
 
