@@ -8,6 +8,7 @@ import com.example.movra.bc.personalization.behavior_profile.domain.BehaviorProf
 import com.example.movra.bc.personalization.behavior_profile.domain.exception.InvalidBehaviorProfileException;
 import com.example.movra.bc.personalization.behavior_profile.domain.repository.BehaviorProfileRepository;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.CoachingMode;
+import com.example.movra.bc.personalization.behavior_profile.domain.type.ExamTrack;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.ExecutionDifficulty;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.RecoveryStyle;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.SocialPreference;
@@ -58,6 +59,7 @@ class UpdateBehaviorProfileServiceTest {
                 ExecutionDifficulty.LOW,
                 SocialPreference.LOW,
                 RecoveryStyle.QUICK_RESTART,
+                ExamTrack.NAESIN,
                 8,
                 17,
                 CoachingMode.GENTLE
@@ -66,6 +68,7 @@ class UpdateBehaviorProfileServiceTest {
                 ExecutionDifficulty.HIGH,
                 SocialPreference.HIGH,
                 RecoveryStyle.SLOW_REBUILDER,
+                ExamTrack.BOTH,
                 10,
                 22,
                 CoachingMode.STRICT
@@ -78,6 +81,7 @@ class UpdateBehaviorProfileServiceTest {
         assertThat(behaviorProfile.getExecutionDifficulty()).isEqualTo(ExecutionDifficulty.HIGH);
         assertThat(behaviorProfile.getSocialPreference()).isEqualTo(SocialPreference.HIGH);
         assertThat(behaviorProfile.getRecoveryStyle()).isEqualTo(RecoveryStyle.SLOW_REBUILDER);
+        assertThat(behaviorProfile.getExamTrack()).isEqualTo(ExamTrack.BOTH);
         assertThat(behaviorProfile.getPreferredFocusStartHour()).isEqualTo(10);
         assertThat(behaviorProfile.getPreferredFocusEndHour()).isEqualTo(22);
         assertThat(behaviorProfile.getCoachingMode()).isEqualTo(CoachingMode.STRICT);
@@ -96,6 +100,7 @@ class UpdateBehaviorProfileServiceTest {
                         ExecutionDifficulty.MEDIUM,
                         SocialPreference.MEDIUM,
                         RecoveryStyle.NEEDS_REFLECTION,
+                        ExamTrack.NAESIN,
                         9,
                         18,
                         CoachingMode.NEUTRAL
@@ -112,6 +117,7 @@ class UpdateBehaviorProfileServiceTest {
                 ExecutionDifficulty.MEDIUM,
                 SocialPreference.MEDIUM,
                 RecoveryStyle.NEEDS_REFLECTION,
+                ExamTrack.NAESIN,
                 9,
                 18,
                 CoachingMode.NEUTRAL
@@ -124,6 +130,7 @@ class UpdateBehaviorProfileServiceTest {
                         null,
                         SocialPreference.MEDIUM,
                         RecoveryStyle.NEEDS_REFLECTION,
+                        ExamTrack.NAESIN,
                         9,
                         18,
                         CoachingMode.NEUTRAL
@@ -140,6 +147,7 @@ class UpdateBehaviorProfileServiceTest {
                 ExecutionDifficulty.MEDIUM,
                 SocialPreference.MEDIUM,
                 RecoveryStyle.NEEDS_REFLECTION,
+                ExamTrack.NAESIN,
                 9,
                 18,
                 CoachingMode.NEUTRAL
@@ -152,6 +160,7 @@ class UpdateBehaviorProfileServiceTest {
                         ExecutionDifficulty.MEDIUM,
                         SocialPreference.MEDIUM,
                         RecoveryStyle.NEEDS_REFLECTION,
+                        ExamTrack.NAESIN,
                         9,
                         24,
                         CoachingMode.NEUTRAL
@@ -168,6 +177,7 @@ class UpdateBehaviorProfileServiceTest {
                 ExecutionDifficulty.MEDIUM,
                 SocialPreference.MEDIUM,
                 RecoveryStyle.NEEDS_REFLECTION,
+                ExamTrack.NAESIN,
                 9,
                 18,
                 CoachingMode.NEUTRAL
@@ -180,8 +190,39 @@ class UpdateBehaviorProfileServiceTest {
                         ExecutionDifficulty.MEDIUM,
                         SocialPreference.MEDIUM,
                         RecoveryStyle.NEEDS_REFLECTION,
+                        ExamTrack.NAESIN,
                         9,
                         null,
+                        CoachingMode.NEUTRAL
+                )
+        )).isInstanceOf(InvalidBehaviorProfileException.class);
+    }
+
+    @Test
+    @DisplayName("update throws when exam track is null")
+    void update_nullExamTrack_throwsException() {
+        givenCurrentUser();
+        BehaviorProfile behaviorProfile = BehaviorProfile.create(
+                userId,
+                ExecutionDifficulty.MEDIUM,
+                SocialPreference.MEDIUM,
+                RecoveryStyle.NEEDS_REFLECTION,
+                ExamTrack.NAESIN,
+                9,
+                18,
+                CoachingMode.NEUTRAL
+        );
+        given(behaviorProfileRepository.findByUserId(userId))
+                .willReturn(Optional.of(behaviorProfile));
+
+        assertThatThrownBy(() -> updateBehaviorProfileService.update(
+                new UpdateBehaviorProfileRequest(
+                        ExecutionDifficulty.MEDIUM,
+                        SocialPreference.MEDIUM,
+                        RecoveryStyle.NEEDS_REFLECTION,
+                        null,
+                        9,
+                        18,
                         CoachingMode.NEUTRAL
                 )
         )).isInstanceOf(InvalidBehaviorProfileException.class);

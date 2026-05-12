@@ -1,12 +1,16 @@
 package com.example.movra.application.personalization.behavior_profile;
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
+import com.example.movra.bc.analytics.activation_event.application.service.AnalyticsEventRecorder;
+import com.example.movra.bc.analytics.activation_event.domain.type.AnalyticsEventType;
 import com.example.movra.bc.personalization.behavior_profile.application.exception.BehaviorProfileAlreadyExistsException;
 import com.example.movra.bc.personalization.behavior_profile.application.service.CreateBehaviorProfileService;
 import com.example.movra.bc.personalization.behavior_profile.application.service.dto.request.CreateBehaviorProfileRequest;
+import com.example.movra.bc.personalization.behavior_profile.domain.BehaviorProfile;
 import com.example.movra.bc.personalization.behavior_profile.domain.exception.InvalidBehaviorProfileException;
 import com.example.movra.bc.personalization.behavior_profile.domain.repository.BehaviorProfileRepository;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.CoachingMode;
+import com.example.movra.bc.personalization.behavior_profile.domain.type.ExamTrack;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.ExecutionDifficulty;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.RecoveryStyle;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.SocialPreference;
@@ -24,7 +28,9 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.lenient;
@@ -40,6 +46,9 @@ class CreateBehaviorProfileServiceTest {
 
     @Mock
     private CurrentUserQuery currentUserQuery;
+
+    @Mock
+    private AnalyticsEventRecorder analyticsEventRecorder;
 
     private final UserId userId = UserId.newId();
 
@@ -68,6 +77,7 @@ class CreateBehaviorProfileServiceTest {
                 ExecutionDifficulty.MEDIUM,
                 SocialPreference.MEDIUM,
                 RecoveryStyle.NEEDS_REFLECTION,
+                ExamTrack.NAESIN,
                 9,
                 18,
                 CoachingMode.NEUTRAL
@@ -79,10 +89,21 @@ class CreateBehaviorProfileServiceTest {
     void create_success() {
         givenCurrentUser();
         given(behaviorProfileRepository.existsByUserId(userId)).willReturn(false);
+        given(behaviorProfileRepository.saveAndFlush(any()))
+                .willAnswer(invocation -> invocation.getArgument(0, BehaviorProfile.class));
 
         createBehaviorProfileService.create(validRequest());
 
         then(behaviorProfileRepository).should().saveAndFlush(any());
+        then(analyticsEventRecorder).should().recordSafely(
+                eq(userId),
+                eq(AnalyticsEventType.BEHAVIOR_PROFILE_CREATED),
+                argThat(properties ->
+                        properties.containsKey("behaviorProfileId")
+                                && properties.get("examTrack").equals(ExamTrack.NAESIN.name())
+                                && properties.get("executionDifficulty").equals(ExecutionDifficulty.MEDIUM.name())
+                )
+        );
     }
 
     @Test
@@ -128,6 +149,7 @@ class CreateBehaviorProfileServiceTest {
                 null,
                 SocialPreference.MEDIUM,
                 RecoveryStyle.NEEDS_REFLECTION,
+                ExamTrack.NAESIN,
                 9,
                 18,
                 CoachingMode.NEUTRAL
@@ -146,6 +168,7 @@ class CreateBehaviorProfileServiceTest {
                 ExecutionDifficulty.MEDIUM,
                 SocialPreference.MEDIUM,
                 RecoveryStyle.NEEDS_REFLECTION,
+                ExamTrack.NAESIN,
                 -1,
                 18,
                 CoachingMode.NEUTRAL
@@ -164,7 +187,27 @@ class CreateBehaviorProfileServiceTest {
                 ExecutionDifficulty.MEDIUM,
                 SocialPreference.MEDIUM,
                 RecoveryStyle.NEEDS_REFLECTION,
+                ExamTrack.NAESIN,
                 null,
+                18,
+                CoachingMode.NEUTRAL
+        );
+
+        assertThatThrownBy(() -> createBehaviorProfileService.create(request))
+                .isInstanceOf(InvalidBehaviorProfileException.class);
+    }
+
+    @Test
+    @DisplayName("create throws when exam track is null")
+    void create_nullExamTrack_throwsException() {
+        givenCurrentUser();
+        given(behaviorProfileRepository.existsByUserId(userId)).willReturn(false);
+        CreateBehaviorProfileRequest request = new CreateBehaviorProfileRequest(
+                ExecutionDifficulty.MEDIUM,
+                SocialPreference.MEDIUM,
+                RecoveryStyle.NEEDS_REFLECTION,
+                null,
+                9,
                 18,
                 CoachingMode.NEUTRAL
         );
