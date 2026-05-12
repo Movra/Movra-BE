@@ -34,6 +34,7 @@ public enum ErrorCode {
     DAILY_PLAN_NOT_FOUND(HttpStatus.NOT_FOUND, "일일 계획을 찾을 수 없습니다."),
     FUTURE_VISION_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 미래 비전입니다."),
     FUTURE_VISION_NOT_FOUND(HttpStatus.NOT_FOUND, "미래 비전을 찾을 수 없습니다."),
+    INVALID_FUTURE_VISION(HttpStatus.BAD_REQUEST, "미래 비전 내용이 유효하지 않습니다."),
     FUTURE_VISION_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "미래 비전 생성에 실패했습니다."),
     FUTURE_VISION_UPDATE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "미래 비전 수정에 실패했습니다."),
     TASK_NOT_FOUND(HttpStatus.NOT_FOUND, "작업을 찾을 수 없습니다."),
@@ -52,8 +53,11 @@ public enum ErrorCode {
     INVALID_TOP_PICK_ESTIMATED_MINUTES(HttpStatus.BAD_REQUEST, "상위 선택 예상 시간은 0보다 커야 합니다."),
     INVALID_TOP_PICK_MEMO(HttpStatus.BAD_REQUEST, "상위 선택 메모는 비어 있을 수 없으며 255자 이하여야 합니다."),
     TOP_PICK_DETAIL_NOT_FOUND(HttpStatus.NOT_FOUND, "상위 선택 상세 정보를 찾을 수 없습니다."),
+    EXAM_SCHEDULE_NOT_FOUND(HttpStatus.NOT_FOUND, "시험 일정을 찾을 수 없습니다."),
+    INVALID_EXAM_SCHEDULE(HttpStatus.BAD_REQUEST, "시험 일정 내용이 유효하지 않습니다."),
 
     TINY_WIN_NOT_FOUND(HttpStatus.NOT_FOUND, "작은 성과를 찾을 수 없습니다."),
+    INVALID_TINY_WIN(HttpStatus.BAD_REQUEST, "작은 성과 내용이 유효하지 않습니다."),
     DAILY_REFLECTION_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 일일 회고입니다."),
     DAILY_REFLECTION_NOT_FOUND(HttpStatus.NOT_FOUND, "일일 회고를 찾을 수 없습니다."),
     INVALID_DAILY_REFLECTION(HttpStatus.BAD_REQUEST, "일일 회고 내용이 유효하지 않습니다."),
@@ -62,7 +66,6 @@ public enum ErrorCode {
     PARTICIPANT_NOT_FOUND(HttpStatus.NOT_FOUND, "참여자를 찾을 수 없습니다."),
     NOT_LEADER(HttpStatus.FORBIDDEN, "리더만 이 작업을 수행할 수 있습니다."),
     LEADER_CANNOT_KICK_SELF(HttpStatus.BAD_REQUEST, "리더는 자신을 내보낼 수 없습니다."),
-    PRIVATE_ROOM_REQUIRES_INVITE_CODE(HttpStatus.BAD_REQUEST, "비공개 방은 초대 코드가 필요합니다."),
     INVALID_INVITE_CODE(HttpStatus.BAD_REQUEST, "유효하지 않은 초대 코드입니다."),
 
     ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "방을 찾을 수 없습니다."),
@@ -76,13 +79,18 @@ public enum ErrorCode {
     INVALID_FOCUS_SESSION(HttpStatus.BAD_REQUEST, "유효하지 않은 집중 세션입니다."),
 
     DEVICE_TOKEN_NOT_FOUND(HttpStatus.NOT_FOUND, "디바이스 토큰을 찾을 수 없습니다."),
+    INVALID_NOTIFICATION_PREFERENCE(HttpStatus.BAD_REQUEST, "알림 설정이 유효하지 않습니다."),
+    INVALID_WEB_PUSH_SUBSCRIPTION(HttpStatus.BAD_REQUEST, "웹 푸시 구독 정보가 유효하지 않습니다."),
+    INVALID_ANALYTICS_EVENT(HttpStatus.BAD_REQUEST, "분석 이벤트가 유효하지 않습니다."),
 
     INVITE_CODE_NOT_GENERATED(HttpStatus.BAD_REQUEST, "초대 코드가 생성되지 않았습니다."),
     INVITE_CODE_EXPIRED(HttpStatus.BAD_REQUEST, "초대 코드가 만료되었습니다."),
 
     ACCOUNTABILITY_RELATION_NOT_FOUND(HttpStatus.NOT_FOUND, "감시 관계를 찾을 수 없습니다."),
+    ACCOUNTABILITY_RELATION_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 감시 관계입니다."),
     MONITORING_TARGET_NOT_ALLOWED(HttpStatus.FORBIDDEN, "허용되지 않은 모니터링 대상입니다."),
     NOT_SUBJECT_USER(HttpStatus.FORBIDDEN, "해당 관계의 주체 유저가 아닙니다."),
+    NOT_WATCHER_USER(HttpStatus.FORBIDDEN, "해당 관계의 감시자 유저가 아닙니다."),
     WATCHER_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 감시자가 존재합니다."),
 
     CANNOT_JOIN_OWN_ACCOUNTABILITY_RELATION(HttpStatus.BAD_REQUEST, "자신의 감시 관계에는 참여할 수 없습니다."),
