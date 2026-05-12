@@ -6,17 +6,21 @@ import com.example.movra.bc.account.user.application.user.exception.DuplicateAcc
 import com.example.movra.bc.account.user.application.user.exception.DuplicateUserException;
 import com.example.movra.bc.account.user.application.user.exception.PendingOauthNotFoundException;
 import com.example.movra.bc.account.user.application.user.exception.UserCreationFailedException;
-import com.example.movra.sharedkernel.file.storage.ImageHelper;
 import com.example.movra.bc.account.user.application.user.helper.UserPersister;
 import com.example.movra.bc.account.user.domain.user.User;
 import com.example.movra.bc.account.user.domain.user.repository.UserRepository;
+import com.example.movra.bc.analytics.activation_event.application.service.AnalyticsEventRecorder;
+import com.example.movra.bc.analytics.activation_event.domain.type.AnalyticsEventType;
 import com.example.movra.bc.account.user.infrastructure.user.security.jwt.JwtTokenProvider;
 import com.example.movra.bc.account.user.infrastructure.user.security.oauth.dto.PendingOauth;
 import com.example.movra.bc.account.user.infrastructure.user.security.oauth.pending.PendingOauthStore;
+import com.example.movra.sharedkernel.file.storage.ImageHelper;
 import com.example.movra.sharedkernel.file.storage.type.ImageType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -28,6 +32,7 @@ public class OauthProfileSetupService {
     private final ImageHelper imageHelper;
     private final UserPersister userPersister;
     private final JwtTokenProvider jwtTokenProvider;
+    private final AnalyticsEventRecorder analyticsEventRecorder;
 
     public ProfileSetupResponse setup(String token, OauthProfileSetupRequest oauthProfileSetupRequest){
         PendingOauth pendingOauth = pendingOauthStore.find(token)
@@ -58,6 +63,11 @@ public class OauthProfileSetupService {
 
             jwtTokenProvider.save(user.getId().id().toString(), refreshToken);
             pendingOauthStore.remove(token);
+            analyticsEventRecorder.recordSafely(
+                    user.getId(),
+                    AnalyticsEventType.SIGNUP,
+                    Map.of("source", pendingOauth.oauthProvider().name())
+            );
 
             return ProfileSetupResponse.builder()
                     .accessToken(accessToken)

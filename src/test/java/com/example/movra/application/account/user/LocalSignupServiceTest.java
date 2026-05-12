@@ -6,7 +6,10 @@ import com.example.movra.bc.account.user.application.user.exception.DuplicateAcc
 import com.example.movra.bc.account.user.application.user.exception.DuplicateEmailException;
 import com.example.movra.sharedkernel.file.storage.ImageHelper;
 import com.example.movra.bc.account.user.application.user.helper.UserPersister;
+import com.example.movra.bc.account.user.domain.user.User;
 import com.example.movra.bc.account.user.domain.user.repository.UserRepository;
+import com.example.movra.bc.analytics.activation_event.application.service.AnalyticsEventRecorder;
+import com.example.movra.bc.analytics.activation_event.domain.type.AnalyticsEventType;
 import com.example.movra.sharedkernel.file.storage.type.ImageType;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,7 +19,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
+import java.util.Map;
+
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
@@ -36,6 +42,9 @@ class LocalSignupServiceTest {
     @Mock
     private ImageHelper imageHelper;
 
+    @Mock
+    private AnalyticsEventRecorder analyticsEventRecorder;
+
     private LocalSignupRequest createSignupRequest() {
         return new LocalSignupRequest(
                 "test@example.com",
@@ -54,6 +63,20 @@ class LocalSignupServiceTest {
         given(userRepository.existsByAccountId(request.accountId())).willReturn(false);
         given(userRepository.existsByAuthCredentialEmail(request.email())).willReturn(false);
         given(imageHelper.upload(request.profileImage(), ImageType.PROFILE)).willReturn("uploaded-url");
+        User user = User.createLocalUser(
+                request.accountId(),
+                request.profileName(),
+                "uploaded-url",
+                request.email(),
+                request.password()
+        );
+        given(userPersister.saveLocalUser(
+                request.accountId(),
+                request.profileName(),
+                "uploaded-url",
+                request.email(),
+                request.password()
+        )).willReturn(user);
 
         // when
         localSignupService.signup(request);
@@ -65,6 +88,11 @@ class LocalSignupServiceTest {
                 eq("uploaded-url"),
                 eq(request.email()),
                 eq(request.password())
+        );
+        then(analyticsEventRecorder).should().recordSafely(
+                eq(user.getId()),
+                eq(AnalyticsEventType.SIGNUP),
+                argThat(properties -> properties.equals(Map.of("source", "LOCAL")))
         );
     }
 
