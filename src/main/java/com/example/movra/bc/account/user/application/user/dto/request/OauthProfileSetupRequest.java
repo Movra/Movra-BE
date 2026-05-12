@@ -8,7 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 public record OauthProfileSetupRequest(
 
         @NotBlank(message = "account ID는 필수입니다.")
-        @Size(max = 30, message = "account ID를 30 사이로 입력해주세요.")
+        @Size(max = 20, message = "account ID를 20자 이내로 입력해주세요.")
         String accountId,
 
         @NotBlank(message = "이름은 필수입니다.")

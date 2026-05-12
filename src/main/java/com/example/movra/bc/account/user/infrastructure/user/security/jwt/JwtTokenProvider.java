@@ -25,6 +25,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class JwtTokenProvider {
 
+    private static final String ACCESS_TOKEN_TYPE = "access_token";
+    private static final String REFRESH_TOKEN_TYPE = "refresh_token";
+
     private final JwtProperties jwtProperties;
     private final RefreshTokenRepository refreshTokenRepository;
 
@@ -39,20 +42,28 @@ public class JwtTokenProvider {
     }
 
     public Optional<String> findByRefreshToken(String refreshToken){
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return Optional.empty();
+        }
+
         return refreshTokenRepository.findByRefreshToken(hashToken(refreshToken))
                 .map(rt -> refreshToken);
     }
 
     public String generateAccessToken(UUID userId){
-        return generateToken(userId.toString(), "access_token", jwtProperties.accessExp());
+        return generateToken(userId.toString(), ACCESS_TOKEN_TYPE, jwtProperties.accessExp());
     }
 
     public String generateRefreshToken(UUID userId){
-        return generateToken(userId.toString(), "refresh_token", jwtProperties.refreshExp());
+        return generateToken(userId.toString(), REFRESH_TOKEN_TYPE, jwtProperties.refreshExp());
     }
 
-    public String extractSubject(String token) {
-        return getClaims(token).getSubject();
+    public String extractAccessTokenSubject(String token) {
+        return extractSubject(token, ACCESS_TOKEN_TYPE);
+    }
+
+    public String extractRefreshTokenSubject(String token) {
+        return extractSubject(token, REFRESH_TOKEN_TYPE);
     }
 
     public String resolveToken(HttpServletRequest request){
@@ -78,6 +89,15 @@ public class JwtTokenProvider {
                 .compact();
     }
 
+    private String extractSubject(String token, String expectedType) {
+        Claims claims = getClaims(token);
+        if (!expectedType.equals(claims.get("type", String.class))) {
+            throw new InvalidJwtException();
+        }
+
+        return claims.getSubject();
+    }
+
     private Claims getClaims(String token) {
         try {
             return Jwts.parserBuilder()
@@ -94,7 +114,7 @@ public class JwtTokenProvider {
 
     private String parseToken(String bearerToken){
         if(bearerToken != null && bearerToken.startsWith(jwtProperties.prefix())){
-            return bearerToken.replace(jwtProperties.prefix(), "").trim();
+            return bearerToken.substring(jwtProperties.prefix().length()).trim();
         }
 
         return null;

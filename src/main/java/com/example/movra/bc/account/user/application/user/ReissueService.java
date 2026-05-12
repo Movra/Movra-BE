@@ -24,7 +24,7 @@ public class ReissueService {
 
         UUID userId;
         try {
-            userId = UUID.fromString(jwtTokenProvider.extractSubject(refreshToken));
+            userId = UUID.fromString(jwtTokenProvider.extractRefreshTokenSubject(refreshToken));
         } catch (IllegalArgumentException e) {
             throw new InvalidJwtException();
         }

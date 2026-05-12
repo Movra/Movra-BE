@@ -46,7 +46,7 @@ class TokenServiceTest {
                 "encodedPassword"
         );
 
-        given(jwtTokenProvider.extractSubject(token)).willReturn(userId.toString());
+        given(jwtTokenProvider.extractAccessTokenSubject(token)).willReturn(userId.toString());
         given(userRepository.findById(UserId.of(userId))).willReturn(Optional.of(user));
 
         // when
@@ -63,7 +63,7 @@ class TokenServiceTest {
         UUID userId = UUID.randomUUID();
         String token = "validToken";
 
-        given(jwtTokenProvider.extractSubject(token)).willReturn(userId.toString());
+        given(jwtTokenProvider.extractAccessTokenSubject(token)).willReturn(userId.toString());
         given(userRepository.findById(UserId.of(userId))).willReturn(Optional.empty());
 
         // when & then

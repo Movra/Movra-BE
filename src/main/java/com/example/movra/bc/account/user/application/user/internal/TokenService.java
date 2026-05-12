@@ -18,7 +18,7 @@ public class TokenService {
     private final UserRepository userRepository;
 
     public User authenticate(String token){
-        String userId = jwtTokenProvider.extractSubject(token);
+        String userId = jwtTokenProvider.extractAccessTokenSubject(token);
 
         try {
             return userRepository.findById(UserId.of(UUID.fromString(userId)))
