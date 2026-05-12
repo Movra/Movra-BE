@@ -11,13 +11,15 @@ import java.util.UUID;
 public record ParticipantResponse(
         UUID participantId,
         UUID userId,
+        String participantName,
         SessionMode sessionMode,
         LocalDateTime joinedAt
 ) {
-    public static ParticipantResponse from(Participant participant) {
+    public static ParticipantResponse from(Participant participant, String profileName) {
         return ParticipantResponse.builder()
                 .participantId(participant.getId().id())
                 .userId(participant.getUserId().id())
+                .participantName(profileName)
                 .sessionMode(participant.getSessionMode())
                 .joinedAt(participant.getJoinedAt())
                 .build();

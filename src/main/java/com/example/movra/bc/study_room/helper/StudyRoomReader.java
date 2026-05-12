@@ -6,12 +6,15 @@ import com.example.movra.bc.study_room.participant.domain.Participant;
 import com.example.movra.bc.study_room.participant.domain.repository.ParticipantRepository;
 import com.example.movra.bc.study_room.room.application.exception.RoomNotFoundException;
 import com.example.movra.bc.study_room.room.domain.Room;
+import com.example.movra.bc.study_room.room.domain.exception.InvalidInviteCodeException;
 import com.example.movra.bc.study_room.room.domain.repository.RoomRepository;
+import com.example.movra.bc.study_room.room.domain.vo.InviteCode;
 import com.example.movra.bc.study_room.room.domain.vo.RoomId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -25,6 +28,15 @@ public class StudyRoomReader {
     public Room getRoom(UUID roomId) {
         return roomRepository.findById(RoomId.of(roomId))
                 .orElseThrow(RoomNotFoundException::new);
+    }
+
+    public Room getRoomByInviteCode(String inviteCode) {
+        return roomRepository.findByInviteCode(InviteCode.of(inviteCode))
+                .orElseThrow(InvalidInviteCodeException::new);
+    }
+
+    public List<Room> getPublicRooms() {
+        return roomRepository.findAllPublicRooms();
     }
 
     public Participant getParticipant(UserId userId, RoomId roomId) {

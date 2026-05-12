@@ -13,8 +13,6 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
-
 @Service
 @RequiredArgsConstructor
 public class JoinRoomService {
@@ -24,9 +22,9 @@ public class JoinRoomService {
     private final CurrentUserQuery currentUserQuery;
 
     @Transactional
-    public void join(UUID roomId, JoinRoomRequest request) {
+    public void join(JoinRoomRequest request) {
         UserId userId = currentUserQuery.currentUser().userId();
-        Room room = studyRoomReader.getRoom(roomId);
+        Room room = studyRoomReader.getRoomByInviteCode(request.inviteCode());
 
         if (participantRepository.existsByUserIdAndRoomId(userId, room.getId())) {
             throw new AlreadyJoinedException();
