@@ -1,9 +1,12 @@
 package com.example.movra.application.feedback.daily_reflection;
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
+import com.example.movra.bc.analytics.activation_event.application.service.AnalyticsEventRecorder;
+import com.example.movra.bc.analytics.activation_event.domain.type.AnalyticsEventType;
 import com.example.movra.bc.feedback.daily_reflection.application.exception.DailyReflectionAlreadyExistsException;
 import com.example.movra.bc.feedback.daily_reflection.application.service.CreateDailyReflectionService;
 import com.example.movra.bc.feedback.daily_reflection.application.service.dto.request.CreateDailyReflectionRequest;
+import com.example.movra.bc.feedback.daily_reflection.domain.DailyReflection;
 import com.example.movra.bc.feedback.daily_reflection.domain.exception.InvalidDailyReflectionException;
 import com.example.movra.bc.feedback.daily_reflection.domain.repository.DailyReflectionRepository;
 import com.example.movra.sharedkernel.user.AuthenticatedUser;
@@ -21,7 +24,9 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.lenient;
@@ -37,6 +42,9 @@ class CreateDailyReflectionServiceTest {
 
     @Mock
     private CurrentUserQuery currentUserQuery;
+
+    @Mock
+    private AnalyticsEventRecorder analyticsEventRecorder;
 
     private final UserId userId = UserId.newId();
     private final LocalDate reflectionDate = LocalDate.of(2026, 4, 10);
@@ -73,10 +81,20 @@ class CreateDailyReflectionServiceTest {
                 "Start the afternoon task in smaller chunks"
         );
         given(dailyReflectionRepository.existsByUserIdAndReflectionDate(userId, reflectionDate)).willReturn(false);
+        given(dailyReflectionRepository.saveAndFlush(any()))
+                .willAnswer(invocation -> invocation.getArgument(0, DailyReflection.class));
 
         createDailyReflectionService.create(request);
 
         then(dailyReflectionRepository).should().saveAndFlush(any());
+        then(analyticsEventRecorder).should().recordSafely(
+                eq(userId),
+                eq(AnalyticsEventType.DAILY_REFLECTION_CREATED),
+                argThat(properties ->
+                        properties.containsKey("dailyReflectionId")
+                                && properties.get("reflectionDate").equals(reflectionDate.toString())
+                )
+        );
     }
 
     @Test
