@@ -3,15 +3,18 @@ package com.example.movra.bc.account.user.presentation.user;
 import com.example.movra.bc.account.user.application.user.LocalLoginService;
 import com.example.movra.bc.account.user.application.user.LocalSignupService;
 import com.example.movra.bc.account.user.application.user.OauthProfileSetupService;
+import com.example.movra.bc.account.user.application.user.QueryOnboardingContextService;
 import com.example.movra.bc.account.user.application.user.ReissueService;
 import com.example.movra.bc.account.user.application.user.dto.request.TokenReissueRequest;
 import com.example.movra.bc.account.user.application.user.dto.request.LocalLoginRequest;
 import com.example.movra.bc.account.user.application.user.dto.request.LocalSignupRequest;
 import com.example.movra.bc.account.user.application.user.dto.request.OauthProfileSetupRequest;
+import com.example.movra.bc.account.user.application.user.dto.response.OnboardingContextResponse;
 import com.example.movra.bc.account.user.application.user.dto.response.ProfileSetupResponse;
 import com.example.movra.bc.account.user.application.user.dto.response.TokenResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,6 +31,12 @@ public class AuthController {
     private final LocalLoginService localLoginService;
     private final OauthProfileSetupService oauthProfileSetupService;
     private final ReissueService reissueService;
+    private final QueryOnboardingContextService queryOnboardingContextService;
+
+    @GetMapping("/onboarding-context")
+    public OnboardingContextResponse onboardingContext() {
+        return queryOnboardingContextService.query();
+    }
 
     @PostMapping("/signup")
     public void signup(@Valid @ModelAttribute LocalSignupRequest localSignupRequest) {

@@ -1,9 +1,13 @@
 package com.example.movra.application.planning.daily_plan.top_pick;
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
+import com.example.movra.bc.analytics.activation_event.application.service.AnalyticsEventRecorder;
+import com.example.movra.bc.analytics.activation_event.domain.type.AnalyticsEventType;
+import com.example.movra.bc.notification.application.service.NotificationGateway;
 import com.example.movra.bc.personalization.behavior_profile.domain.BehaviorProfile;
 import com.example.movra.bc.personalization.behavior_profile.domain.repository.BehaviorProfileRepository;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.CoachingMode;
+import com.example.movra.bc.personalization.behavior_profile.domain.type.ExamTrack;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.ExecutionDifficulty;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.RecoveryStyle;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.SocialPreference;
@@ -33,6 +37,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.lenient;
@@ -51,6 +57,12 @@ class SelectTopPicksServiceTest {
 
     @Mock
     private CurrentUserQuery currentUserQuery;
+
+    @Mock
+    private AnalyticsEventRecorder analyticsEventRecorder;
+
+    @Mock
+    private NotificationGateway notificationGateway;
 
     private final UserId userId = UserId.newId();
 
@@ -82,6 +94,22 @@ class SelectTopPicksServiceTest {
 
         assertThat(dailyPlan.getTasks().get(0).isTopPicked()).isTrue();
         then(dailyPlanRepository).should().save(dailyPlan);
+        then(analyticsEventRecorder).should().recordSafely(
+                eq(userId),
+                eq(AnalyticsEventType.TOP_PICK_SELECTED),
+                argThat(properties ->
+                        properties.get("dailyPlanId").equals(dailyPlanId.toString())
+                                && properties.get("taskId").equals(taskId.toString())
+                                && properties.get("estimatedMinutes").equals("30")
+                )
+        );
+        then(notificationGateway).should().sendSafely(
+                eq(userId),
+                argThat(payload ->
+                        payload.type().name().equals("DAILY_TOP_PICKS")
+                                && payload.data().get("taskId").equals(taskId.toString())
+                )
+        );
     }
 
     @Test
@@ -196,7 +224,7 @@ class SelectTopPicksServiceTest {
                 .willReturn(Optional.of(dailyPlan));
         BehaviorProfile profile = BehaviorProfile.create(
                 userId, ExecutionDifficulty.LOW, SocialPreference.MEDIUM,
-                RecoveryStyle.QUICK_RESTART, 9, 18, CoachingMode.NEUTRAL
+                RecoveryStyle.QUICK_RESTART, ExamTrack.NAESIN, 9, 18, CoachingMode.NEUTRAL
         );
         given(behaviorProfileRepository.findByUserId(userId))
                 .willReturn(Optional.of(profile));

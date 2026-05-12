@@ -7,6 +7,7 @@ import lombok.Builder;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Builder
@@ -18,9 +19,12 @@ public record RoomDetailResponse(
         LocalDateTime createdAt,
         List<ParticipantResponse> participants
 ) {
-    public static RoomDetailResponse from(Room room, List<Participant> participants) {
+    public static RoomDetailResponse from(Room room, List<Participant> participants, Map<UUID, String> profileNameMap) {
         List<ParticipantResponse> participantResponses = participants.stream()
-                .map(ParticipantResponse::from)
+                .map(participant -> ParticipantResponse.from(
+                        participant,
+                        profileNameMap.getOrDefault(participant.getUserId().id(), "")
+                ))
                 .toList();
 
         return RoomDetailResponse.builder()

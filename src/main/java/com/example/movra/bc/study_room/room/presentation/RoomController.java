@@ -8,11 +8,13 @@ import com.example.movra.bc.study_room.room.application.service.QueryRoomService
 import com.example.movra.bc.study_room.room.application.service.dto.request.CreateRoomRequest;
 import com.example.movra.bc.study_room.room.application.service.dto.request.JoinRoomRequest;
 import com.example.movra.bc.study_room.room.application.service.dto.response.CreateRoomResponse;
+import com.example.movra.bc.study_room.room.application.service.dto.response.PublicRoomResponse;
 import com.example.movra.bc.study_room.room.application.service.dto.response.RoomDetailResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -31,14 +33,19 @@ public class RoomController {
         return createRoomService.create(request);
     }
 
+    @GetMapping
+    public List<PublicRoomResponse> queryAll() {
+        return queryRoomService.queryAll();
+    }
+
     @GetMapping("/{roomId}")
     public RoomDetailResponse query(@PathVariable UUID roomId) {
         return queryRoomService.query(roomId);
     }
 
-    @PostMapping("/{roomId}/join")
-    public void join(@PathVariable UUID roomId, @Valid @RequestBody JoinRoomRequest request) {
-        joinRoomService.join(roomId, request);
+    @PostMapping("/join")
+    public void join(@Valid @RequestBody JoinRoomRequest request) {
+        joinRoomService.join(request);
     }
 
     @PostMapping("/{roomId}/leave")

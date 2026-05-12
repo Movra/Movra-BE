@@ -6,11 +6,10 @@ import com.example.movra.bc.study_room.participant.domain.repository.Participant
 import com.example.movra.bc.study_room.room.application.service.JoinRoomService;
 import com.example.movra.bc.study_room.room.application.service.dto.request.JoinRoomRequest;
 import com.example.movra.bc.study_room.room.domain.PrivateRoom;
+import com.example.movra.bc.study_room.room.domain.PublicRoom;
 import com.example.movra.bc.study_room.room.domain.Room;
 import com.example.movra.bc.study_room.room.domain.exception.AlreadyJoinedException;
 import com.example.movra.bc.study_room.room.domain.exception.InvalidInviteCodeException;
-import com.example.movra.bc.study_room.room.domain.repository.RoomRepository;
-import com.example.movra.bc.study_room.room.domain.vo.Visibility;
 import com.example.movra.sharedkernel.user.AuthenticatedUser;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import org.junit.jupiter.api.DisplayName;
@@ -22,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.lenient;
@@ -31,9 +31,6 @@ class JoinRoomServiceTest {
 
     @InjectMocks
     private JoinRoomService joinRoomService;
-
-    @Mock
-    private RoomRepository roomRepository;
 
     @Mock
     private ParticipantRepository participantRepository;
@@ -54,16 +51,17 @@ class JoinRoomServiceTest {
     }
 
     @Test
-    @DisplayName("공개 방 입장 성공")
-    void join_publicRoom_success() {
+    @DisplayName("공개 방 초대 코드로 입장 성공")
+    void join_publicRoomWithInviteCode_success() {
         // given
         givenCurrentUser();
-        Room room = Room.create("스터디룸", leaderId, Visibility.PUBLIC);
-        given(studyRoomReader.getRoom(any())).willReturn(room);
+        PublicRoom room = PublicRoom.create("스터디룸", leaderId);
+        String inviteCode = room.getInviteCode().code();
+        given(studyRoomReader.getRoomByInviteCode(inviteCode)).willReturn(room);
         given(participantRepository.existsByUserIdAndRoomId(userId, room.getId())).willReturn(false);
 
         // when
-        joinRoomService.join(room.getId().id(), new JoinRoomRequest(null));
+        joinRoomService.join(new JoinRoomRequest(inviteCode));
 
         // then
         then(participantRepository).should().save(any());
@@ -76,11 +74,11 @@ class JoinRoomServiceTest {
         givenCurrentUser();
         PrivateRoom room = PrivateRoom.create("비공개룸", leaderId);
         String inviteCode = room.getInviteCode().code();
-        given(studyRoomReader.getRoom(any())).willReturn(room);
+        given(studyRoomReader.getRoomByInviteCode(inviteCode)).willReturn(room);
         given(participantRepository.existsByUserIdAndRoomId(userId, room.getId())).willReturn(false);
 
         // when
-        joinRoomService.join(room.getId().id(), new JoinRoomRequest(inviteCode));
+        joinRoomService.join(new JoinRoomRequest(inviteCode));
 
         // then
         then(participantRepository).should().save(any());
@@ -91,26 +89,26 @@ class JoinRoomServiceTest {
     void join_alreadyJoined_throwsException() {
         // given
         givenCurrentUser();
-        Room room = Room.create("스터디룸", leaderId, Visibility.PUBLIC);
-        given(studyRoomReader.getRoom(any())).willReturn(room);
+        Room room = PublicRoom.create("스터디룸", leaderId);
+        String inviteCode = room.getInviteCode().code();
+        given(studyRoomReader.getRoomByInviteCode(inviteCode)).willReturn(room);
         given(participantRepository.existsByUserIdAndRoomId(userId, room.getId())).willReturn(true);
 
         // when & then
-        assertThatThrownBy(() -> joinRoomService.join(room.getId().id(), new JoinRoomRequest(null)))
+        assertThatThrownBy(() -> joinRoomService.join(new JoinRoomRequest(inviteCode)))
                 .isInstanceOf(AlreadyJoinedException.class);
     }
 
     @Test
-    @DisplayName("비공개 방에 잘못된 초대 코드로 입장 시 InvalidInviteCodeException 발생")
+    @DisplayName("존재하지 않는 초대 코드로 입장 시 InvalidInviteCodeException 발생")
     void join_invalidInviteCode_throwsException() {
         // given
         givenCurrentUser();
-        PrivateRoom room = PrivateRoom.create("비공개룸", leaderId);
-        given(studyRoomReader.getRoom(any())).willReturn(room);
-        given(participantRepository.existsByUserIdAndRoomId(userId, room.getId())).willReturn(false);
+        given(studyRoomReader.getRoomByInviteCode(eq("wrong-code")))
+                .willThrow(new InvalidInviteCodeException());
 
         // when & then
-        assertThatThrownBy(() -> joinRoomService.join(room.getId().id(), new JoinRoomRequest("wrong-code")))
+        assertThatThrownBy(() -> joinRoomService.join(new JoinRoomRequest("wrong-code")))
                 .isInstanceOf(InvalidInviteCodeException.class);
     }
 }

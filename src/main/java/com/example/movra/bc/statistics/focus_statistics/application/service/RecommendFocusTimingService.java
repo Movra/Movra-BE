@@ -45,7 +45,12 @@ public class RecommendFocusTimingService {
         Instant now = clock.instant();
         ZoneId zoneId = clock.getZone();
         LocalDate today = now.atZone(zoneId).toLocalDate();
-        UserId userId = currentUserQuery.currentUser().userId();
+        return recommendFor(currentUserQuery.currentUser().userId(), today, now);
+    }
+
+    @Transactional(readOnly = true)
+    public FocusTimingRecommendationResponse recommendFor(UserId userId, LocalDate today, Instant now) {
+        ZoneId zoneId = clock.getZone();
 
         LocalDate from = today.minusDays(LOOKBACK_DAYS);
         LocalDate to = today.minusDays(1);

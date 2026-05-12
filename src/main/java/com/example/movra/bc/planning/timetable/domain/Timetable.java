@@ -54,9 +54,9 @@ public class Timetable extends AbstractAggregateRoot {
                 .build();
     }
 
-    public void assignTopPick(TaskId taskId, LocalTime startTime, LocalTime endTime) {
+    public Slot assignTopPick(TaskId taskId, LocalTime startTime, LocalTime endTime) {
         long assignedTopPicks = slots.stream().filter(Slot::isTopPick).count();
-        if (topPickTotal > 0 && assignedTopPicks >= topPickTotal) {
+        if (assignedTopPicks >= topPickTotal) {
             throw new TopPickSlotLimitExceededException();
         }
 
@@ -65,15 +65,17 @@ public class Timetable extends AbstractAggregateRoot {
 
         Slot slot = Slot.createTopPick(taskId, startTime, endTime, this);
         this.slots.add(slot);
+        return slot;
     }
 
-    public void assignTask(TaskId taskId, LocalTime startTime, LocalTime endTime) {
+    public Slot assignTask(TaskId taskId, LocalTime startTime, LocalTime endTime) {
         validateTopPicksAssigned();
         validateTimeRange(startTime, endTime);
         validateNoOverlap(startTime, endTime, null);
 
         Slot slot = Slot.create(taskId, startTime, endTime, this);
         this.slots.add(slot);
+        return slot;
     }
 
     public void reschedule(SlotId slotId, LocalTime newStart, LocalTime newEnd) {

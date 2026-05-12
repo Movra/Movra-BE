@@ -14,8 +14,8 @@ public class FutureVisionPersister {
     private final FutureVisionRepository futureVisionRepository;
 
     @Transactional
-    public void saveFutureVision(UserId userId, String weeklyVisionImageUrl, String yearlyVisionImageUrl, String yearlyVisionDescription){
-        futureVisionRepository.save(
+    public FutureVision saveFutureVision(UserId userId, String weeklyVisionImageUrl, String yearlyVisionImageUrl, String yearlyVisionDescription){
+        return futureVisionRepository.save(
                 FutureVision.create(
                         userId,
                         weeklyVisionImageUrl,

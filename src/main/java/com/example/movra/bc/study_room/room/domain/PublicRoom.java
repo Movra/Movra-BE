@@ -1,6 +1,7 @@
 package com.example.movra.bc.study_room.room.domain;
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
+import com.example.movra.bc.study_room.room.domain.vo.InviteCode;
 import com.example.movra.bc.study_room.room.domain.vo.RoomId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.PrimaryKeyJoinColumn;
@@ -16,8 +17,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class PublicRoom extends Room {
 
-    private PublicRoom(RoomId id, UserId leaderId, String name, LocalDateTime createdAt) {
-        super(id, leaderId, name, createdAt);
+    private PublicRoom(RoomId id, UserId leaderId, String name, InviteCode inviteCode, LocalDateTime createdAt) {
+        super(id, leaderId, name, inviteCode, createdAt);
     }
 
     public static PublicRoom create(String name, UserId userId) {
@@ -25,6 +26,7 @@ public class PublicRoom extends Room {
                 RoomId.newId(),
                 userId,
                 name,
+                InviteCode.generate(),
                 LocalDateTime.now()
         );
         room.initialize(userId);

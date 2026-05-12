@@ -15,7 +15,19 @@ import java.time.Clock;
 @Getter
 @Builder(access = AccessLevel.PRIVATE)
 @Entity
-@Table(name = "tbl_accountability_relation")
+@Table(
+        name = "tbl_accountability_relation",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_accountability_relation_subject_user_id",
+                        columnNames = "subject_user_id"
+                ),
+                @UniqueConstraint(
+                        name = "uk_accountability_relation_watcher_user_id",
+                        columnNames = "watcher_user_id"
+                )
+        }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class AccountabilityRelation extends AbstractAggregateRoot {
@@ -65,6 +77,28 @@ public class AccountabilityRelation extends AbstractAggregateRoot {
         visibilityPolicy.validateAllowed(monitoringTarget);
     }
 
+    public void updateVisibilityPolicy(UserId subjectUserId, VisibilityPolicy visibilityPolicy) {
+        validateSubjectUser(subjectUserId);
+        this.visibilityPolicy = visibilityPolicy;
+    }
+
+    public void disconnectWatcherBySubject(UserId subjectUserId) {
+        validateSubjectUser(subjectUserId);
+        disconnectWatcher();
+    }
+
+    public void disconnectWatcherByWatcher(UserId watcherUserId) {
+        if (this.watcherUserId == null || !this.watcherUserId.equals(watcherUserId)) {
+            throw new NotWatcherUserException();
+        }
+
+        disconnectWatcher();
+    }
+
+    private void disconnectWatcher() {
+        this.watcherUserId = null;
+        this.inviteCode = null;
+    }
 
     private void validateSubjectUser(UserId subjectUserId) {
         if (!this.subjectUserId.equals(subjectUserId)) {

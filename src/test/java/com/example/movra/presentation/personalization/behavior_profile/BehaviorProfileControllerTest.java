@@ -70,6 +70,7 @@ class BehaviorProfileControllerTest {
                   "executionDifficulty": "MEDIUM",
                   "socialPreference": "MEDIUM",
                   "recoveryStyle": "NEEDS_REFLECTION",
+                  "examTrack": "NAESIN",
                   "preferredFocusEndHour": 18,
                   "coachingMode": "NEUTRAL"
                 }
@@ -92,6 +93,7 @@ class BehaviorProfileControllerTest {
                   "executionDifficulty": "MEDIUM",
                   "socialPreference": "MEDIUM",
                   "recoveryStyle": "NEEDS_REFLECTION",
+                  "examTrack": "NAESIN",
                   "preferredFocusStartHour": 9,
                   "coachingMode": "NEUTRAL"
                 }
@@ -104,5 +106,28 @@ class BehaviorProfileControllerTest {
                 .andExpect(jsonPath("$.message", containsString("preferredFocusEndHour")));
 
         then(updateBehaviorProfileService).shouldHaveNoInteractions();
+    }
+
+    @Test
+    @DisplayName("create returns 400 when examTrack is omitted")
+    void create_missingExamTrack_returnsBadRequest() throws Exception {
+        String requestBody = """
+                {
+                  "executionDifficulty": "MEDIUM",
+                  "socialPreference": "MEDIUM",
+                  "recoveryStyle": "NEEDS_REFLECTION",
+                  "preferredFocusStartHour": 9,
+                  "preferredFocusEndHour": 18,
+                  "coachingMode": "NEUTRAL"
+                }
+                """;
+
+        mockMvc.perform(post("/behavior-profiles")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", containsString("examTrack")));
+
+        then(createBehaviorProfileService).shouldHaveNoInteractions();
     }
 }

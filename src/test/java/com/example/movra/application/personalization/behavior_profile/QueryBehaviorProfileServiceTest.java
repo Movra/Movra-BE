@@ -7,6 +7,7 @@ import com.example.movra.bc.personalization.behavior_profile.application.service
 import com.example.movra.bc.personalization.behavior_profile.domain.BehaviorProfile;
 import com.example.movra.bc.personalization.behavior_profile.domain.repository.BehaviorProfileRepository;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.CoachingMode;
+import com.example.movra.bc.personalization.behavior_profile.domain.type.ExamTrack;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.ExecutionDifficulty;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.RecoveryStyle;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.SocialPreference;
@@ -56,6 +57,7 @@ class QueryBehaviorProfileServiceTest {
                 ExecutionDifficulty.MEDIUM,
                 SocialPreference.HIGH,
                 RecoveryStyle.NEEDS_REFLECTION,
+                ExamTrack.MOPYUNG_SUNUNG,
                 9,
                 18,
                 CoachingMode.NEUTRAL
@@ -70,6 +72,7 @@ class QueryBehaviorProfileServiceTest {
         assertThat(response.executionDifficulty()).isEqualTo(ExecutionDifficulty.MEDIUM);
         assertThat(response.socialPreference()).isEqualTo(SocialPreference.HIGH);
         assertThat(response.recoveryStyle()).isEqualTo(RecoveryStyle.NEEDS_REFLECTION);
+        assertThat(response.examTrack()).isEqualTo(ExamTrack.MOPYUNG_SUNUNG);
         assertThat(response.preferredFocusStartHour()).isEqualTo(9);
         assertThat(response.preferredFocusEndHour()).isEqualTo(18);
         assertThat(response.coachingMode()).isEqualTo(CoachingMode.NEUTRAL);

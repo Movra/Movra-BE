@@ -5,5 +5,17 @@ public enum NotificationType {
     DAILY_TOP_PICKS,
     DAILY_TIMETABLE,
     ACCOUNTABILITY_DAILY_SUMMARY,
-    ACCOUNTABILITY_MESSAGE
+    ACCOUNTABILITY_MESSAGE,
+    RECOVERY,
+    TIMING,
+    D_DAY,
+    STREAK;
+
+    public int dailyTypeLimit() {
+        return switch (this) {
+            case RECOVERY, TIMING, STREAK -> 1;
+            case D_DAY -> 3;
+            default -> Integer.MAX_VALUE;
+        };
+    }
 }

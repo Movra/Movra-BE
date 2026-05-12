@@ -1,6 +1,7 @@
 package com.example.movra.bc.personalization.behavior_profile.application.service.dto.request;
 
 import com.example.movra.bc.personalization.behavior_profile.domain.type.CoachingMode;
+import com.example.movra.bc.personalization.behavior_profile.domain.type.ExamTrack;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.ExecutionDifficulty;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.RecoveryStyle;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.SocialPreference;
@@ -17,6 +18,9 @@ public record UpdateBehaviorProfileRequest(
 
         @NotNull
         RecoveryStyle recoveryStyle,
+
+        @NotNull
+        ExamTrack examTrack,
 
         @NotNull
         @Min(0) @Max(23)

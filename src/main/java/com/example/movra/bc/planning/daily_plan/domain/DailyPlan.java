@@ -89,11 +89,11 @@ public class DailyPlan extends AbstractAggregateRoot {
         findTask(taskId).unComplete();
     }
 
-    public void markAsTopPicked(TaskId taskId, int estimatedMinutes, String memo, int maxTopPicks) {
+    public boolean markAsTopPicked(TaskId taskId, int estimatedMinutes, String memo, int maxTopPicks) {
         Task task = findTask(taskId);
 
         if (task.isTopPicked()) {
-            return;
+            return false;
         }
 
         long count = tasks.stream().filter(Task::isTopPicked).count();
@@ -104,6 +104,7 @@ public class DailyPlan extends AbstractAggregateRoot {
 
         task.markAsTopPicked(estimatedMinutes, memo);
         registerEvent(new TaskTopPickedEvent(this.dailyPlanId, taskId));
+        return true;
     }
 
     public void unmarkTopPicked(TaskId taskId) {
@@ -132,6 +133,18 @@ public class DailyPlan extends AbstractAggregateRoot {
 
         if (task.getTaskType() != expectedType) {
             throw new InvalidTaskTypeException();
+        }
+    }
+
+    public void validateTaskExists(TaskId taskId) {
+        findTask(taskId);
+    }
+
+    public void validateTopPickedTask(TaskId taskId) {
+        Task task = findTask(taskId);
+
+        if (!task.isTopPicked()) {
+            throw new NotTopPickedTaskException();
         }
     }
 

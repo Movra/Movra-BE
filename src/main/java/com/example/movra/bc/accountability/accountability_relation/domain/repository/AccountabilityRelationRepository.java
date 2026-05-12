@@ -5,12 +5,19 @@ import com.example.movra.bc.accountability.accountability_relation.domain.Accoun
 import com.example.movra.bc.accountability.accountability_relation.domain.vo.AccountabilityRelationId;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface AccountabilityRelationRepository extends JpaRepository<AccountabilityRelation, AccountabilityRelationId> {
      Optional<AccountabilityRelation> findBySubjectUserId(UserId subjectUserId);
 
      Optional<AccountabilityRelation> findByWatcherUserId(UserId watcherUserId);
+
+     boolean existsBySubjectUserId(UserId subjectUserId);
+
+     List<AccountabilityRelation> findAllBySubjectUserId(UserId subjectUserId);
+
+     List<AccountabilityRelation> findAllByWatcherUserId(UserId watcherUserId);
 
      Optional<AccountabilityRelation> findBySubjectUserIdAndWatcherUserId(UserId subjectUserId, UserId watcherUserId);
 

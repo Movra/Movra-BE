@@ -64,7 +64,7 @@ class RemoveSlotServiceTest {
     @DisplayName("슬롯 삭제 성공")
     void remove_success() {
         // given
-        Timetable timetable = Timetable.create(DailyPlanId.newId(), 0);
+        Timetable timetable = Timetable.create(DailyPlanId.newId(), 1);
         timetable.assignTopPick(TaskId.newId(), LocalTime.of(9, 0), LocalTime.of(10, 0));
         UUID timetableId = timetable.getTimetableId().id();
         UUID slotId = timetable.getSlots().get(0).getSlotId().id();
@@ -95,7 +95,7 @@ class RemoveSlotServiceTest {
     @DisplayName("존재하지 않는 슬롯 삭제 시 SlotNotFoundException 발생")
     void remove_slotNotFound_throwsException() {
         // given
-        Timetable timetable = Timetable.create(DailyPlanId.newId(), 0);
+        Timetable timetable = Timetable.create(DailyPlanId.newId(), 1);
         timetable.assignTopPick(TaskId.newId(), LocalTime.of(9, 0), LocalTime.of(10, 0));
         UUID timetableId = timetable.getTimetableId().id();
         given(timetableRepository.findById(TimetableId.of(timetableId))).willReturn(Optional.of(timetable));

@@ -95,22 +95,23 @@ Room (abstract, JOINED 상속)
 ├── RoomId (VO, @EmbeddedId)
 ├── UserId leaderId (방장)
 ├── name (최대 20자)
+├── InviteCode (VO, unique) — 모든 방이 보유, 입장 토큰
 ├── createdAt
-├── PublicRoom (서브클래스)
-│   └── join() 그대로 사용
-└── PrivateRoom (서브클래스)
-    ├── InviteCode (VO)
-    └── join() 오버라이드 → 초대 코드 검증
+├── PublicRoom (서브클래스) — GET /rooms 목록 노출
+└── PrivateRoom (서브클래스) — 목록 미노출
 ```
 
 - 팩토리: `Room.create(name, userId, visibility)` → PublicRoom/PrivateRoom 분기
+- 모든 방은 생성 시 `InviteCode.generate()`로 초대 코드 발급
+- 입장은 초대 코드로만 가능 (`Room.join`이 invite code 검증)
+- Visibility 구분은 **목록 노출 여부**만 결정, 입장 정책은 동일
 - 멤버십 추적 없음 (Participant가 SSOT)
 - 방장 위임: `reassignLeader(newLeaderId)`
 
 **핵심 설계 결정:**
 - Room은 인가 정책만 담당 (kick, join 검증)
 - 멤버십 데이터는 Participant 애그리거트가 소유
-- join 로직: 다형성으로 처리 (instanceof 금지)
+- 입장 경로 단일화: 클라이언트는 invite code만 알면 됨 (roomId 우회 불가)
 
 **도메인 이벤트:**
 - `RoomCreatedEvent`

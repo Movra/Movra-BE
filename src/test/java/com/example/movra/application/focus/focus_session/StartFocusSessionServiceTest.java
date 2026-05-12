@@ -3,8 +3,11 @@ package com.example.movra.application.focus.focus_session;
 import com.example.movra.bc.account.user.domain.user.User;
 import com.example.movra.bc.account.user.domain.user.repository.UserRepository;
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
+import com.example.movra.bc.analytics.activation_event.application.service.AnalyticsEventRecorder;
+import com.example.movra.bc.analytics.activation_event.domain.type.AnalyticsEventType;
 import com.example.movra.bc.focus.focus_session.application.exception.FocusSessionAlreadyInProgressException;
 import com.example.movra.bc.focus.focus_session.application.service.StartFocusSessionService;
+import com.example.movra.bc.focus.focus_session.application.service.dto.request.StartFocusSessionRequest;
 import com.example.movra.bc.focus.focus_session.application.service.dto.response.FocusSessionResponse;
 import com.example.movra.bc.focus.focus_session.domain.FocusSession;
 import com.example.movra.bc.focus.focus_session.domain.repository.FocusSessionRepository;
@@ -23,8 +26,11 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,10 +52,14 @@ class StartFocusSessionServiceTest {
     private Clock clock;
 
     @Mock
+    private AnalyticsEventRecorder analyticsEventRecorder;
+
+    @Mock
     private User user;
 
     private final UserId userId = UserId.newId();
     private final Instant now = Instant.parse("2026-04-12T00:00:00Z");
+    private final StartFocusSessionRequest request = new StartFocusSessionRequest(3);
 
     private void givenCurrentUser() {
         lenient().when(currentUserQuery.currentUser()).thenReturn(
@@ -62,14 +72,14 @@ class StartFocusSessionServiceTest {
     void start_success() {
         // given
         givenCurrentUser();
-        FocusSession focusSession = FocusSession.start(userId, now);
+        FocusSession focusSession = FocusSession.start(userId, now, request.presetMinutes());
         given(clock.instant()).willReturn(now);
         given(userRepository.findByIdForUpdate(userId)).willReturn(Optional.of(user));
         given(focusSessionRepository.existsByUserIdAndEndedAtIsNull(userId)).willReturn(false);
         given(focusSessionRepository.save(any(FocusSession.class))).willReturn(focusSession);
 
         // when
-        FocusSessionResponse response = startFocusSessionService.start();
+        FocusSessionResponse response = startFocusSessionService.start(request);
 
         // then
         assertThat(response.inProgress()).isTrue();
@@ -78,6 +88,19 @@ class StartFocusSessionServiceTest {
         assertThat(response.recordedElapsedSeconds()).isNull();
         assertThat(response.elapsedSeconds()).isZero();
         assertThat(response.focusSessionId()).isEqualTo(focusSession.getId().id());
+        assertThat(response.presetMinutes()).isEqualTo(3);
+        assertThat(response.presetSeconds()).isEqualTo(180);
+        assertThat(response.presetCompletionRate()).isNull();
+        then(analyticsEventRecorder).should().recordSafely(
+                eq(userId),
+                eq(AnalyticsEventType.FOCUS_SESSION_STARTED),
+                argThat(properties ->
+                        properties.get("focusSessionId").equals(focusSession.getId().id().toString())
+                                && properties.get("startedAt").equals(now.toString())
+                                && properties.get("presetMinutes").equals("3")
+                                && properties.get("presetSeconds").equals("180")
+                )
+        );
     }
 
     @Test
@@ -90,7 +113,21 @@ class StartFocusSessionServiceTest {
         given(focusSessionRepository.existsByUserIdAndEndedAtIsNull(userId)).willReturn(true);
 
         // when & then
-        assertThatThrownBy(() -> startFocusSessionService.start())
+        assertThatThrownBy(() -> startFocusSessionService.start(request))
                 .isInstanceOf(FocusSessionAlreadyInProgressException.class);
+    }
+
+    @Test
+    @DisplayName("start throws when preset minutes is unsupported")
+    void start_invalidPreset_throwsException() {
+        // given
+        givenCurrentUser();
+        given(clock.instant()).willReturn(now);
+        given(userRepository.findByIdForUpdate(userId)).willReturn(Optional.of(user));
+        given(focusSessionRepository.existsByUserIdAndEndedAtIsNull(userId)).willReturn(false);
+
+        // when & then
+        assertThatThrownBy(() -> startFocusSessionService.start(new StartFocusSessionRequest(7)))
+                .isInstanceOf(com.example.movra.bc.focus.focus_session.domain.exception.InvalidFocusSessionException.class);
     }
 }

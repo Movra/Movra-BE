@@ -59,7 +59,7 @@ class RescheduleSlotServiceTest {
     }
 
     private Timetable createTimetableWithSlot() {
-        Timetable timetable = Timetable.create(DailyPlanId.newId(), 0);
+        Timetable timetable = Timetable.create(DailyPlanId.newId(), 2);
         timetable.assignTopPick(TaskId.newId(), LocalTime.of(9, 0), LocalTime.of(10, 0));
         return timetable;
     }

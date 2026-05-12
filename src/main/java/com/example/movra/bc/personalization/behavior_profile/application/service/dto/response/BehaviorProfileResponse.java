@@ -2,6 +2,7 @@ package com.example.movra.bc.personalization.behavior_profile.application.servic
 
 import com.example.movra.bc.personalization.behavior_profile.domain.BehaviorProfile;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.CoachingMode;
+import com.example.movra.bc.personalization.behavior_profile.domain.type.ExamTrack;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.ExecutionDifficulty;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.RecoveryStyle;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.SocialPreference;
@@ -15,6 +16,7 @@ public record BehaviorProfileResponse(
         ExecutionDifficulty executionDifficulty,
         SocialPreference socialPreference,
         RecoveryStyle recoveryStyle,
+        ExamTrack examTrack,
         int preferredFocusStartHour,
         int preferredFocusEndHour,
         CoachingMode coachingMode
@@ -26,6 +28,7 @@ public record BehaviorProfileResponse(
                 .executionDifficulty(behaviorProfile.getExecutionDifficulty())
                 .socialPreference(behaviorProfile.getSocialPreference())
                 .recoveryStyle(behaviorProfile.getRecoveryStyle())
+                .examTrack(behaviorProfile.getExamTrack())
                 .preferredFocusStartHour(behaviorProfile.getPreferredFocusStartHour())
                 .preferredFocusEndHour(behaviorProfile.getPreferredFocusEndHour())
                 .coachingMode(behaviorProfile.getCoachingMode())

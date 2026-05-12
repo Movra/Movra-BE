@@ -12,12 +12,7 @@ import com.example.movra.bc.visioning.future_vision.application.service.dto.resp
 import com.example.movra.bc.visioning.future_vision.application.service.dto.response.YearlyVisionResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/future-vision")
@@ -30,7 +25,7 @@ public class FutureVisionController {
     private final UpdateYearlyVisionService updateYearlyVisionService;
 
     @PostMapping
-    public void create(@Valid @RequestBody CreateFutureVisionRequest request) {
+    public void create(@Valid @ModelAttribute CreateFutureVisionRequest request) {
         createFutureVisionService.create(request);
     }
 
@@ -50,12 +45,12 @@ public class FutureVisionController {
     }
 
     @PatchMapping("/weekly")
-    public void updateWeekly(@Valid @RequestBody UpdateWeeklyVisionRequest request) {
+    public void updateWeekly(@Valid @ModelAttribute UpdateWeeklyVisionRequest request) {
         updateWeeklyVisionService.update(request);
     }
 
     @PatchMapping("/yearly")
-    public void updateYearly(@Valid @RequestBody UpdateYearlyVisionRequest request) {
+    public void updateYearly(@Valid @ModelAttribute UpdateYearlyVisionRequest request) {
         updateYearlyVisionService.update(request);
     }
 }

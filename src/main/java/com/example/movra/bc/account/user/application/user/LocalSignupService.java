@@ -4,14 +4,19 @@ import com.example.movra.bc.account.user.application.user.dto.request.LocalSignu
 import com.example.movra.bc.account.user.application.user.exception.DuplicateAccountIdException;
 import com.example.movra.bc.account.user.application.user.exception.DuplicateEmailException;
 import com.example.movra.bc.account.user.application.user.exception.UserCreationFailedException;
-import com.example.movra.sharedkernel.file.storage.ImageHelper;
 import com.example.movra.bc.account.user.application.user.helper.UserPersister;
+import com.example.movra.bc.account.user.domain.user.User;
 import com.example.movra.bc.account.user.domain.user.repository.UserRepository;
+import com.example.movra.bc.analytics.activation_event.application.service.AnalyticsEventRecorder;
+import com.example.movra.bc.analytics.activation_event.domain.type.AnalyticsEventType;
+import com.example.movra.sharedkernel.file.storage.ImageHelper;
 import com.example.movra.sharedkernel.file.storage.type.ImageType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -21,6 +26,7 @@ public class LocalSignupService {
     private final UserRepository userRepository;
     private final UserPersister userPersister;
     private final ImageHelper imageHelper;
+    private final AnalyticsEventRecorder analyticsEventRecorder;
 
     public void signup(LocalSignupRequest localSignupRequest){
         if(userRepository.existsByAccountId(localSignupRequest.accountId())){
@@ -34,12 +40,17 @@ public class LocalSignupService {
         String profileUrl = imageHelper.upload(localSignupRequest.profileImage(), ImageType.PROFILE);
 
         try{
-            userPersister.saveLocalUser(
+            User user = userPersister.saveLocalUser(
                     localSignupRequest.accountId(),
                     localSignupRequest.profileName(),
                     profileUrl,
                     localSignupRequest.email(),
                     localSignupRequest.password()
+            );
+            analyticsEventRecorder.recordSafely(
+                    user.getId(),
+                    AnalyticsEventType.SIGNUP,
+                    Map.of("source", "LOCAL")
             );
         } catch (DataIntegrityViolationException e){
             imageHelper.cleanup(profileUrl);

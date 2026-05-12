@@ -2,13 +2,13 @@ package com.example.movra.sharedkernel.notification;
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
 import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
-@ConditionalOnProperty(prefix = "app.fcm", name = "enabled", havingValue = "false", matchIfMissing = true)
-public class LoggingNotificationSender implements NotificationSender {
+@ConditionalOnExpression("'${app.fcm.enabled:false}' == 'false' && '${app.web-push.enabled:false}' == 'false'")
+public class LoggingNotificationSender implements NotificationChannelSender {
 
     @Override
     public void send(UserId targetUserId, NotificationPayload payload) {

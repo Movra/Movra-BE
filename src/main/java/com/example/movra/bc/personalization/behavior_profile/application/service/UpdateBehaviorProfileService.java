@@ -27,6 +27,7 @@ public class UpdateBehaviorProfileService {
                 request.executionDifficulty(),
                 request.socialPreference(),
                 request.recoveryStyle(),
+                request.examTrack(),
                 request.preferredFocusStartHour(),
                 request.preferredFocusEndHour(),
                 request.coachingMode()

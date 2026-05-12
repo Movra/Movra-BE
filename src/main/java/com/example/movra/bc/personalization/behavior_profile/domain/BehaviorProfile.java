@@ -3,6 +3,7 @@ package com.example.movra.bc.personalization.behavior_profile.domain;
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.personalization.behavior_profile.domain.exception.InvalidBehaviorProfileException;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.CoachingMode;
+import com.example.movra.bc.personalization.behavior_profile.domain.type.ExamTrack;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.ExecutionDifficulty;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.RecoveryStyle;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.SocialPreference;
@@ -56,6 +57,10 @@ public class BehaviorProfile extends AbstractAggregateRoot {
     @Column(name = "recovery_style", nullable = false)
     private RecoveryStyle recoveryStyle;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "exam_track", nullable = false, columnDefinition = "varchar(32) default 'UNDECIDED'")
+    private ExamTrack examTrack;
+
     @Column(name = "preferred_focus_start_hour", nullable = false)
     private int preferredFocusStartHour;
 
@@ -71,11 +76,12 @@ public class BehaviorProfile extends AbstractAggregateRoot {
             ExecutionDifficulty executionDifficulty,
             SocialPreference socialPreference,
             RecoveryStyle recoveryStyle,
+            ExamTrack examTrack,
             Integer preferredFocusStartHour,
             Integer preferredFocusEndHour,
             CoachingMode coachingMode
     ) {
-        validate(userId, executionDifficulty, socialPreference, recoveryStyle,
+        validate(userId, executionDifficulty, socialPreference, recoveryStyle, examTrack,
                 preferredFocusStartHour, preferredFocusEndHour, coachingMode);
 
         return BehaviorProfile.builder()
@@ -84,6 +90,7 @@ public class BehaviorProfile extends AbstractAggregateRoot {
                 .executionDifficulty(executionDifficulty)
                 .socialPreference(socialPreference)
                 .recoveryStyle(recoveryStyle)
+                .examTrack(examTrack)
                 .preferredFocusStartHour(preferredFocusStartHour)
                 .preferredFocusEndHour(preferredFocusEndHour)
                 .coachingMode(coachingMode)
@@ -94,16 +101,18 @@ public class BehaviorProfile extends AbstractAggregateRoot {
             ExecutionDifficulty executionDifficulty,
             SocialPreference socialPreference,
             RecoveryStyle recoveryStyle,
+            ExamTrack examTrack,
             Integer preferredFocusStartHour,
             Integer preferredFocusEndHour,
             CoachingMode coachingMode
     ) {
-        validateFields(executionDifficulty, socialPreference, recoveryStyle,
+        validateFields(executionDifficulty, socialPreference, recoveryStyle, examTrack,
                 preferredFocusStartHour, preferredFocusEndHour, coachingMode);
 
         this.executionDifficulty = executionDifficulty;
         this.socialPreference = socialPreference;
         this.recoveryStyle = recoveryStyle;
+        this.examTrack = examTrack;
         this.preferredFocusStartHour = preferredFocusStartHour;
         this.preferredFocusEndHour = preferredFocusEndHour;
         this.coachingMode = coachingMode;
@@ -114,6 +123,7 @@ public class BehaviorProfile extends AbstractAggregateRoot {
             ExecutionDifficulty executionDifficulty,
             SocialPreference socialPreference,
             RecoveryStyle recoveryStyle,
+            ExamTrack examTrack,
             Integer preferredFocusStartHour,
             Integer preferredFocusEndHour,
             CoachingMode coachingMode
@@ -122,7 +132,7 @@ public class BehaviorProfile extends AbstractAggregateRoot {
             throw new InvalidBehaviorProfileException();
         }
 
-        validateFields(executionDifficulty, socialPreference, recoveryStyle,
+        validateFields(executionDifficulty, socialPreference, recoveryStyle, examTrack,
                 preferredFocusStartHour, preferredFocusEndHour, coachingMode);
     }
 
@@ -130,12 +140,13 @@ public class BehaviorProfile extends AbstractAggregateRoot {
             ExecutionDifficulty executionDifficulty,
             SocialPreference socialPreference,
             RecoveryStyle recoveryStyle,
+            ExamTrack examTrack,
             Integer preferredFocusStartHour,
             Integer preferredFocusEndHour,
             CoachingMode coachingMode
     ) {
         if (executionDifficulty == null || socialPreference == null
-                || recoveryStyle == null || coachingMode == null
+                || recoveryStyle == null || examTrack == null || coachingMode == null
                 || preferredFocusStartHour == null || preferredFocusEndHour == null) {
             throw new InvalidBehaviorProfileException();
         }

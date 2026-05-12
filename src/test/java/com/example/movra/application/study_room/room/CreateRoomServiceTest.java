@@ -41,8 +41,8 @@ class CreateRoomServiceTest {
     }
 
     @Test
-    @DisplayName("공개 방 생성 성공")
-    void create_publicRoom_success() {
+    @DisplayName("공개 방 생성 시 초대 코드 반환")
+    void create_publicRoom_returnsInviteCode() {
         // given
         givenCurrentUser();
 
@@ -51,7 +51,7 @@ class CreateRoomServiceTest {
 
         // then
         assertThat(response.roomId()).isNotNull();
-        assertThat(response.inviteCode()).isNull();
+        assertThat(response.inviteCode()).isNotNull();
         then(roomRepository).should().save(any());
     }
 

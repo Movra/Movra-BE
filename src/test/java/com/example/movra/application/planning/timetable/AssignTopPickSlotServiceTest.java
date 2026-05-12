@@ -1,10 +1,15 @@
 package com.example.movra.application.planning.timetable;
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
+import com.example.movra.bc.analytics.activation_event.application.service.AnalyticsEventRecorder;
+import com.example.movra.bc.analytics.activation_event.domain.type.AnalyticsEventType;
+import com.example.movra.bc.notification.application.service.NotificationGateway;
 import com.example.movra.bc.planning.daily_plan.domain.DailyPlan;
+import com.example.movra.bc.planning.daily_plan.domain.Task;
+import com.example.movra.bc.planning.daily_plan.domain.exception.NotTopPickedTaskException;
+import com.example.movra.bc.planning.daily_plan.domain.exception.TaskNotFoundException;
 import com.example.movra.bc.planning.daily_plan.domain.repository.DailyPlanRepository;
 import com.example.movra.bc.planning.daily_plan.domain.vo.TaskId;
-import com.example.movra.bc.planning.daily_plan.domain.vo.DailyPlanId;
 import com.example.movra.bc.planning.timetable.application.service.AssignTopPickSlotService;
 import com.example.movra.bc.planning.timetable.application.service.dto.request.AssignTopPickSlotRequest;
 import com.example.movra.bc.planning.timetable.domain.Timetable;
@@ -30,7 +35,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.BDDMockito.then;
@@ -50,6 +56,12 @@ class AssignTopPickSlotServiceTest {
     @Mock
     private CurrentUserQuery currentUserQuery;
 
+    @Mock
+    private AnalyticsEventRecorder analyticsEventRecorder;
+
+    @Mock
+    private NotificationGateway notificationGateway;
+
     private final UserId userId = UserId.newId();
 
     @BeforeEach
@@ -58,24 +70,31 @@ class AssignTopPickSlotServiceTest {
                 AuthenticatedUser.builder().userId(userId).build());
     }
 
-    private Timetable createTimetable() {
-        return Timetable.create(DailyPlanId.newId(), 0);
+    private void stubOwnership(Timetable timetable, DailyPlan dailyPlan) {
+        given(dailyPlanRepository.findByDailyPlanIdAndUserId(timetable.getDailyPlanId(), userId)).willReturn(Optional.of(dailyPlan));
     }
 
-    private void stubOwnership(Timetable timetable) {
-        DailyPlan dailyPlan = DailyPlan.create(userId, LocalDate.of(2026, 3, 17));
-        given(dailyPlanRepository.findByDailyPlanIdAndUserId(timetable.getDailyPlanId(), userId)).willReturn(Optional.of(dailyPlan));
+    private DailyPlan createDailyPlan() {
+        return DailyPlan.create(userId, LocalDate.of(2026, 3, 17));
+    }
+
+    private Task addTopPickedTask(DailyPlan dailyPlan) {
+        Task task = dailyPlan.addTask("핵심 과제");
+        dailyPlan.markAsTopPicked(task.getTaskId(), 60, "memo", DailyPlan.DEFAULT_MAX_TOP_PICKS);
+        return task;
     }
 
     @Test
     @DisplayName("TopPick 슬롯 배정 성공")
     void assign_success() {
         // given
-        Timetable timetable = createTimetable();
+        DailyPlan dailyPlan = createDailyPlan();
+        Task task = addTopPickedTask(dailyPlan);
+        Timetable timetable = Timetable.create(dailyPlan.getDailyPlanId(), 1);
         UUID timetableId = timetable.getTimetableId().id();
-        UUID taskId = UUID.randomUUID();
+        UUID taskId = task.getTaskId().id();
         given(timetableRepository.findById(TimetableId.of(timetableId))).willReturn(Optional.of(timetable));
-        stubOwnership(timetable);
+        stubOwnership(timetable, dailyPlan);
 
         // when
         assignTopPickSlotService.assign(timetableId, taskId,
@@ -86,6 +105,25 @@ class AssignTopPickSlotServiceTest {
         assertThat(timetable.getSlots().get(0).isTopPick()).isTrue();
         assertThat(timetable.getSlots().get(0).getTaskId()).isEqualTo(TaskId.of(taskId));
         then(timetableRepository).should().save(timetable);
+        then(analyticsEventRecorder).should().recordSafely(
+                eq(userId),
+                eq(AnalyticsEventType.TIMETABLE_SLOT_CREATED),
+                argThat(properties ->
+                        properties.get("dailyPlanId").equals(timetable.getDailyPlanId().id().toString())
+                                && properties.get("timetableId").equals(timetableId.toString())
+                                && properties.get("taskId").equals(taskId.toString())
+                                && properties.get("slotId").equals(timetable.getSlots().get(0).getSlotId().id().toString())
+                                && properties.get("slotType").equals("TOP_PICK")
+                )
+        );
+        then(notificationGateway).should().sendSafely(
+                eq(userId),
+                argThat(payload ->
+                        payload.type().name().equals("DAILY_TIMETABLE")
+                                && payload.data().get("slotId").equals(timetable.getSlots().get(0).getSlotId().id().toString())
+                                && payload.data().get("slotType").equals("TOP_PICK")
+                )
+        );
     }
 
     @Test
@@ -105,14 +143,17 @@ class AssignTopPickSlotServiceTest {
     @DisplayName("시간 겹침 시 TimeOverlapException 발생")
     void assign_timeOverlap_throwsException() {
         // given
-        Timetable timetable = createTimetable();
+        DailyPlan dailyPlan = createDailyPlan();
+        Task assignedTask = addTopPickedTask(dailyPlan);
+        Task overlappingTask = addTopPickedTask(dailyPlan);
+        Timetable timetable = Timetable.create(dailyPlan.getDailyPlanId(), 2);
         UUID timetableId = timetable.getTimetableId().id();
-        timetable.assignTopPick(TaskId.newId(), LocalTime.of(9, 0), LocalTime.of(10, 0));
+        timetable.assignTopPick(assignedTask.getTaskId(), LocalTime.of(9, 0), LocalTime.of(10, 0));
         given(timetableRepository.findById(TimetableId.of(timetableId))).willReturn(Optional.of(timetable));
-        stubOwnership(timetable);
+        stubOwnership(timetable, dailyPlan);
 
         // when & then
-        assertThatThrownBy(() -> assignTopPickSlotService.assign(timetableId, UUID.randomUUID(),
+        assertThatThrownBy(() -> assignTopPickSlotService.assign(timetableId, overlappingTask.getTaskId().id(),
                 new AssignTopPickSlotRequest(LocalTime.of(9, 30), LocalTime.of(10, 30))))
                 .isInstanceOf(TimeOverlapException.class);
     }
@@ -121,14 +162,49 @@ class AssignTopPickSlotServiceTest {
     @DisplayName("시작 시간이 종료 시간보다 늦으면 InvalidTimeRangeException 발생")
     void assign_invalidTimeRange_throwsException() {
         // given
-        Timetable timetable = createTimetable();
+        DailyPlan dailyPlan = createDailyPlan();
+        Task task = addTopPickedTask(dailyPlan);
+        Timetable timetable = Timetable.create(dailyPlan.getDailyPlanId(), 1);
         UUID timetableId = timetable.getTimetableId().id();
         given(timetableRepository.findById(TimetableId.of(timetableId))).willReturn(Optional.of(timetable));
-        stubOwnership(timetable);
+        stubOwnership(timetable, dailyPlan);
+
+        // when & then
+        assertThatThrownBy(() -> assignTopPickSlotService.assign(timetableId, task.getTaskId().id(),
+                new AssignTopPickSlotRequest(LocalTime.of(10, 0), LocalTime.of(9, 0))))
+                .isInstanceOf(InvalidTimeRangeException.class);
+    }
+
+    @Test
+    @DisplayName("DailyPlan에 없는 Task를 TopPick 슬롯으로 배정하면 TaskNotFoundException 발생")
+    void assign_taskNotInDailyPlan_throwsException() {
+        // given
+        DailyPlan dailyPlan = createDailyPlan();
+        Timetable timetable = Timetable.create(dailyPlan.getDailyPlanId(), 1);
+        UUID timetableId = timetable.getTimetableId().id();
+        given(timetableRepository.findById(TimetableId.of(timetableId))).willReturn(Optional.of(timetable));
+        stubOwnership(timetable, dailyPlan);
 
         // when & then
         assertThatThrownBy(() -> assignTopPickSlotService.assign(timetableId, UUID.randomUUID(),
-                new AssignTopPickSlotRequest(LocalTime.of(10, 0), LocalTime.of(9, 0))))
-                .isInstanceOf(InvalidTimeRangeException.class);
+                new AssignTopPickSlotRequest(LocalTime.of(9, 0), LocalTime.of(10, 0))))
+                .isInstanceOf(TaskNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("TopPick으로 선택되지 않은 Task를 TopPick 슬롯으로 배정하면 NotTopPickedTaskException 발생")
+    void assign_notTopPickedTask_throwsException() {
+        // given
+        DailyPlan dailyPlan = createDailyPlan();
+        Task task = dailyPlan.addTask("일반 과제");
+        Timetable timetable = Timetable.create(dailyPlan.getDailyPlanId(), 1);
+        UUID timetableId = timetable.getTimetableId().id();
+        given(timetableRepository.findById(TimetableId.of(timetableId))).willReturn(Optional.of(timetable));
+        stubOwnership(timetable, dailyPlan);
+
+        // when & then
+        assertThatThrownBy(() -> assignTopPickSlotService.assign(timetableId, task.getTaskId().id(),
+                new AssignTopPickSlotRequest(LocalTime.of(9, 0), LocalTime.of(10, 0))))
+                .isInstanceOf(NotTopPickedTaskException.class);
     }
 }

@@ -5,8 +5,10 @@ import com.example.movra.bc.study_room.room.domain.event.ParticipantJoinedEvent;
 import com.example.movra.bc.study_room.room.domain.event.ParticipantKickedEvent;
 import com.example.movra.bc.study_room.room.domain.event.RoomCreatedEvent;
 import com.example.movra.bc.study_room.room.domain.event.RoomDissolvedEvent;
+import com.example.movra.bc.study_room.room.domain.exception.InvalidInviteCodeException;
 import com.example.movra.bc.study_room.room.domain.exception.LeaderCannotKickSelfException;
 import com.example.movra.bc.study_room.room.domain.exception.NotLeaderException;
+import com.example.movra.bc.study_room.room.domain.vo.InviteCode;
 import com.example.movra.bc.study_room.room.domain.vo.RoomId;
 import com.example.movra.bc.study_room.room.domain.vo.Visibility;
 import com.example.movra.sharedkernel.domain.AbstractAggregateRoot;
@@ -42,13 +44,18 @@ public abstract class Room extends AbstractAggregateRoot {
     @Column(length = 20, nullable = false)
     private String name;
 
+    @Embedded
+    @AttributeOverride(name = "code", column = @Column(name = "invite_code", nullable = false, unique = true))
+    private InviteCode inviteCode;
+
     @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    protected Room(RoomId id, UserId leaderId, String name, LocalDateTime createdAt) {
+    protected Room(RoomId id, UserId leaderId, String name, InviteCode inviteCode, LocalDateTime createdAt) {
         this.id = id;
         this.leaderId = leaderId;
         this.name = name;
+        this.inviteCode = inviteCode;
         this.createdAt = createdAt;
     }
 
@@ -64,6 +71,10 @@ public abstract class Room extends AbstractAggregateRoot {
     }
 
     public void join(UserId userId, String inviteCode) {
+        if (inviteCode == null || !this.inviteCode.code().equals(inviteCode)) {
+            throw new InvalidInviteCodeException();
+        }
+
         registerEvent(new ParticipantJoinedEvent(this.id, userId));
     }
 
