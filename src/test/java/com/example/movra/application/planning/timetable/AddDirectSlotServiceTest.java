@@ -1,6 +1,9 @@
 package com.example.movra.application.planning.timetable;
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
+import com.example.movra.bc.analytics.activation_event.application.service.AnalyticsEventRecorder;
+import com.example.movra.bc.analytics.activation_event.domain.type.AnalyticsEventType;
+import com.example.movra.bc.notification.application.service.NotificationGateway;
 import com.example.movra.bc.planning.daily_plan.application.exception.DailyPlanNotFoundException;
 import com.example.movra.bc.planning.daily_plan.domain.DailyPlan;
 import com.example.movra.bc.planning.daily_plan.domain.repository.DailyPlanRepository;
@@ -28,6 +31,8 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.BDDMockito.then;
@@ -46,6 +51,12 @@ class AddDirectSlotServiceTest {
 
     @Mock
     private CurrentUserQuery currentUserQuery;
+
+    @Mock
+    private AnalyticsEventRecorder analyticsEventRecorder;
+
+    @Mock
+    private NotificationGateway notificationGateway;
 
     private final UserId userId = UserId.newId();
 
@@ -78,6 +89,25 @@ class AddDirectSlotServiceTest {
         assertThat(timetable.getSlots().get(0).isTopPick()).isFalse();
         then(dailyPlanRepository).should().save(dailyPlan);
         then(timetableRepository).should().save(timetable);
+        then(analyticsEventRecorder).should().recordSafely(
+                eq(userId),
+                eq(AnalyticsEventType.TIMETABLE_SLOT_CREATED),
+                argThat(properties ->
+                        properties.get("dailyPlanId").equals(dailyPlanId.id().toString())
+                                && properties.get("timetableId").equals(timetableUuid.toString())
+                                && properties.get("taskId").equals(dailyPlan.getTasks().get(0).getTaskId().id().toString())
+                                && properties.get("slotId").equals(timetable.getSlots().get(0).getSlotId().id().toString())
+                                && properties.get("slotType").equals("DIRECT")
+                )
+        );
+        then(notificationGateway).should().sendSafely(
+                eq(userId),
+                argThat(payload ->
+                        payload.type().name().equals("DAILY_TIMETABLE")
+                                && payload.data().get("slotId").equals(timetable.getSlots().get(0).getSlotId().id().toString())
+                                && payload.data().get("slotType").equals("DIRECT")
+                )
+        );
     }
 
     @Test

@@ -59,7 +59,7 @@ class QueryTimetableServiceTest {
         DailyPlanId dailyPlanId = DailyPlanId.newId();
         DailyPlan dailyPlan = DailyPlan.create(userId, LocalDate.of(2026, 3, 17));
 
-        Timetable timetable = Timetable.create(dailyPlanId, 0);
+        Timetable timetable = Timetable.create(dailyPlanId, 1);
         timetable.assignTopPick(
                 dailyPlan.addTask("할 일").getTaskId(),
                 LocalTime.of(9, 0),
