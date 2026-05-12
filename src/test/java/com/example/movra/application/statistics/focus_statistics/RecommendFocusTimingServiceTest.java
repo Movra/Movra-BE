@@ -4,6 +4,7 @@ import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.personalization.behavior_profile.domain.BehaviorProfile;
 import com.example.movra.bc.personalization.behavior_profile.domain.repository.BehaviorProfileRepository;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.CoachingMode;
+import com.example.movra.bc.personalization.behavior_profile.domain.type.ExamTrack;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.ExecutionDifficulty;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.RecoveryStyle;
 import com.example.movra.bc.personalization.behavior_profile.domain.type.SocialPreference;
@@ -183,6 +184,7 @@ class RecommendFocusTimingServiceTest {
                 ExecutionDifficulty.MEDIUM,
                 SocialPreference.LOW,
                 RecoveryStyle.QUICK_RESTART,
+                ExamTrack.MOPYUNG_SUNUNG,
                 9,
                 21,
                 CoachingMode.GENTLE
