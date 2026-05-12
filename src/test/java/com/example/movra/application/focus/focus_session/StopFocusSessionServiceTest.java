@@ -3,6 +3,8 @@ package com.example.movra.application.focus.focus_session;
 import com.example.movra.bc.account.user.domain.user.User;
 import com.example.movra.bc.account.user.domain.user.repository.UserRepository;
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
+import com.example.movra.bc.analytics.activation_event.application.service.AnalyticsEventRecorder;
+import com.example.movra.bc.analytics.activation_event.domain.type.AnalyticsEventType;
 import com.example.movra.bc.focus.focus_session.application.exception.FocusSessionNotFoundException;
 import com.example.movra.bc.focus.focus_session.application.service.StopFocusSessionService;
 import com.example.movra.bc.focus.focus_session.application.service.dto.response.FocusSessionResponse;
@@ -23,7 +25,10 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
@@ -45,6 +50,9 @@ class StopFocusSessionServiceTest {
     private Clock clock;
 
     @Mock
+    private AnalyticsEventRecorder analyticsEventRecorder;
+
+    @Mock
     private User user;
 
     private final UserId userId = UserId.newId();
@@ -62,7 +70,7 @@ class StopFocusSessionServiceTest {
     void stop_success() {
         // given
         givenCurrentUser();
-        FocusSession focusSession = FocusSession.start(userId, startedAt);
+        FocusSession focusSession = FocusSession.start(userId, startedAt, 25);
         given(clock.instant()).willReturn(endedAt);
         given(userRepository.findByIdForUpdate(userId)).willReturn(Optional.of(user));
         given(focusSessionRepository.findByUserIdAndEndedAtIsNull(userId)).willReturn(Optional.of(focusSession));
@@ -75,8 +83,23 @@ class StopFocusSessionServiceTest {
         assertThat(response.endedAt()).isEqualTo(endedAt);
         assertThat(response.recordedElapsedSeconds()).isEqualTo(1800L);
         assertThat(response.elapsedSeconds()).isEqualTo(1800L);
+        assertThat(response.presetMinutes()).isEqualTo(25);
+        assertThat(response.presetSeconds()).isEqualTo(1500);
+        assertThat(response.presetCompletionRate()).isEqualTo(1.2);
         assertThat(focusSession.isInProgress()).isFalse();
         assertThat(focusSession.getDurationSeconds()).isEqualTo(1800L);
+        then(analyticsEventRecorder).should().recordSafely(
+                eq(userId),
+                eq(AnalyticsEventType.FOCUS_SESSION_COMPLETED),
+                argThat(properties ->
+                        properties.get("focusSessionId").equals(focusSession.getId().id().toString())
+                                && properties.get("durationSeconds").equals("1800")
+                                && properties.get("endedAt").equals(endedAt.toString())
+                                && properties.get("presetMinutes").equals("25")
+                                && properties.get("presetSeconds").equals("1500")
+                                && properties.get("presetCompletionRate").equals("1.2")
+                )
+        );
     }
 
     @Test
@@ -91,5 +114,30 @@ class StopFocusSessionServiceTest {
         // when & then
         assertThatThrownBy(() -> stopFocusSessionService.stop())
                 .isInstanceOf(FocusSessionNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("stop records abandoned event when preset is not completed")
+    void stop_underPreset_recordsAbandonedEvent() {
+        // given
+        givenCurrentUser();
+        FocusSession focusSession = FocusSession.start(userId, startedAt, 25);
+        Instant earlyEnd = startedAt.plusSeconds(60);
+        given(clock.instant()).willReturn(earlyEnd);
+        given(userRepository.findByIdForUpdate(userId)).willReturn(Optional.of(user));
+        given(focusSessionRepository.findByUserIdAndEndedAtIsNull(userId)).willReturn(Optional.of(focusSession));
+
+        // when
+        stopFocusSessionService.stop();
+
+        // then
+        then(analyticsEventRecorder).should().recordSafely(
+                eq(userId),
+                eq(AnalyticsEventType.FOCUS_SESSION_ABANDONED),
+                argThat(properties ->
+                        properties.get("durationSeconds").equals("60")
+                                && properties.get("presetCompletionRate").equals("0.04")
+                )
+        );
     }
 }

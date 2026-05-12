@@ -19,6 +19,8 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Focu
 
     Optional<FocusSession> findByUserIdAndEndedAtIsNull(UserId userId);
 
+    Optional<FocusSession> findFirstByUserIdAndEndedAtIsNotNullOrderByEndedAtDesc(UserId userId);
+
     @Query("""
             SELECT fs
             FROM FocusSession fs

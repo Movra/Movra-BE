@@ -13,7 +13,10 @@ public record FocusSessionResponse(
         Instant endedAt,
         Long recordedElapsedSeconds,
         long elapsedSeconds,
-        boolean inProgress
+        boolean inProgress,
+        Integer presetMinutes,
+        Integer presetSeconds,
+        Double presetCompletionRate
 ) {
 
     public static FocusSessionResponse from(FocusSession focusSession, Instant now) {
@@ -24,6 +27,9 @@ public record FocusSessionResponse(
                 .recordedElapsedSeconds(focusSession.getDurationSeconds())
                 .elapsedSeconds(focusSession.elapsedSecondsAt(now))
                 .inProgress(focusSession.isInProgress())
+                .presetMinutes(focusSession.getPresetMinutes())
+                .presetSeconds(focusSession.presetSeconds())
+                .presetCompletionRate(focusSession.presetCompletionRate())
                 .build();
     }
 }

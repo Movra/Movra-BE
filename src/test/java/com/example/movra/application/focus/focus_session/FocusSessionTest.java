@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class FocusSessionTest {
@@ -27,6 +28,33 @@ class FocusSessionTest {
     void start_startedAtIsNull_throwsException() {
         assertThatThrownBy(() -> FocusSession.start(userId, null))
                 .isInstanceOf(InvalidFocusSessionException.class);
+    }
+
+    @Test
+    @DisplayName("start stores preset minutes")
+    void start_presetMinutes_success() {
+        FocusSession focusSession = FocusSession.start(userId, startedAt, 3);
+
+        assertThat(focusSession.getPresetMinutes()).isEqualTo(3);
+        assertThat(focusSession.presetSeconds()).isEqualTo(180);
+    }
+
+    @Test
+    @DisplayName("start throws when preset minutes is unsupported")
+    void start_unsupportedPresetMinutes_throwsException() {
+        assertThatThrownBy(() -> FocusSession.start(userId, startedAt, 7))
+                .isInstanceOf(InvalidFocusSessionException.class);
+    }
+
+    @Test
+    @DisplayName("complete calculates preset completion rate")
+    void complete_calculatesPresetCompletionRate_success() {
+        FocusSession focusSession = FocusSession.start(userId, startedAt, 3);
+
+        focusSession.complete(startedAt.plusSeconds(90));
+
+        assertThat(focusSession.getDurationSeconds()).isEqualTo(90);
+        assertThat(focusSession.presetCompletionRate()).isEqualTo(0.5);
     }
 
     @Test

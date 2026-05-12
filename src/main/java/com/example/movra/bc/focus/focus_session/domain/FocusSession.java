@@ -20,6 +20,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Set;
 
 @Getter
 @Builder(access = AccessLevel.PRIVATE)
@@ -28,6 +29,8 @@ import java.time.Instant;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class FocusSession extends AbstractAggregateRoot {
+
+    public static final Set<Integer> ALLOWED_PRESET_MINUTES = Set.of(3, 5, 10, 25);
 
     @EmbeddedId
     @AttributeOverride(name = "id", column = @Column(name = "focus_session_id"))
@@ -46,7 +49,14 @@ public class FocusSession extends AbstractAggregateRoot {
     @Column(name = "duration_seconds")
     private Long durationSeconds; //TODO -> 함수 종속성 문제
 
+    @Column(name = "preset_minutes")
+    private Integer presetMinutes;
+
     public static FocusSession start(UserId userId, Instant startedAt) {
+        return start(userId, startedAt, 5);
+    }
+
+    public static FocusSession start(UserId userId, Instant startedAt, Integer presetMinutes) {
         if (userId == null) {
             throw new InvalidFocusSessionException();
         }
@@ -55,10 +65,13 @@ public class FocusSession extends AbstractAggregateRoot {
             throw new InvalidFocusSessionException();
         }
 
+        validatePresetMinutes(presetMinutes);
+
         return FocusSession.builder()
                 .id(FocusSessionId.newId())
                 .userId(userId)
                 .startedAt(startedAt)
+                .presetMinutes(presetMinutes)
                 .build();
     }
 
@@ -97,5 +110,26 @@ public class FocusSession extends AbstractAggregateRoot {
         }
 
         return Math.max(0L, Duration.between(startedAt, now).getSeconds());
+    }
+
+    public Integer presetSeconds() {
+        if (presetMinutes == null) {
+            return null;
+        }
+        return presetMinutes * 60;
+    }
+
+    public Double presetCompletionRate() {
+        Integer presetSeconds = presetSeconds();
+        if (durationSeconds == null || presetSeconds == null || presetSeconds == 0) {
+            return null;
+        }
+        return (double) durationSeconds / presetSeconds;
+    }
+
+    private static void validatePresetMinutes(Integer presetMinutes) {
+        if (presetMinutes == null || !ALLOWED_PRESET_MINUTES.contains(presetMinutes)) {
+            throw new InvalidFocusSessionException();
+        }
     }
 }

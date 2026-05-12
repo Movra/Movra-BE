@@ -3,7 +3,10 @@ package com.example.movra.bc.focus.focus_session.application.service;
 import com.example.movra.bc.account.user.application.user.exception.UserNotFoundException;
 import com.example.movra.bc.account.user.domain.user.repository.UserRepository;
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
+import com.example.movra.bc.analytics.activation_event.application.service.AnalyticsEventRecorder;
+import com.example.movra.bc.analytics.activation_event.domain.type.AnalyticsEventType;
 import com.example.movra.bc.focus.focus_session.application.exception.FocusSessionAlreadyInProgressException;
+import com.example.movra.bc.focus.focus_session.application.service.dto.request.StartFocusSessionRequest;
 import com.example.movra.bc.focus.focus_session.application.service.dto.response.FocusSessionResponse;
 import com.example.movra.bc.focus.focus_session.domain.FocusSession;
 import com.example.movra.bc.focus.focus_session.domain.repository.FocusSessionRepository;
@@ -14,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -23,11 +27,13 @@ public class StartFocusSessionService {
     private final UserRepository userRepository;
     private final CurrentUserQuery currentUserQuery;
     private final Clock clock;
+    private final AnalyticsEventRecorder analyticsEventRecorder;
 
     @Transactional
-    public FocusSessionResponse start() {
+    public FocusSessionResponse start(StartFocusSessionRequest request) {
         UserId userId = currentUserQuery.currentUser().userId();
         Instant now = clock.instant();
+        Integer presetMinutes = request == null ? null : request.presetMinutes();
 
         userRepository.findByIdForUpdate(userId)
                 .orElseThrow(UserNotFoundException::new);
@@ -36,7 +42,17 @@ public class StartFocusSessionService {
             throw new FocusSessionAlreadyInProgressException();
         }
 
-        FocusSession focusSession = focusSessionRepository.save(FocusSession.start(userId, now));
+        FocusSession focusSession = focusSessionRepository.save(FocusSession.start(userId, now, presetMinutes));
+        analyticsEventRecorder.recordSafely(
+                userId,
+                AnalyticsEventType.FOCUS_SESSION_STARTED,
+                Map.of(
+                        "focusSessionId", focusSession.getId().id().toString(),
+                        "startedAt", focusSession.getStartedAt().toString(),
+                        "presetMinutes", String.valueOf(focusSession.getPresetMinutes()),
+                        "presetSeconds", String.valueOf(focusSession.presetSeconds())
+                )
+        );
         return FocusSessionResponse.from(focusSession, now);
     }
 }
