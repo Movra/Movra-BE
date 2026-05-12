@@ -66,3 +66,7 @@ cloud:
     credentials:
       access-key: test-access-key
       secret-key: test-secret-key
+
+app:
+  cors:
+    allowed-origin-patterns: http://localhost:3000
