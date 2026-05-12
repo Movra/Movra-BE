@@ -4,6 +4,7 @@ import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.accountability.accountability_relation.application.service.exception.AccountabilityRelationNotFoundException;
 import com.example.movra.bc.accountability.accountability_relation.application.service.invite.ReissueInviteCodeService;
 import com.example.movra.bc.accountability.accountability_relation.domain.repository.AccountabilityRelationRepository;
+import com.example.movra.bc.analytics.activation_event.application.service.AnalyticsEventRecorder;
 import com.example.movra.sharedkernel.user.AuthenticatedUser;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import org.junit.jupiter.api.DisplayName;
@@ -33,6 +34,9 @@ class ReissueInviteCodeServiceTest {
 
     @Mock
     private Clock clock;
+
+    @Mock
+    private AnalyticsEventRecorder analyticsEventRecorder;
 
     @Test
     @DisplayName("reissue throws AccountabilityRelationNotFoundException when relation does not exist")
