@@ -1,10 +1,13 @@
 package com.example.movra.application.visioning.future_vision;
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
-import com.example.movra.bc.visioning.future_vision.application.service.CreateFutureVisionService;
+import com.example.movra.bc.analytics.activation_event.application.service.AnalyticsEventRecorder;
+import com.example.movra.bc.analytics.activation_event.domain.type.AnalyticsEventType;
 import com.example.movra.bc.visioning.future_vision.application.exception.FutureVisionAlreadyExistsException;
 import com.example.movra.bc.visioning.future_vision.application.helper.FutureVisionPersister;
+import com.example.movra.bc.visioning.future_vision.application.service.CreateFutureVisionService;
 import com.example.movra.bc.visioning.future_vision.application.service.dto.request.CreateFutureVisionRequest;
+import com.example.movra.bc.visioning.future_vision.domain.FutureVision;
 import com.example.movra.bc.visioning.future_vision.domain.repository.FutureVisionRepository;
 import com.example.movra.sharedkernel.file.storage.ImageHelper;
 import com.example.movra.sharedkernel.file.storage.type.ImageType;
@@ -18,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.web.multipart.MultipartFile;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
@@ -43,6 +47,9 @@ class CreateFutureVisionServiceTest {
     @Mock
     private CurrentUserQuery currentUserQuery;
 
+    @Mock
+    private AnalyticsEventRecorder analyticsEventRecorder;
+
     private final UserId userId = UserId.newId();
 
     private void givenCurrentUser() {
@@ -60,6 +67,13 @@ class CreateFutureVisionServiceTest {
         MultipartFile yearlyImage = mock(MultipartFile.class);
         given(imageHelper.upload(weeklyImage, ImageType.FUTURE)).willReturn("weekly-url");
         given(imageHelper.upload(yearlyImage, ImageType.FUTURE)).willReturn("yearly-url");
+        FutureVision futureVision = FutureVision.create(userId, "weekly-url", "yearly-url", "annual vision");
+        given(futureVisionPersister.saveFutureVision(
+                eq(userId),
+                eq("weekly-url"),
+                eq("yearly-url"),
+                eq("annual vision")
+        )).willReturn(futureVision);
 
         createFutureVisionService.create(new CreateFutureVisionRequest(
                 weeklyImage,
@@ -69,6 +83,11 @@ class CreateFutureVisionServiceTest {
 
         then(futureVisionPersister).should().saveFutureVision(
                 eq(userId), eq("weekly-url"), eq("yearly-url"), eq("annual vision")
+        );
+        then(analyticsEventRecorder).should().recordSafely(
+                eq(userId),
+                eq(AnalyticsEventType.FUTURE_VISION_CREATED),
+                argThat(properties -> properties.get("futureVisionId").equals(futureVision.getId().id().toString()))
         );
     }
 

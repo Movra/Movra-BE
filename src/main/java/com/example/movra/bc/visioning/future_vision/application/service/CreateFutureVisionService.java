@@ -1,10 +1,13 @@
 package com.example.movra.bc.visioning.future_vision.application.service;
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
+import com.example.movra.bc.analytics.activation_event.application.service.AnalyticsEventRecorder;
+import com.example.movra.bc.analytics.activation_event.domain.type.AnalyticsEventType;
 import com.example.movra.bc.visioning.future_vision.application.exception.FutureVisionAlreadyExistsException;
 import com.example.movra.bc.visioning.future_vision.application.exception.FutureVisionCreationFailedException;
 import com.example.movra.bc.visioning.future_vision.application.helper.FutureVisionPersister;
 import com.example.movra.bc.visioning.future_vision.application.service.dto.request.CreateFutureVisionRequest;
+import com.example.movra.bc.visioning.future_vision.domain.FutureVision;
 import com.example.movra.bc.visioning.future_vision.domain.repository.FutureVisionRepository;
 import com.example.movra.sharedkernel.file.storage.ImageHelper;
 import com.example.movra.sharedkernel.file.storage.type.ImageType;
@@ -13,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -23,6 +28,7 @@ public class CreateFutureVisionService {
     private final FutureVisionRepository futureVisionRepository;
     private final CurrentUserQuery currentUserQuery;
     private final ImageHelper imageHelper;
+    private final AnalyticsEventRecorder analyticsEventRecorder;
 
     @Transactional
     public void create(CreateFutureVisionRequest request) {
@@ -36,11 +42,16 @@ public class CreateFutureVisionService {
         String yearlyVisionImageUrl = imageHelper.upload(request.yearlyVisionImageUrl(), ImageType.FUTURE);
 
         try{
-            futureVisionPersister.saveFutureVision(
+            FutureVision futureVision = futureVisionPersister.saveFutureVision(
                     userId,
                     weeklyVisionImageUrl,
                     yearlyVisionImageUrl,
                     request.yearlyVisionDescription()
+            );
+            analyticsEventRecorder.recordSafely(
+                    userId,
+                    AnalyticsEventType.FUTURE_VISION_CREATED,
+                    Map.of("futureVisionId", futureVision.getId().id().toString())
             );
         } catch (Exception e) {
             imageHelper.cleanup(weeklyVisionImageUrl);
