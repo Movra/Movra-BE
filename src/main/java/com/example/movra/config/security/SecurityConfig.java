@@ -9,6 +9,7 @@ import com.example.movra.bc.account.user.infrastructure.user.security.jwt.JwtTok
 import com.example.movra.bc.account.user.infrastructure.user.security.jwt.JwtTokenProvider;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -39,6 +40,9 @@ public class SecurityConfig {
     private final OauthSuccessHandler oauthSuccessHandler;
     private final OauthFailureHandler oauthFailureHandler;
 
+    @Value("${app.cors.allowed-origin-patterns}")
+    private List<String> allowedOriginPatterns;
+
     @Bean
     public SecurityFilterChain filterChain(
             HttpSecurity http
@@ -56,6 +60,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/oauth/profile-setup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/reissue").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/auth/onboarding-context").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/web-push/vapid-public-key").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
@@ -76,7 +82,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*")); //추후에
+        configuration.setAllowedOriginPatterns(resolveAllowedOriginPatterns());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
@@ -84,5 +90,22 @@ public class SecurityConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
+    }
+
+    private List<String> resolveAllowedOriginPatterns() {
+        if (allowedOriginPatterns == null) {
+            throw new IllegalStateException("CORS allowed origin patterns must be configured.");
+        }
+
+        List<String> normalizedPatterns = allowedOriginPatterns.stream()
+                .map(String::trim)
+                .filter(pattern -> !pattern.isBlank())
+                .toList();
+
+        if (normalizedPatterns.isEmpty() || normalizedPatterns.contains("*")) {
+            throw new IllegalStateException("Credentialed CORS must not use wildcard origins.");
+        }
+
+        return normalizedPatterns;
     }
 }
