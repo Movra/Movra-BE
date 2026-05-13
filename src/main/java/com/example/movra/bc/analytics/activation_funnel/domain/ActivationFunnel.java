@@ -16,6 +16,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 
 @Getter
@@ -31,6 +33,9 @@ import java.time.Instant;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ActivationFunnel extends AbstractAggregateRoot {
+
+    private static final long FOCUS_TIMING_CARD_AVAILABLE_AFTER_DAYS = 7;
+
 
     @EmbeddedId
     @AttributeOverride(name = "id", column = @Column(name = "activation_funnel_id"))
@@ -114,6 +119,14 @@ public class ActivationFunnel extends AbstractAggregateRoot {
         if (nsmFirstEntryAt == null) {
             nsmFirstEntryAt = occurredAt;
         }
+    }
+
+    public boolean isFocusTimingCardAvailable(Clock clock) {
+        return signupAt != null && daysSinceSignup(clock) >= FOCUS_TIMING_CARD_AVAILABLE_AFTER_DAYS;
+    }
+
+    private long daysSinceSignup(Clock clock) {
+        return Duration.between(signupAt, clock.instant()).toDays();
     }
 
     private void markActivationSource(String activationSource) {

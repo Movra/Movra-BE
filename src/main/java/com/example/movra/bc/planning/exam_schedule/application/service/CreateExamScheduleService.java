@@ -7,8 +7,10 @@ import com.example.movra.bc.planning.exam_schedule.application.service.dto.reque
 import com.example.movra.bc.planning.exam_schedule.application.service.dto.response.ExamScheduleResponse;
 import com.example.movra.bc.planning.exam_schedule.domain.ExamSchedule;
 import com.example.movra.bc.planning.exam_schedule.domain.repository.ExamScheduleRepository;
+import com.example.movra.config.cache.HomeCacheNames;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +28,10 @@ public class CreateExamScheduleService {
     private final Clock clock;
     private final AnalyticsEventRecorder analyticsEventRecorder;
 
+    @CacheEvict(
+            cacheNames = HomeCacheNames.NEXT_EXAM_SCHEDULE,
+            key = "@homeCacheKey.currentUserIdToday()"
+    )
     @Transactional
     public ExamScheduleResponse create(ExamScheduleRequest request) {
         UserId userId = currentUserQuery.currentUser().userId();

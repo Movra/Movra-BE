@@ -232,6 +232,31 @@ class ExamScheduleServiceTest {
     }
 
     @Test
+    @DisplayName("findNextForHome returns the upcoming exam when present")
+    void findNextForHome_present_returnsResponse() {
+        givenCurrentUser();
+        ExamSchedule examSchedule = schedule(ExamType.HAKPYUNG, "학평", today.plusDays(3), null);
+        given(examScheduleRepository.findFirstByUserIdAndExamDateGreaterThanEqualOrderByExamDateAsc(userId, today))
+                .willReturn(Optional.of(examSchedule));
+
+        Optional<ExamScheduleResponse> response = queryExamScheduleService.findNextForHome();
+
+        assertThat(response).isPresent();
+        assertThat(response.get().title()).isEqualTo("학평");
+        assertThat(response.get().daysUntil()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("findNextForHome returns empty when no upcoming exam exists")
+    void findNextForHome_notFound_returnsEmpty() {
+        givenCurrentUser();
+        given(examScheduleRepository.findFirstByUserIdAndExamDateGreaterThanEqualOrderByExamDateAsc(userId, today))
+                .willReturn(Optional.empty());
+
+        assertThat(queryExamScheduleService.findNextForHome()).isEmpty();
+    }
+
+    @Test
     @DisplayName("querySeasonMode returns intensive mode for upcoming exam")
     void querySeasonMode_upcomingExam_returnsSeasonMode() {
         givenCurrentUser();

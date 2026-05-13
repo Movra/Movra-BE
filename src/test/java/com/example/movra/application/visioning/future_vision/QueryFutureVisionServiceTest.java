@@ -87,4 +87,24 @@ class QueryFutureVisionServiceTest {
         assertThatThrownBy(() -> queryFutureVisionService.query())
                 .isInstanceOf(FutureVisionNotFoundException.class);
     }
+
+    @Test
+    void findForHome_present_returnsResponse() {
+        givenCurrentUser();
+        FutureVision futureVision = FutureVision.create(userId, "weekly.png", "yearly.png", "annual vision");
+        given(futureVisionRepository.findByUserId(userId)).willReturn(Optional.of(futureVision));
+
+        Optional<FutureVisionResponse> response = queryFutureVisionService.findForHome();
+
+        assertThat(response).isPresent();
+        assertThat(response.get().weeklyVisionImageUrl()).isEqualTo("weekly.png");
+    }
+
+    @Test
+    void findForHome_notFound_returnsEmpty() {
+        givenCurrentUser();
+        given(futureVisionRepository.findByUserId(userId)).willReturn(Optional.empty());
+
+        assertThat(queryFutureVisionService.findForHome()).isEmpty();
+    }
 }
