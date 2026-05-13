@@ -4,6 +4,8 @@ import com.example.movra.bc.planning.daily_plan.domain.vo.DailyPlanId;
 import com.example.movra.bc.planning.timetable.domain.Timetable;
 import com.example.movra.bc.planning.timetable.domain.vo.TimetableId;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
@@ -12,4 +14,12 @@ import java.util.Optional;
 public interface TimetableRepository extends JpaRepository<Timetable, TimetableId> {
 
     Optional<Timetable> findByDailyPlanId(DailyPlanId dailyPlanId);
+
+    @Query("""
+            SELECT DISTINCT t
+            FROM Timetable t
+            LEFT JOIN FETCH t.slots
+            WHERE t.dailyPlanId = :dailyPlanId
+            """)
+    Optional<Timetable> findByDailyPlanIdWithSlots(@Param("dailyPlanId") DailyPlanId dailyPlanId);
 }
