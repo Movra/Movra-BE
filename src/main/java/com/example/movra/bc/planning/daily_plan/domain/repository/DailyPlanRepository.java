@@ -19,6 +19,19 @@ public interface DailyPlanRepository extends JpaRepository<DailyPlan, DailyPlanI
 
     Optional<DailyPlan> findByUserIdAndPlanDate(UserId userId, LocalDate planDate);
 
+    @Query("""
+            SELECT DISTINCT dp
+            FROM DailyPlan dp
+            LEFT JOIN FETCH dp.tasks task
+            LEFT JOIN FETCH task.topPickDetail
+            WHERE dp.userId = :userId
+              AND dp.planDate = :planDate
+            """)
+    Optional<DailyPlan> findByUserIdAndPlanDateWithTasks(
+            @Param("userId") UserId userId,
+            @Param("planDate") LocalDate planDate
+    );
+
     boolean existsByUserIdAndPlanDate(UserId userId, LocalDate planDate);
 
     @Query("SELECT DISTINCT dp.userId FROM DailyPlan dp WHERE dp.planDate = :planDate")
