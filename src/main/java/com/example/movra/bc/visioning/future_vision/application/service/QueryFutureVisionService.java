@@ -7,10 +7,14 @@ import com.example.movra.bc.visioning.future_vision.application.service.dto.resp
 import com.example.movra.bc.visioning.future_vision.application.service.dto.response.YearlyVisionResponse;
 import com.example.movra.bc.visioning.future_vision.domain.FutureVision;
 import com.example.movra.bc.visioning.future_vision.domain.repository.FutureVisionRepository;
+import com.example.movra.config.cache.HomeCacheNames;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,23 +25,36 @@ public class QueryFutureVisionService {
 
     @Transactional(readOnly = true)
     public FutureVisionResponse query() {
-        return FutureVisionResponse.from(getFutureVision());
+        return FutureVisionResponse.from(getFutureVisionOrThrow());
     }
 
     @Transactional(readOnly = true)
     public WeeklyVisionResponse queryWeeklyVision() {
-        return WeeklyVisionResponse.from(getFutureVision());
+        return WeeklyVisionResponse.from(getFutureVisionOrThrow());
     }
 
     @Transactional(readOnly = true)
     public YearlyVisionResponse queryYearlyVision() {
-        return YearlyVisionResponse.from(getFutureVision());
+        return YearlyVisionResponse.from(getFutureVisionOrThrow());
     }
 
-    private FutureVision getFutureVision() {
-        UserId userId = currentUserQuery.currentUser().userId();
+    @Cacheable(
+            cacheNames = HomeCacheNames.FUTURE_VISION,
+            key = "@homeCacheKey.currentUserId()",
+            sync = true
+    )
+    @Transactional(readOnly = true)
+    public Optional<FutureVisionResponse> findForHome() {
+        return futureVisionRepository.findByUserId(currentUserId())
+                .map(FutureVisionResponse::from);
+    }
 
-        return futureVisionRepository.findByUserId(userId)
+    private FutureVision getFutureVisionOrThrow() {
+        return futureVisionRepository.findByUserId(currentUserId())
                 .orElseThrow(FutureVisionNotFoundException::new);
+    }
+
+    private UserId currentUserId() {
+        return currentUserQuery.currentUser().userId();
     }
 }
