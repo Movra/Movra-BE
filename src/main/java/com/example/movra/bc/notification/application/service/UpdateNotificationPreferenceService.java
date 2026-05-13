@@ -7,8 +7,10 @@ import com.example.movra.bc.notification.application.service.dto.request.Notific
 import com.example.movra.bc.notification.application.service.dto.response.NotificationPreferenceResponse;
 import com.example.movra.bc.notification.domain.NotificationPreference;
 import com.example.movra.bc.notification.domain.repository.NotificationPreferenceRepository;
+import com.example.movra.config.cache.HomeCacheNames;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,10 @@ public class UpdateNotificationPreferenceService {
     private final CurrentUserQuery currentUserQuery;
     private final AnalyticsEventRecorder analyticsEventRecorder;
 
+    @CachePut(
+            cacheNames = HomeCacheNames.NOTIFICATION_PREFERENCE,
+            key = "@homeCacheKey.currentUserId()"
+    )
     @Transactional
     public NotificationPreferenceResponse update(NotificationPreferenceRequest request) {
         UserId userId = currentUserQuery.currentUser().userId();
