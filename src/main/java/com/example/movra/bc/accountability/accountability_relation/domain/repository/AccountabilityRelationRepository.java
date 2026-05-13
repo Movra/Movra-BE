@@ -22,4 +22,6 @@ public interface AccountabilityRelationRepository extends JpaRepository<Accounta
      Optional<AccountabilityRelation> findBySubjectUserIdAndWatcherUserId(UserId subjectUserId, UserId watcherUserId);
 
      Optional<AccountabilityRelation> findByInviteCode_Code(String inviteCodeCode);
+
+     List<AccountabilityRelation> findAllBySubjectUserIdOrWatcherUserId(UserId subjectUserId, UserId watcherUserId);
 }
