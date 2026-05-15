@@ -106,7 +106,6 @@ public class NotificationPreference extends AbstractAggregateRoot {
             LocalTime schoolHoursStart,
             LocalTime schoolHoursEnd,
             Boolean weekendSchoolQuietEnabled,
-            Boolean sleepHoursQuietEnabled,
             Integer maxDailyPushCount
     ) {
         validateFields(
@@ -118,7 +117,6 @@ public class NotificationPreference extends AbstractAggregateRoot {
                 schoolHoursStart,
                 schoolHoursEnd,
                 weekendSchoolQuietEnabled,
-                sleepHoursQuietEnabled,
                 maxDailyPushCount
         );
 
@@ -130,7 +128,6 @@ public class NotificationPreference extends AbstractAggregateRoot {
         this.schoolHoursStart = schoolHoursStart;
         this.schoolHoursEnd = schoolHoursEnd;
         this.weekendSchoolQuietEnabled = weekendSchoolQuietEnabled;
-        this.sleepHoursQuietEnabled = true;
         this.maxDailyPushCount = maxDailyPushCount;
     }
 
@@ -152,7 +149,6 @@ public class NotificationPreference extends AbstractAggregateRoot {
             LocalTime schoolHoursStart,
             LocalTime schoolHoursEnd,
             Boolean weekendSchoolQuietEnabled,
-            Boolean sleepHoursQuietEnabled,
             Integer maxDailyPushCount
     ) {
         if (dailyFocusEnabled == null
@@ -163,12 +159,7 @@ public class NotificationPreference extends AbstractAggregateRoot {
                 || schoolHoursStart == null
                 || schoolHoursEnd == null
                 || weekendSchoolQuietEnabled == null
-                || sleepHoursQuietEnabled == null
                 || maxDailyPushCount == null) {
-            throw new InvalidNotificationPreferenceException();
-        }
-
-        if (!sleepHoursQuietEnabled) {
             throw new InvalidNotificationPreferenceException();
         }
 

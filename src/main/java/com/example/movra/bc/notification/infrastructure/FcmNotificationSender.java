@@ -3,8 +3,8 @@ package com.example.movra.bc.notification.infrastructure;
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.account.user.infrastructure.user.device.DeviceToken;
 import com.example.movra.bc.account.user.infrastructure.user.device.repository.DeviceTokenRepository;
-import com.example.movra.sharedkernel.notification.NotificationChannelSender;
 import com.example.movra.sharedkernel.notification.NotificationPayload;
+import com.example.movra.sharedkernel.notification.NotificationSender;
 import com.google.firebase.messaging.FirebaseMessaging;
 import com.google.firebase.messaging.FirebaseMessagingException;
 import com.google.firebase.messaging.Message;
@@ -22,7 +22,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "app.fcm", name = "enabled", havingValue = "true")
-public class FcmNotificationSender implements NotificationChannelSender {
+public class FcmNotificationSender implements NotificationSender {
 
     private static final String NOTIFICATION_TYPE_DATA_KEY = "type";
 

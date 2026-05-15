@@ -36,9 +36,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'com.google.firebase:firebase-admin:9.3.0'
-    implementation 'nl.martijndwars:web-push:5.1.2'
-    implementation 'org.bitbucket.b_c:jose4j:0.7.9'
-    implementation 'org.bouncycastle:bcprov-jdk18on:1.83'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -61,7 +58,8 @@ gatling {
             'authToken'       : System.getProperty('authToken', ''),
             'iterations'      : System.getProperty('iterations', '30'),
             'pauseMs'         : System.getProperty('pauseMs', '500'),
-            'warmupIterations': System.getProperty('warmupIterations', '3')
+            'warmupIterations': System.getProperty('warmupIterations', '3'),
+            'targetDate'      : System.getProperty('targetDate', '2026-05-15')
     ]
 }
 

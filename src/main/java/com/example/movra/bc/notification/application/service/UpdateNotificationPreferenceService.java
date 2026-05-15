@@ -45,7 +45,6 @@ public class UpdateNotificationPreferenceService {
                 request.schoolHoursStart(),
                 request.schoolHoursEnd(),
                 request.weekendSchoolQuietEnabled(),
-                request.sleepHoursQuietEnabled(),
                 request.maxDailyPushCount()
         );
 

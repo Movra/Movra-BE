@@ -101,9 +101,3 @@ app:
   fcm:
     enabled: ${FCM_ENABLED:false}
     credentials-path: ${FIREBASE_CREDENTIALS_PATH:classpath:firebase/service-account.json}
-  web-push:
-    enabled: ${WEB_PUSH_ENABLED:false}
-    vapid-public-key: ${WEB_PUSH_VAPID_PUBLIC_KEY:}
-    vapid-private-key: ${WEB_PUSH_VAPID_PRIVATE_KEY:}
-    subject: ${WEB_PUSH_VAPID_SUBJECT:}
-    ttl-seconds: ${WEB_PUSH_TTL_SECONDS:86400}

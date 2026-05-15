@@ -80,7 +80,6 @@ public enum ErrorCode {
 
     DEVICE_TOKEN_NOT_FOUND(HttpStatus.NOT_FOUND, "디바이스 토큰을 찾을 수 없습니다."),
     INVALID_NOTIFICATION_PREFERENCE(HttpStatus.BAD_REQUEST, "알림 설정이 유효하지 않습니다."),
-    INVALID_WEB_PUSH_SUBSCRIPTION(HttpStatus.BAD_REQUEST, "웹 푸시 구독 정보가 유효하지 않습니다."),
     INVALID_ANALYTICS_EVENT(HttpStatus.BAD_REQUEST, "분석 이벤트가 유효하지 않습니다."),
 
     INVITE_CODE_NOT_GENERATED(HttpStatus.BAD_REQUEST, "초대 코드가 생성되지 않았습니다."),

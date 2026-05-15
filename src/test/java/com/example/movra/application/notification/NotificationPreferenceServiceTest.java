@@ -118,30 +118,7 @@ class NotificationPreferenceServiceTest {
                 LocalTime.of(8, 0),
                 LocalTime.of(15, 30),
                 false,
-                true,
                 11
-        );
-
-        assertThatThrownBy(() -> updateNotificationPreferenceService.update(request))
-                .isInstanceOf(InvalidNotificationPreferenceException.class);
-    }
-
-    @Test
-    @DisplayName("update throws when sleep quiet hours are disabled")
-    void update_sleepQuietDisabled_throwsException() {
-        givenCurrentUser();
-        given(notificationPreferenceRepository.findByUserId(userId)).willReturn(Optional.empty());
-        NotificationPreferenceRequest request = new NotificationPreferenceRequest(
-                true,
-                true,
-                true,
-                true,
-                true,
-                LocalTime.of(8, 0),
-                LocalTime.of(15, 30),
-                false,
-                false,
-                3
         );
 
         assertThatThrownBy(() -> updateNotificationPreferenceService.update(request))
@@ -162,7 +139,7 @@ class NotificationPreferenceServiceTest {
                 false,
                 LocalTime.of(8, 0),
                 LocalTime.of(15, 30),
-                true, true, 4
+                true, 4
         );
 
         updateNotificationPreferenceService.update(request);
@@ -195,7 +172,6 @@ class NotificationPreferenceServiceTest {
                 true,
                 LocalTime.of(8, 0),
                 LocalTime.of(15, 30),
-                true,
                 true,
                 4
         );

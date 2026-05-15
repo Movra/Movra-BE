@@ -151,7 +151,7 @@ class NotificationGatewayTest {
         preference.update(true, true, true, true, true,
                 NotificationPreference.DEFAULT_SCHOOL_HOURS_START,
                 NotificationPreference.DEFAULT_SCHOOL_HOURS_END,
-                true, true, 3);
+                true, 3);
         given(notificationPreferenceRepository.findByUserId(userId)).willReturn(Optional.of(preference));
 
         NotificationDeliveryResult result = gateway.send(userId, payload);
@@ -266,7 +266,6 @@ class NotificationGatewayTest {
                 NotificationPreference.DEFAULT_SCHOOL_HOURS_START,
                 NotificationPreference.DEFAULT_SCHOOL_HOURS_END,
                 false,
-                true,
                 NotificationPreference.DEFAULT_MAX_DAILY_PUSH_COUNT
         );
         return preference;

@@ -35,9 +35,6 @@ public record NotificationPreferenceRequest(
         Boolean weekendSchoolQuietEnabled,
 
         @NotNull
-        Boolean sleepHoursQuietEnabled,
-
-        @NotNull
         @Min(0) @Max(10)
         Integer maxDailyPushCount
 ) {

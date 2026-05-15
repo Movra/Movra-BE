@@ -61,7 +61,6 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/auth/oauth/profile-setup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/reissue").permitAll()
                         .requestMatchers(HttpMethod.GET, "/auth/onboarding-context").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/web-push/vapid-public-key").permitAll()
                         .requestMatchers("/ws/**").permitAll()
                         .anyRequest().authenticated())
                 .oauth2Login(oauth2 -> oauth2
