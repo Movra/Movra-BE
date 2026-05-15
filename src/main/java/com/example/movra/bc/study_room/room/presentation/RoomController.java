@@ -5,10 +5,12 @@ import com.example.movra.bc.study_room.room.application.service.JoinRoomService;
 import com.example.movra.bc.study_room.room.application.service.KickParticipantService;
 import com.example.movra.bc.study_room.room.application.service.LeaveRoomService;
 import com.example.movra.bc.study_room.room.application.service.QueryRoomService;
+import com.example.movra.bc.study_room.room.application.service.RoomInviteCodeService;
 import com.example.movra.bc.study_room.room.application.service.dto.request.CreateRoomRequest;
 import com.example.movra.bc.study_room.room.application.service.dto.request.JoinRoomRequest;
 import com.example.movra.bc.study_room.room.application.service.dto.response.CreateRoomResponse;
 import com.example.movra.bc.study_room.room.application.service.dto.response.PublicRoomResponse;
+import com.example.movra.bc.study_room.room.application.service.dto.response.RoomInviteCodeResponse;
 import com.example.movra.bc.study_room.room.application.service.dto.response.RoomDetailResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ public class RoomController {
     private final LeaveRoomService leaveRoomService;
     private final KickParticipantService kickParticipantService;
     private final QueryRoomService queryRoomService;
+    private final RoomInviteCodeService roomInviteCodeService;
 
     @PostMapping
     public CreateRoomResponse create(@Valid @RequestBody CreateRoomRequest request) {
@@ -46,6 +49,16 @@ public class RoomController {
     @PostMapping("/join")
     public void join(@Valid @RequestBody JoinRoomRequest request) {
         joinRoomService.join(request);
+    }
+
+    @GetMapping("/{roomId}/invite-code")
+    public RoomInviteCodeResponse queryInviteCode(@PathVariable UUID roomId) {
+        return roomInviteCodeService.query(roomId);
+    }
+
+    @PostMapping("/{roomId}/invite-code/reissue")
+    public RoomInviteCodeResponse reissueInviteCode(@PathVariable UUID roomId) {
+        return roomInviteCodeService.reissue(roomId);
     }
 
     @PostMapping("/{roomId}/leave")

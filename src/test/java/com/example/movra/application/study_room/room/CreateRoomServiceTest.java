@@ -42,7 +42,7 @@ class CreateRoomServiceTest {
 
     @Test
     @DisplayName("공개 방 생성 시 초대 코드 반환")
-    void create_publicRoom_returnsInviteCode() {
+    void create_publicRoom_doesNotReturnInviteCode() {
         // given
         givenCurrentUser();
 
@@ -51,7 +51,7 @@ class CreateRoomServiceTest {
 
         // then
         assertThat(response.roomId()).isNotNull();
-        assertThat(response.inviteCode()).isNotNull();
+        assertThat(response.inviteCode()).isNull();
         then(roomRepository).should().save(any());
     }
 

@@ -26,7 +26,7 @@ public class PublicRoom extends Room {
                 RoomId.newId(),
                 userId,
                 name,
-                InviteCode.generate(),
+                null,
                 LocalDateTime.now()
         );
         room.initialize(userId);

@@ -56,12 +56,11 @@ class JoinRoomServiceTest {
         // given
         givenCurrentUser();
         PublicRoom room = PublicRoom.create("스터디룸", leaderId);
-        String inviteCode = room.getInviteCode().code();
-        given(studyRoomReader.getRoomByInviteCode(inviteCode)).willReturn(room);
+        given(studyRoomReader.getRoom(room.getId().id())).willReturn(room);
         given(participantRepository.existsByUserIdAndRoomId(userId, room.getId())).willReturn(false);
 
         // when
-        joinRoomService.join(new JoinRoomRequest(inviteCode));
+        joinRoomService.join(new JoinRoomRequest(room.getId().id(), null));
 
         // then
         then(participantRepository).should().save(any());
@@ -74,11 +73,11 @@ class JoinRoomServiceTest {
         givenCurrentUser();
         PrivateRoom room = PrivateRoom.create("비공개룸", leaderId);
         String inviteCode = room.getInviteCode().code();
-        given(studyRoomReader.getRoomByInviteCode(inviteCode)).willReturn(room);
+        given(studyRoomReader.getRoom(room.getId().id())).willReturn(room);
         given(participantRepository.existsByUserIdAndRoomId(userId, room.getId())).willReturn(false);
 
         // when
-        joinRoomService.join(new JoinRoomRequest(inviteCode));
+        joinRoomService.join(new JoinRoomRequest(room.getId().id(), inviteCode));
 
         // then
         then(participantRepository).should().save(any());
@@ -90,12 +89,11 @@ class JoinRoomServiceTest {
         // given
         givenCurrentUser();
         Room room = PublicRoom.create("스터디룸", leaderId);
-        String inviteCode = room.getInviteCode().code();
-        given(studyRoomReader.getRoomByInviteCode(inviteCode)).willReturn(room);
+        given(studyRoomReader.getRoom(room.getId().id())).willReturn(room);
         given(participantRepository.existsByUserIdAndRoomId(userId, room.getId())).willReturn(true);
 
         // when & then
-        assertThatThrownBy(() -> joinRoomService.join(new JoinRoomRequest(inviteCode)))
+        assertThatThrownBy(() -> joinRoomService.join(new JoinRoomRequest(room.getId().id(), null)))
                 .isInstanceOf(AlreadyJoinedException.class);
     }
 
@@ -108,7 +106,7 @@ class JoinRoomServiceTest {
                 .willThrow(new InvalidInviteCodeException());
 
         // when & then
-        assertThatThrownBy(() -> joinRoomService.join(new JoinRoomRequest("wrong-code")))
+        assertThatThrownBy(() -> joinRoomService.join(new JoinRoomRequest(null, "wrong-code")))
                 .isInstanceOf(InvalidInviteCodeException.class);
     }
 }

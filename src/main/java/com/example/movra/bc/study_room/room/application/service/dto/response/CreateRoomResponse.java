@@ -13,7 +13,7 @@ public record CreateRoomResponse(
     public static CreateRoomResponse from(Room room) {
         return CreateRoomResponse.builder()
                 .roomId(room.getId().id())
-                .inviteCode(room.getInviteCode().code())
+                .inviteCode(room.getInviteCode() == null ? null : room.getInviteCode().code())
                 .build();
     }
 }

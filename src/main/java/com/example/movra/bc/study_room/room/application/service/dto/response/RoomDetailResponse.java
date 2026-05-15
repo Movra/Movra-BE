@@ -2,7 +2,9 @@ package com.example.movra.bc.study_room.room.application.service.dto.response;
 
 import com.example.movra.bc.study_room.participant.application.service.dto.response.ParticipantResponse;
 import com.example.movra.bc.study_room.participant.domain.Participant;
+import com.example.movra.bc.study_room.room.domain.PrivateRoom;
 import com.example.movra.bc.study_room.room.domain.Room;
+import com.example.movra.bc.study_room.room.domain.vo.Visibility;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
@@ -14,6 +16,7 @@ import java.util.UUID;
 public record RoomDetailResponse(
         UUID roomId,
         String name,
+        Visibility visibility,
         UUID leaderUserId,
         int currentCount,
         LocalDateTime createdAt,
@@ -30,6 +33,7 @@ public record RoomDetailResponse(
         return RoomDetailResponse.builder()
                 .roomId(room.getId().id())
                 .name(room.getName())
+                .visibility(room instanceof PrivateRoom ? Visibility.PRIVATE : Visibility.PUBLIC)
                 .leaderUserId(room.getLeaderId().id())
                 .currentCount(participantResponses.size())
                 .createdAt(room.getCreatedAt())

@@ -45,7 +45,7 @@ public abstract class Room extends AbstractAggregateRoot {
     private String name;
 
     @Embedded
-    @AttributeOverride(name = "code", column = @Column(name = "invite_code", nullable = false, unique = true))
+    @AttributeOverride(name = "code", column = @Column(name = "invite_code", unique = true))
     private InviteCode inviteCode;
 
     @Column(nullable = false)
@@ -71,11 +71,36 @@ public abstract class Room extends AbstractAggregateRoot {
     }
 
     public void join(UserId userId, String inviteCode) {
-        if (inviteCode == null || !this.inviteCode.code().equals(inviteCode)) {
+        if (inviteCode == null || this.inviteCode == null || !this.inviteCode.code().equals(inviteCode)) {
             throw new InvalidInviteCodeException();
         }
 
         registerEvent(new ParticipantJoinedEvent(this.id, userId));
+    }
+
+    public void joinPublic(UserId userId) {
+        if (!(this instanceof PublicRoom)) {
+            throw new InvalidInviteCodeException();
+        }
+
+        registerEvent(new ParticipantJoinedEvent(this.id, userId));
+    }
+
+    public InviteCode reissueInviteCode(UserId leaderId) {
+        validateLeader(leaderId);
+
+        if (!(this instanceof PrivateRoom)) {
+            throw new InvalidInviteCodeException();
+        }
+
+        this.inviteCode = InviteCode.generate();
+        return this.inviteCode;
+    }
+
+    public void validateLeader(UserId userId) {
+        if (!this.leaderId.equals(userId)) {
+            throw new NotLeaderException();
+        }
     }
 
     public void kick(UserId leaderId, UserId targetId) {
@@ -100,9 +125,4 @@ public abstract class Room extends AbstractAggregateRoot {
         this.leaderId = newLeaderId;
     }
 
-    private void validateLeader(UserId userId) {
-        if (!this.leaderId.equals(userId)) {
-            throw new NotLeaderException();
-        }
-    }
 }
