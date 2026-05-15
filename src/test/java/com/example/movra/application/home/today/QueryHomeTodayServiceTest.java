@@ -28,6 +28,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.lang.reflect.RecordComponent;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -86,6 +87,32 @@ class QueryHomeTodayServiceTest {
                 currentUserQuery,
                 clock
         );
+    }
+
+    @Test
+    @DisplayName("home today response exposes only the summary fields required by the home screen")
+    void homeTodayResponse_contract_containsOnlyHomeSummaryFields() {
+        assertThat(HomeTodayResponse.class.getRecordComponents())
+                .extracting(RecordComponent::getName)
+                .containsExactly(
+                        "targetDate",
+                        "futureVision",
+                        "topPicks",
+                        "timetable",
+                        "seasonMode",
+                        "nextExamSchedule",
+                        "notificationPreference",
+                        "friendAccountability",
+                        "showFocusTimingCard"
+                )
+                .doesNotContain(
+                        "todayDailyPlan",
+                        "morningTasks",
+                        "focusSessions",
+                        "activeFocusSession",
+                        "recoveryCard",
+                        "behaviorProfile"
+                );
     }
 
     @Test
@@ -218,6 +245,7 @@ class QueryHomeTodayServiceTest {
                 .schoolHoursQuietEnabled(true)
                 .schoolHoursStart(java.time.LocalTime.of(8, 0))
                 .schoolHoursEnd(java.time.LocalTime.of(15, 30))
+                .weekendSchoolQuietEnabled(false)
                 .sleepHoursQuietEnabled(true)
                 .maxDailyPushCount(3)
                 .build();

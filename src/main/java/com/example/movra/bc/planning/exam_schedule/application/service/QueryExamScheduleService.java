@@ -59,7 +59,7 @@ public class QueryExamScheduleService {
     @Cacheable(
             cacheNames = HomeCacheNames.NEXT_EXAM_SCHEDULE,
             key = "@homeCacheKey.currentUserIdToday()",
-            sync = true
+            unless = "#result == null"
     )
     @Transactional(readOnly = true)
     public Optional<ExamScheduleResponse> findNextForHome() {

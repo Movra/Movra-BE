@@ -41,7 +41,7 @@ public class QueryFutureVisionService {
     @Cacheable(
             cacheNames = HomeCacheNames.FUTURE_VISION,
             key = "@homeCacheKey.currentUserId()",
-            sync = true
+            unless = "#result == null"
     )
     @Transactional(readOnly = true)
     public Optional<FutureVisionResponse> findForHome() {
