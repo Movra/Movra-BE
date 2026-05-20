@@ -50,8 +50,8 @@ WHERE user_id = UUID_TO_BIN(@user_id_str)
 DELETE
 FROM tbl_focus_session
 WHERE user_id = UUID_TO_BIN(@user_id_str)
-  AND started_at >= '2026-03-31 15:00:00'
-  AND started_at < '2026-04-30 15:00:00';
+  AND started_at < '2026-04-30 15:00:00'
+  AND (ended_at IS NULL OR ended_at > '2026-03-31 15:00:00');
 
 -- ================================================================
 -- focus_session UUID 변수 선언

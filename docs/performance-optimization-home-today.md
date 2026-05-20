@@ -207,13 +207,19 @@ readOnly 트랜잭션을 도는 것이 올바른 의미론이고, 새 provisione
 - `src/gatling/java/HomeTodayPeakLoadSimulation.java`
 
 **수정**
-- `bc/home/today/application/service/QueryHomeTodayService.java` — `@Transactional(readOnly = true)`
-- `bc/notification/application/service/QueryNotificationPreferenceService.java` — readOnly + provisioner
-- 홈 캐시 제거 — `QueryFutureVisionService`, `QueryExamScheduleService`,
-  `UpdateNotificationPreferenceService`, `CreateFutureVisionService`,
-  `UpdateWeeklyVisionService`, `UpdateYearlyVisionService`,
-  `CreateExamScheduleService`, `UpdateExamScheduleService`, `DeleteExamScheduleService`
-- `config/cache/RedisCacheConfig.java` — 홈 캐시 항목 제거
+- `src/main/java/com/example/movra/bc/home/today/application/service/QueryHomeTodayService.java` — `@Transactional(readOnly = true)`
+- `src/main/java/com/example/movra/bc/notification/application/service/QueryNotificationPreferenceService.java` — readOnly + provisioner
+- `src/main/java/com/example/movra/bc/visioning/future_vision/application/service/QueryFutureVisionService.java` — 홈 캐시 제거
+- `src/main/java/com/example/movra/bc/planning/exam_schedule/application/service/QueryExamScheduleService.java` — 홈 캐시 제거
+- `src/main/java/com/example/movra/bc/notification/application/service/UpdateNotificationPreferenceService.java` — 홈 캐시 제거
+- `src/main/java/com/example/movra/bc/visioning/future_vision/application/service/CreateFutureVisionService.java` — 홈 캐시 제거
+- `src/main/java/com/example/movra/bc/visioning/future_vision/application/service/UpdateWeeklyVisionService.java` — 홈 캐시 제거
+- `src/main/java/com/example/movra/bc/visioning/future_vision/application/service/UpdateYearlyVisionService.java` — 홈 캐시 제거
+- `src/main/java/com/example/movra/bc/planning/exam_schedule/application/service/CreateExamScheduleService.java` — 홈 캐시 제거
+- `src/main/java/com/example/movra/bc/planning/exam_schedule/application/service/UpdateExamScheduleService.java` — 홈 캐시 제거
+- `src/main/java/com/example/movra/bc/planning/exam_schedule/application/service/DeleteExamScheduleService.java` — 홈 캐시 제거
+- `src/main/java/com/example/movra/config/cache/RedisCacheConfig.java` — 홈 캐시 항목 제거
 
 **삭제**
-- `config/cache/HomeCacheNames.java`, `config/cache/HomeCacheKey.java`
+- `src/main/java/com/example/movra/config/cache/HomeCacheNames.java`
+- `src/main/java/com/example/movra/config/cache/HomeCacheKey.java`

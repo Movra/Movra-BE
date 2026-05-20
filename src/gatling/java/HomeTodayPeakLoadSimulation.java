@@ -31,9 +31,9 @@ public class HomeTodayPeakLoadSimulation extends Simulation {
 
     private static final String BASE_URL = System.getProperty("baseUrl", "http://localhost:8080");
     private static final String AUTH_TOKEN = resolveAuthToken();
-    private static final int TARGET_TPS = Integer.parseInt(System.getProperty("targetTps", "10"));
-    private static final int RAMP_SECONDS = Integer.parseInt(System.getProperty("rampSeconds", "30"));
-    private static final int HOLD_SECONDS = Integer.parseInt(System.getProperty("holdSeconds", "120"));
+    private static final int TARGET_TPS = positiveIntProperty("targetTps", 10);
+    private static final int RAMP_SECONDS = positiveIntProperty("rampSeconds", 30);
+    private static final int HOLD_SECONDS = positiveIntProperty("holdSeconds", 120);
 
     private static String resolveAuthToken() {
         String fromEnv = System.getenv("AUTH_TOKEN");
@@ -41,6 +41,20 @@ public class HomeTodayPeakLoadSimulation extends Simulation {
             return fromEnv;
         }
         return System.getProperty("authToken", "");
+    }
+
+    private static int positiveIntProperty(String propertyName, int defaultValue) {
+        String rawValue = System.getProperty(propertyName, Integer.toString(defaultValue));
+
+        try {
+            int value = Integer.parseInt(rawValue);
+            if (value <= 0) {
+                throw new IllegalArgumentException(propertyName + " must be a positive integer, but was: " + rawValue);
+            }
+            return value;
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(propertyName + " must be a positive integer, but was: " + rawValue, e);
+        }
     }
 
     private final HttpProtocolBuilder httpProtocol = http
