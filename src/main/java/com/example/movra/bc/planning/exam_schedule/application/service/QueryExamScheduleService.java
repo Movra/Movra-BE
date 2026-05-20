@@ -5,10 +5,8 @@ import com.example.movra.bc.planning.exam_schedule.application.exception.ExamSch
 import com.example.movra.bc.planning.exam_schedule.application.service.dto.response.ExamScheduleResponse;
 import com.example.movra.bc.planning.exam_schedule.domain.repository.ExamScheduleRepository;
 import com.example.movra.bc.planning.exam_schedule.domain.vo.ExamScheduleId;
-import com.example.movra.config.cache.HomeCacheNames;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,11 +54,6 @@ public class QueryExamScheduleService {
                 .orElseThrow(ExamScheduleNotFoundException::new);
     }
 
-    @Cacheable(
-            cacheNames = HomeCacheNames.NEXT_EXAM_SCHEDULE,
-            key = "@homeCacheKey.currentUserIdToday()",
-            unless = "#result == null"
-    )
     @Transactional(readOnly = true)
     public Optional<ExamScheduleResponse> findNextForHome() {
         UserId userId = currentUserQuery.currentUser().userId();
