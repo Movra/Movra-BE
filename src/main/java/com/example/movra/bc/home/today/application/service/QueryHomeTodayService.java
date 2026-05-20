@@ -19,6 +19,7 @@ import com.example.movra.bc.visioning.future_vision.application.service.dto.resp
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.util.List;
@@ -36,6 +37,11 @@ public class QueryHomeTodayService {
     private final CurrentUserQuery currentUserQuery;
     private final Clock clock;
 
+    // 단일 readOnly 트랜잭션으로 묶어 8개 조회를 한 커넥션에서 처리한다.
+    // 하위 서비스의 @Transactional 은 REQUIRED 로 이 트랜잭션에 합류한다.
+    // DailyPlan / NotificationPreference 자동 생성(쓰기)은 각 Provisioner 의
+    // REQUIRES_NEW 트랜잭션으로 분리되어 readOnly 와 무관하게 동작한다.
+    @Transactional(readOnly = true)
     public HomeTodayResponse query() {
         TodayPlanningOverviewResponse todayPlanningOverview = queryTodayPlanningOverviewService.query();
         ExamScheduleResponse nextExamSchedule = queryNextExamSchedule();

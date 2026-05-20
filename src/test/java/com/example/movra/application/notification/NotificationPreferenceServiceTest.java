@@ -3,6 +3,7 @@ package com.example.movra.application.notification;
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.analytics.activation_event.application.service.AnalyticsEventRecorder;
 import com.example.movra.bc.analytics.activation_event.domain.type.AnalyticsEventType;
+import com.example.movra.bc.notification.application.service.NotificationPreferenceProvisioner;
 import com.example.movra.bc.notification.application.service.QueryNotificationPreferenceService;
 import com.example.movra.bc.notification.application.service.UpdateNotificationPreferenceService;
 import com.example.movra.bc.notification.application.service.dto.request.NotificationPreferenceRequest;
@@ -39,6 +40,9 @@ class NotificationPreferenceServiceTest {
     private NotificationPreferenceRepository notificationPreferenceRepository;
 
     @Mock
+    private NotificationPreferenceProvisioner notificationPreferenceProvisioner;
+
+    @Mock
     private CurrentUserQuery currentUserQuery;
 
     @Mock
@@ -52,6 +56,7 @@ class NotificationPreferenceServiceTest {
     void setUp() {
         queryNotificationPreferenceService = new QueryNotificationPreferenceService(
                 notificationPreferenceRepository,
+                notificationPreferenceProvisioner,
                 currentUserQuery
         );
         updateNotificationPreferenceService = new UpdateNotificationPreferenceService(
@@ -72,8 +77,8 @@ class NotificationPreferenceServiceTest {
     void queryMine_missing_createsDefault() {
         givenCurrentUser();
         given(notificationPreferenceRepository.findByUserId(userId)).willReturn(Optional.empty());
-        given(notificationPreferenceRepository.save(any(NotificationPreference.class)))
-                .willAnswer(invocation -> invocation.getArgument(0, NotificationPreference.class));
+        given(notificationPreferenceProvisioner.createOrLoad(userId))
+                .willReturn(NotificationPreference.createDefault(userId));
 
         NotificationPreferenceResponse response = queryNotificationPreferenceService.queryMine();
 
@@ -82,7 +87,7 @@ class NotificationPreferenceServiceTest {
         assertThat(response.weekendSchoolQuietEnabled()).isFalse();
         assertThat(response.sleepHoursQuietEnabled()).isTrue();
         assertThat(response.maxDailyPushCount()).isEqualTo(NotificationPreference.DEFAULT_MAX_DAILY_PUSH_COUNT);
-        then(notificationPreferenceRepository).should().save(any(NotificationPreference.class));
+        then(notificationPreferenceProvisioner).should().createOrLoad(userId);
     }
 
     @Test

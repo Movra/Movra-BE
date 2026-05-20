@@ -14,13 +14,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class QueryNotificationPreferenceService {
 
     private final NotificationPreferenceRepository notificationPreferenceRepository;
+    private final NotificationPreferenceProvisioner notificationPreferenceProvisioner;
     private final CurrentUserQuery currentUserQuery;
 
-    @Transactional
+    @Transactional(readOnly = true)
     public NotificationPreferenceResponse queryMine() {
         UserId userId = currentUserQuery.currentUser().userId();
         NotificationPreference preference = notificationPreferenceRepository.findByUserId(userId)
-                .orElseGet(() -> notificationPreferenceRepository.save(NotificationPreference.createDefault(userId)));
+                .orElseGet(() -> notificationPreferenceProvisioner.createOrLoad(userId));
 
         return NotificationPreferenceResponse.from(preference);
     }
