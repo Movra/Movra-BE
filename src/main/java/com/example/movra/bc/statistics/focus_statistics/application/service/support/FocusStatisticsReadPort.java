@@ -5,6 +5,7 @@ import com.example.movra.bc.statistics.focus_statistics.application.service.supp
 import com.example.movra.bc.statistics.focus_statistics.application.service.support.dto.FocusStatisticsSessionView;
 import com.example.movra.bc.statistics.focus_statistics.application.service.support.dto.FocusStatisticsSummaryView;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -16,4 +17,6 @@ public interface FocusStatisticsReadPort {
     List<FocusStatisticsSummaryView> findSummaryRange(UserId userId, LocalDate from, LocalDate to);
 
     List<FocusStatisticsSessionView> findSessions(UserId userId, FocusStatisticsPeriod period);
+
+    List<FocusStatisticsSessionView> findSessionsInRange(UserId userId, Instant from, Instant to);
 }

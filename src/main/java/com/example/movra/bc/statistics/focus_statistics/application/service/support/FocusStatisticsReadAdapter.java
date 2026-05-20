@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -46,6 +47,13 @@ public class FocusStatisticsReadAdapter implements FocusStatisticsReadPort {
                         period.startInstant(),
                         period.endInstant()
                 ).stream()
+                .map(this::toSessionView)
+                .toList();
+    }
+
+    @Override
+    public List<FocusStatisticsSessionView> findSessionsInRange(UserId userId, Instant from, Instant to) {
+        return focusSessionRepository.findAllOverlappingPeriod(userId, from, to).stream()
                 .map(this::toSessionView)
                 .toList();
     }
