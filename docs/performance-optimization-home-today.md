@@ -1,420 +1,219 @@
-# 홈 화면 조회 성능 최적화 — `GET /home/today`
+# 홈 조회 API 성능 측정·최적화 기록 — `GET /home/today`
 
-> `QueryHomeTodayService.query()`의 직렬 DB 호출 10여 회를 줄이고, 변경이 적은 응답 구성요소에 Redis 캐시를 도입하여 응답 시간을 단축한 작업 기록.
+> DAU 150 / Peak 10 TPS / 조회 중심이라는 목표를 전제로 `GET /home/today`를
+> **측정·프로파일링 데이터**로 점검한 기록. 추측으로 고치지 않고, 측정이 가리키는
+> 것만 손댔다. 효과가 없었던 변경도 그대로 기록한다.
 
 ## 목차
 
-- [요약](#요약)
-- [Before / After 성능 비교](#before--after-성능-비교)
-- [최적화 전 진단](#최적화-전-진단)
-- [적용한 최적화](#적용한-최적화)
-  - [1. 조회 시점의 의도된 Exception을 Optional 반환으로 전환](#1-조회-시점의-의도된-exception을-optional-반환으로-전환)
-  - [2. 변경이 잦지 않은 조회에 Redis 캐시 도입](#2-변경이-잦지-않은-조회에-redis-캐시-도입)
-  - [3. 중복 쿼리를 단일 쿼리로 통합](#3-중복-쿼리를-단일-쿼리로-통합)
-- [측정 방법](#측정-방법)
-- [고려사항과 잔존 리스크](#고려사항과-잔존-리스크)
+- [배경](#배경)
+- [측정 전제](#측정-전제)
+- [측정 기록](#측정-기록)
+- [프로파일링 — 56ms는 어디로 가는가](#프로파일링--56ms는-어디로-가는가)
+- [적용한 변경](#적용한-변경)
+- [결론](#결론)
+- [측정의 한계](#측정의-한계)
+- [변경 파일 인덱스](#변경-파일-인덱스)
 
 ---
 
-## 요약
+## 배경
+
+이 엔드포인트에는 Redis 캐시(미래비전·알림설정·다음시험 3종)가 적용돼 있었다.
+목표 규모(DAU 150, Peak 10 TPS, 조회 중심)에 비추어 캐시가 실제로 필요한지를
+측정으로 재검증하기로 하고, 캐시를 걷어낸 상태에서 베이스라인부터 다시 쟀다.
+
+---
+
+## 측정 전제
 
 | 항목 | 값 |
 | --- | --- |
-| 대상 | `GET /home/today` (앱 진입 시 가장 많이 호출되는 엔드포인트) |
-| 측정 도구 | Gatling 3.13.5 (Closed model, 1 virtual user × 30회 순차 호출 + warmup 3회) |
-| 측정 환경 | 로컬, Spring Boot 3.5.11, MySQL, Redis, Virtual Threads on |
-| 핵심 개선 | **p95 -49.5%, Mean -35.9%, p99 -56.8%** |
+| 목표 부하 | DAU 150, 피크 10 TPS, 조회 중심 서비스 |
+| 측정 도구 | Gatling 3.13.5 |
+| 측정 환경 | 로컬 단일 머신 (앱·MySQL·Redis·Gatling 동거), Spring Boot 3.5, Java 21, Virtual Threads on |
+| 시뮬레이션 | `HomeTodayBaselineSimulation` (1유저 순차), `HomeTodayPeakLoadSimulation` (10 TPS 지속) |
+| 측정 계정 | 단일 테스트 계정 (홈 데이터 보유) |
+
+`HomeTodayPeakLoadSimulation`은 목표 부하를 모델링한다 — warmup 2 req/s(10s) →
+1→10 req/s 램프(30s) → 10 req/s 지속(120s), 총 1,385건. 표본이 커서
+1유저 순차(n=33)보다 통계적으로 신뢰도가 높다.
 
 ---
 
-## Before / After 성능 비교
+## 측정 기록
 
-### Before (Baseline)
+3차에 걸쳐 측정했다. **각 차수의 조건을 명시한다 — 조건을 섞으면 무엇이 효과를
+냈는지 알 수 없기 때문이다.** (이전 문서가 캐시와 N+1 개선을 한 수치에 섞어
+제시했던 것을 반복하지 않는다.)
 
-| 지표 | 값 |
+### 10 TPS 지속 (`HomeTodayPeakLoadSimulation`, 1,385건, 실패율 0%)
+
+| 지표 | Run 1 | Run 2 | Run 3 |
+| --- | ---: | ---: | ---: |
+| mean | 77 ms | 56 ms | 58 ms |
+| p50 | 75 ms | 54 ms | 56 ms |
+| p75 | 85 ms | 60 ms | 62 ms |
+| p95 | 105 ms | 77 ms | 78 ms |
+| p99 | 133 ms | 124 ms | 114 ms |
+| max | 202 ms | 178 ms | 221 ms |
+
+| 차수 | 조건 |
 | --- | --- |
-| 성공률 | 100% (33/33) |
-| Min | 114 ms |
-| Mean | 248 ms |
-| p50 | 159 ms |
-| p75 | 177 ms |
-| p95 | 404 ms |
-| p99 | 2,790 ms *(cold start 첫 호출 이상치)* |
-| Max | 2,790 ms |
-| 분포 | t < 800ms : 96.97% |
-| 처리량 | 1.27 rps |
+| Run 1 | 캐시 제거 / SQL 콘솔 로깅 ON / `@Transactional` 없음 |
+| Run 2 | + `QueryHomeTodayService.query()` 에 `@Transactional` / SQL 로깅 OFF |
+| Run 3 | + 홈 조회 readOnly 트랜잭션 리팩터링 / SQL 로깅 OFF |
 
-### After (최적화 후)
+**해석**
 
-| 지표 | 값 |
-| --- | --- |
-| 성공률 | 100% (33/33) |
-| Min | 71 ms |
-| Mean | 159 ms |
-| p50 | 125 ms |
-| p75 | 148 ms |
-| p95 | 204 ms |
-| p99 | 1,206 ms |
-| Max | 1,206 ms |
-| 분포 | t < 800ms : 96.97% |
-| 처리량 | 1.43 rps |
+- **Run 1 → Run 2 (p95 105 → 77, -27%)** — `@Transactional` 통합과 SQL 로깅
+  OFF가 *동시에* 바뀌었다. 둘의 기여도는 이 측정만으로 분리 불가. 다만 운영
+  프로파일(`application-prod.yml`)은 원래 `show-sql`/`format_sql`을 끄므로,
+  **105ms 중 일부는 로컬 설정 아티팩트**였다. 운영 기준 실제 베이스라인은
+  처음부터 77ms에 가까웠다.
+- **Run 2 → Run 3 (p95 77 → 78)** — readOnly 리팩터링은 **측정 노이즈 안에서
+  변화 없음**. 효과 0. (자세한 내용은 [적용한 변경 3](#3-홈-조회-readonly-트랜잭션-리팩터링--측정-효과-없음) 참고.)
 
-### 비교
-
-| 지표 | Before | After | 개선 |
-| --- | ---: | ---: | --- |
-| Min | 114 ms | **71 ms** | **-37.7%** |
-| Mean | 248 ms | **159 ms** | **-35.9%** |
-| p50 | 159 ms | **125 ms** | **-21.4%** |
-| p75 | 177 ms | **148 ms** | -16.4% |
-| **p95** | 404 ms | **204 ms** | **-49.5%** |
-| p99 | 2,790 ms | **1,206 ms** | **-56.8%** |
-| Max | 2,790 ms | **1,206 ms** | **-56.8%** |
-| Throughput | 1.27 rps | **1.43 rps** | +12.6% |
+> 참고 — 1유저 순차 베이스라인(`HomeTodayBaselineSimulation`, 로깅 ON):
+> mean 97ms, p95 155ms. 1.6 rps에 불과해 목표 부하·동시성을 검증하지 못한다.
+> 부하가 데워진 10 TPS 측정이 오히려 더 빠른 것은 JIT·커넥션풀 워밍과
+> 큰 표본 때문이며, 부하가 병목이 아니라는 방증이다.
 
 ---
 
-## 최적화 전 진단
+## 프로파일링 — 56ms는 어디로 가는가
 
-`QueryHomeTodayService.query()` 한 번이 단순 합산으로도 **DB 왕복 10회 이상**을 일으키고 있었다. 호출 순서를 따라가 보면 다음과 같다.
+Hibernate `generate_statistics`로 요청 1회의 `Session Metrics`를 캡처했다.
 
-| 단계 | 호출 | 비고 |
+**요청당 DB 쿼리 = 8개, N+1 없음**
+
+| # | 위치 | 쿼리 |
 | --- | --- | --- |
-| 1 | `DailyPlan` 조회 | 없으면 생성 |
-| 2 | `Task`(top picks) 조회 | DailyPlan과 별도 트랜잭션·별도 서비스에서 다시 조회 |
-| 3 | `Timetable` 조회 | DailyPlan과 별도 트랜잭션·별도 서비스에서 다시 조회 |
-| 4 | `FutureVision` 조회 | 등록 안 했으면 `FutureVisionNotFoundException` |
-| 5 | `ExamSchedule` 조회 (next) | 없으면 `ExamScheduleNotFoundException` |
-| 6 | `NotificationPreference` 조회 | 없으면 default 생성 후 저장 |
-| 7 | `AccountabilityRelation` (subject) | `findBySubjectUserId` |
-| 8 | `AccountabilityRelation` (watcher) | `findByWatcherUserId` |
-| 9 | `ActivationFunnel` 조회 | focus card 노출 판단 |
+| 1 | JWT 필터 (`TokenService.authenticate`) | User 조회 (PK) |
+| 2 | `QueryTodayPlanningOverviewService` | DailyPlan + tasks + topPickDetail (fetch join) |
+| 3 | 〃 | Timetable + slots (fetch join) |
+| 4 | `findNextForHome` | ExamSchedule |
+| 5 | `findForHome` | FutureVision |
+| 6 | `queryMine` | NotificationPreference |
+| 7 | `queryFriendAccountabilityStatus` | AccountabilityRelation |
+| 8 | `showFocusTimingCard` | ActivationFunnel |
 
-**병목의 본질은 “쿼리 수 자체”가 아니라 구조였다.**
+**시간 분해 (warm 요청 기준)**
 
-- `DailyPlan`을 여러 하위 서비스(`QueryTodayTopPicksService`, `QueryTodayTimetableService`)가 **각자 다시 조회·검증**하고 있어, 같은 `DailyPlan`이 사실상 여러 번 로드됨
-- 홈에서는 **사용자 본인이 아직 등록하지 않은 도메인(비전·시험·알림 설정)을 정상 케이스로 다뤄야 함에도, 조회 서비스가 `*NotFoundException`을 던지는 경로**가 메인이었음 → 호출자(`QueryHomeTodayService`)에서 try/catch 또는 별도 분기로 받아야 했고, 예외 인스턴스 생성·스택 트레이스 비용도 누적
-- `AccountabilityRelation`은 **본질적으로 한 사용자에 대한 한 쿼리로 충분**한데, "내가 subject인 관계"와 "내가 watcher인 관계"를 두 번에 나눠서 조회
+| 구간 | 시간 |
+| --- | ---: |
+| 서비스 — 7개 쿼리 실행 | 26.0 ms |
+| 서비스 — statement prepare ×7 | 4.1 ms |
+| 서비스 — flush / dirty-check | 8.5 ms |
+| JWT 필터 — User 조회 | 4.1 ms |
+| **DB/Hibernate 합계** | **~43 ms** |
+| 나머지 (보안필터·JWT·직렬화·MVC·VT) | ~13 ms |
 
-> 이 진단을 바탕으로 다음 세 가지 방향을 정했다.
->
-> 1. **조회 시점의 의도된 Exception을 NULL/Optional 반환으로 바꾸기**
-> 2. **변경이 잘 되지 않는 기능은 Cache 도입**
-> 3. **중복 쿼리 하나로 줄이기**
+**발견**
 
----
-
-## 적용한 최적화
-
-### 1. 조회 시점의 의도된 Exception을 Optional 반환으로 전환
-
-홈 화면에서의 "비전 미등록", "시험 일정 미등록"은 **버그가 아니라 정상 상태**다. 그럼에도 기존 조회 서비스는 단건 조회 실패 시 도메인 예외를 던졌고, `QueryHomeTodayService`는 이를 회피하기 위해 우회 경로를 가져야 했다.
-
-홈 전용 진입점을 새로 만들어 `Optional<...>`을 반환하도록 변경했다. 기존의 예외 던지는 API(`query()`, `queryNext()`)는 단건 화면용으로 그대로 유지한다.
-
-**`QueryFutureVisionService`**
-```java
-// 단건 화면용 — 미등록이면 예외
-@Transactional(readOnly = true)
-public FutureVisionResponse query() {
-    return FutureVisionResponse.from(getFutureVisionOrThrow());
-}
-
-// 홈용 — 미등록은 정상 상태이므로 Optional
-@Cacheable(
-        cacheNames = HomeCacheNames.FUTURE_VISION,
-        key = "@homeCacheKey.currentUserId()"
-)
-@Transactional(readOnly = true)
-public Optional<FutureVisionResponse> findForHome() {
-    return futureVisionRepository.findByUserId(currentUserId())
-            .map(FutureVisionResponse::from);
-}
-```
-
-**`QueryExamScheduleService`**
-```java
-// 단건 화면용 — 미등록이면 예외
-@Transactional(readOnly = true)
-public ExamScheduleResponse queryNext() { ... orElseThrow(ExamScheduleNotFoundException::new); }
-
-// 홈용 — Optional + 캐시
-@Cacheable(
-        cacheNames = HomeCacheNames.NEXT_EXAM_SCHEDULE,
-        key = "@homeCacheKey.currentUserIdToday()"
-)
-@Transactional(readOnly = true)
-public Optional<ExamScheduleResponse> findNextForHome() {
-    UserId userId = currentUserQuery.currentUser().userId();
-    LocalDate today = LocalDate.now(clock);
-    return examScheduleRepository
-            .findFirstByUserIdAndExamDateGreaterThanEqualOrderByExamDateAsc(userId, today)
-            .map(es -> ExamScheduleResponse.from(es, today));
-}
-```
-
-**호출부도 깔끔해졌다.**
-```java
-// QueryHomeTodayService
-private FutureVisionResponse queryFutureVision() {
-    return queryFutureVisionService.findForHome().orElse(null);
-}
-
-private ExamScheduleResponse queryNextExamSchedule() {
-    return queryExamScheduleService.findNextForHome().orElse(null);
-}
-```
-
-**왜 효과가 있는가**
-- 정상 흐름에서 발생하던 예외가 사라지면서 스택 트레이스 채움 비용 제거 (`Throwable.fillInStackTrace()`는 JVM에서 의외로 무거움)
-- 호출부의 try/catch / 분기 로직 제거 — 코드 가독성도 회복
-- 이후 캐시·트랜잭션 어노테이션을 같은 메서드에 안전하게 붙일 수 있는 기반이 됨
+1. **N+1 없음.** DailyPlan은 `left join tbl_task ... left join tbl_top_pick_detail`
+   한 방, Timetable은 `left join tbl_slot` 한 방. 응답 매핑은 fetch join된
+   연관만 접근한다.
+2. **`@Transactional` 통합 검증됨.** 요청당 `Session Metrics` 블록이 정확히 2개
+   (JWT 필터용 1 + 서비스용 1). 서비스의 7개 조회가 `1 JDBC connection`에서
+   처리된다. 변경 전이라면 하위 서비스·repo 호출마다 세션이 쪼개져 ~7개였을 것.
+3. **인덱스 전부 정상.** DailyPlan(user_id+plan_date 유니크), Timetable(daily_plan_id
+   유니크), ExamSchedule(@Index), FutureVision·NotificationPreference·ActivationFunnel
+   (user_id 유니크), AccountabilityRelation(양 컬럼 유니크). 슬롯/태스크 FK는
+   MySQL이 자동 인덱싱. 추가할 인덱스 없음.
+4. **DB가 요청의 ~77%.** 비용의 본질은 8개 BC의 8개 테이블에 대한 **8회 순차
+   DB 왕복**이다. BC 격리상 JOIN으로 합칠 수 없다 — 집계형 엔드포인트의
+   구조적 바닥값이다.
 
 ---
 
-### 2. 변경이 잦지 않은 조회에 Redis 캐시 도입
+## 적용한 변경
 
-홈 응답 구성요소 중 **사용자 행동 한 번당 변경 빈도가 매우 낮은** 세 가지를 캐시 대상으로 골랐다.
+### 1. Redis 캐시 제거
 
-| 캐시 이름 | 대상 | TTL | 키 |
-| --- | --- | --- | --- |
-| `home:future-vision` | 미래 비전 | 12h | `currentUserId` |
-| `home:notification-preference` | 알림 환경설정 | 12h | `currentUserId` |
-| `home:next-exam-schedule` | 다음 시험 일정 | 6h | `currentUserId:yyyy-MM-dd` |
+홈 조회 3종 `@Cacheable`, 변경 서비스 6종 `@CacheEvict`/`@CachePut`,
+`HomeCacheKey`/`HomeCacheNames`, `RedisCacheConfig`의 홈 캐시 항목을 모두 제거했다.
 
-`next-exam-schedule`만 키에 날짜를 포함했다. **다음 시험은 날짜가 바뀌면 결과가 달라질 수 있기 때문**(어제까지 다음 시험이었던 항목이 오늘 지나가는 케이스). 매일 0시에 자연스레 새 키로 빠져나가도록 설계했다.
+근거 — 10 TPS 지속에서 캐시 없이 p95 77ms / 실패 0%. 이 규모에서 DB는 압박받지
+않으므로 캐시가 "DB 부하를 흡수"한다는 명분이 성립하지 않는다. 게다가 캐시 키가
+per-user라 적중률이 낮고, 캐시는 Redis 의존성·직렬화 공격 표면·evict 누락 리스크·
+stale 응답이라는 비용을 동반한다. **이 규모에서 캐시는 비용 대비 이득이 없다.**
 
-**캐시 키 컴포넌트** (`config/cache/HomeCacheKey.java`)
-```java
-@Component
-@RequiredArgsConstructor
-public class HomeCacheKey {
-    private final CurrentUserQuery currentUserQuery;
-    private final Clock clock;
+### 2. `QueryHomeTodayService.query()` 단일 트랜잭션
 
-    public String currentUserId() {
-        return currentUserQuery.currentUser().userId().id().toString();
-    }
+`query()`에 `@Transactional`이 없어 하위 서비스 4개와 직접 호출 repo 2개가
+각자 트랜잭션/커넥션을 잡았다(요청당 ~7세트). `@Transactional` 하나로 8개 조회를
+한 커넥션·한 트랜잭션에 묶었다. 프로파일링의 `Session Metrics` 블록 2개가 이를
+확인한다.
 
-    public String currentUserIdToday() {
-        return currentUserId() + ":" + LocalDate.now(clock);
-    }
-}
-```
+### 3. 홈 조회 readOnly 트랜잭션 리팩터링 — 측정 효과 없음
 
-`@Cacheable(key = "@homeCacheKey.currentUserId()")`처럼 SpEL로 빈을 참조해, 인자가 없는 메서드(`findForHome()`)에서도 사용자별 캐시 키를 만들 수 있다. `Clock` 주입 덕분에 테스트에서 키를 결정적으로 만들 수 있다.
+`query()`를 `@Transactional(readOnly = true)`로 전환. find-or-create 쓰기
+(DailyPlan·NotificationPreference 자동 생성)는 `REQUIRES_NEW` 트랜잭션으로
+분리했다. `TodayDailyPlanProvisioner`는 이미 `REQUIRES_NEW`였고, 알림설정용
+`NotificationPreferenceProvisioner`를 같은 패턴으로 신규 추가했다(동시 최초진입
+unique 위반 복구 포함 — latent race 수정).
 
-**Redis 캐시 설정** (`config/cache/RedisCacheConfig.java`)
-```java
-RedisCacheConfiguration defaultConfig = RedisCacheConfiguration.defaultCacheConfig()
-        .serializeKeysWith(... new StringRedisSerializer())
-        .serializeValuesWith(... jsonSerializer)
-        .disableCachingNullValues()       // null 응답은 캐시하지 않음
-        .entryTtl(Duration.ofMinutes(30));
+프로파일링은 readOnly 전환으로 flush/dirty-check ~8.5ms가 사라질 것으로 추정했다.
+**그러나 실측(Run 2 → Run 3)에서 효과는 0이었다.** 그 8.5ms는
+`generate_statistics`를 켠 단일 샘플(n=1)에서 나온 값이고, dirty-check 대상이
+작은 엔티티 14개뿐이라 실제 임계경로 비용은 무시할 수준이었다. n=1,385의 Gatling
+측정이 신뢰할 수 있는 답이며, 그 답은 "변화 없음"이다.
 
-return RedisCacheManager.builder(redisConnectionFactory)
-        .cacheDefaults(defaultConfig)
-        .withInitialCacheConfigurations(Map.of(
-                HomeCacheNames.FUTURE_VISION,          defaultConfig.entryTtl(Duration.ofHours(12)),
-                HomeCacheNames.NOTIFICATION_PREFERENCE, defaultConfig.entryTtl(Duration.ofHours(12)),
-                HomeCacheNames.NEXT_EXAM_SCHEDULE,     defaultConfig.entryTtl(Duration.ofHours(6))
-        ))
-        .build();
-```
-
-- `GenericJackson2JsonRedisSerializer` + `activateDefaultTyping`으로 폴리모픽 응답(`Optional`, sealed 응답 계층 등)도 안전하게 역직렬화
-- `BasicPolymorphicTypeValidator`로 `com.example.movra` 패키지만 허용 — Jackson default typing의 RCE 리스크 차단
-- `disableCachingNullValues()` — 미등록 사용자의 빈 응답을 Redis에 저장하지 않아 메모리 낭비 방지
-
-**캐시 무효화** — 변경 서비스마다 `@CacheEvict` / `@CachePut`을 빠짐없이 부착했다.
-
-| 변경 동작 | 어노테이션 | 캐시 |
-| --- | --- | --- |
-| `CreateFutureVisionService.create` | `@CacheEvict` | `home:future-vision` |
-| `UpdateWeeklyVisionService.update` | `@CacheEvict` | `home:future-vision` |
-| `UpdateYearlyVisionService.update` | `@CacheEvict` | `home:future-vision` |
-| `CreateExamScheduleService.create` | `@CacheEvict` | `home:next-exam-schedule` |
-| `UpdateExamScheduleService.update` | `@CacheEvict` | `home:next-exam-schedule` |
-| `DeleteExamScheduleService.delete` | `@CacheEvict` | `home:next-exam-schedule` |
-| `UpdateNotificationPreferenceService.update` | `@CachePut` | `home:notification-preference` |
-
-`@CachePut`을 쓴 곳은 알림 환경설정만이다. 알림 설정 변경은 **응답으로 바뀐 상태를 즉시 반환**하므로 evict 후 다음 호출에 다시 채우기보다, 변경된 값을 그대로 캐시에 올리는 쪽이 자연스럽다.
-
-**`spring.cache.type=redis`** 명시(`application.yml`) — 의도하지 않은 in-memory fallback 차단.
+**그럼에도 이 변경은 유지한다 — 성능이 아니라 정합성 근거로.** 읽기 엔드포인트가
+readOnly 트랜잭션을 도는 것이 올바른 의미론이고, 새 provisioner는 기존
+`TodayDailyPlanProvisioner` 패턴과 일관되며 알림설정 최초생성의 동시성 race를
+함께 고쳤다. 이 항목은 "성능 최적화"가 아니라 "정합성·일관성 개선"으로 분류한다.
 
 ---
 
-### 3. 중복 쿼리를 단일 쿼리로 통합
+## 결론
 
-#### (a) `AccountabilityRelation` — 두 번의 조회를 한 번으로
+- **캐시는 이 규모에 불필요하다.** 10 TPS 지속에서 캐시 없이 p95 77~78ms,
+  실패 0%. 측정이 캐시 제거를 정당화했다.
+- **p95 105 → 77ms 개선의 상당 부분은 SQL 콘솔 로깅 제거**다 — 운영에선 원래
+  꺼져 있던, 로컬 측정 아티팩트였다. `@Transactional` 통합의 순수 기여도는
+  로컬에서 분리 측정하지 않았다(운영처럼 DB가 네트워크로 분리되면 트랜잭션 경계
+  감소 효과가 더 크다).
+- **readOnly 리팩터링은 지연시간 개선이 없었다.** 프로파일링 단일 샘플에 기반한
+  예측이 큰 표본 실측에서 기각됐다. 정합성 개선으로만 유지한다.
+- **프로파일링 결과 구조적 병목이 없다** — N+1 없음, 누락 인덱스 없음, 중복 조회
+  없음. 8회 순차 DB 왕복은 집계 엔드포인트의 바닥값이며 더 줄일 깔끔한 수단이 없다.
+- **목표(Peak 10 TPS) 대비 p95 ~78ms / 실패 0%로 충분하다.** `/home/today`는
+  추가 최적화가 필요하지 않다.
 
-**Before** — `QueryHomeTodayService`가 친구 책임감(accountability) 상태를 만들기 위해 두 번 호출
-```java
-relationRepository.findBySubjectUserId(userId)  // 내가 subject 인가
-relationRepository.findByWatcherUserId(userId)  // 내가 watcher 인가
-```
-
-**After** — 한 번의 쿼리로 양쪽 후보를 모두 가져와 메모리에서 분류
-```java
-// AccountabilityRelationRepository
-List<AccountabilityRelation> findAllBySubjectUserIdOrWatcherUserId(UserId subjectUserId, UserId watcherUserId);
-
-// QueryHomeTodayService
-List<AccountabilityRelation> relations =
-        accountabilityRelationRepository.findAllBySubjectUserIdOrWatcherUserId(userId, userId);
-
-Optional<AccountabilityRelation> subjectRelation = relations.stream()
-        .filter(r -> userId.equals(r.getSubjectUserId()))
-        .findFirst();
-
-Optional<AccountabilityRelation> watcherRelation = relations.stream()
-        .filter(r -> userId.equals(r.getWatcherUserId()))
-        .findFirst();
-```
-
-> 한 사용자가 갖는 관계 수는 매우 작아 (보통 0~2건), 메모리 분류 비용은 무시할 수 있다. **DB 왕복 -1회는 그대로 절감**.
-
-#### (b) `DailyPlan` + `Task` + `Timetable` — 중복 로드 제거
-
-기존에는 `top picks`, `timetable`이 각자의 조회 서비스에서 다시 `DailyPlan`을 끌어와 검증·매핑하고 있었다. 홈 진입 시 **같은 `DailyPlan`을 사실상 3번 로드**하는 셈이었다.
-
-홈 전용 통합 진입점 `QueryTodayPlanningOverviewService.query()`를 두고, `DailyPlan`을 한 번만 로드한 뒤 거기서 파생되는 응답(top picks, timetable)을 모두 만든다.
-
-```java
-@Service
-@RequiredArgsConstructor
-public class QueryTodayPlanningOverviewService {
-
-    @Transactional
-    public TodayPlanningOverviewResponse query() {
-        UserId userId = currentUserQuery.currentUser().userId();
-        LocalDate today = LocalDate.now(clock);
-        DailyPlan dailyPlan = findOrCreateToday(userId, today);
-
-        return TodayPlanningOverviewResponse.builder()
-                .dailyPlanId(dailyPlan.getDailyPlanId().id())
-                .targetDate(dailyPlan.getPlanDate())
-                .topPicks(topPicks(dailyPlan))   // 메모리에서 필터링
-                .timetable(timetable(dailyPlan)) // dailyPlanId로 단발 조회
-                .build();
-    }
-
-    private List<TopPicksResponse> topPicks(DailyPlan dailyPlan) {
-        return dailyPlan.getTasks().stream()
-                .filter(Task::isTopPicked)
-                .map(TopPicksResponse::from)
-                .toList();
-    }
-}
-```
-
-`DailyPlan` 한 번을 가능한 한 풍부하게 가져오기 위해 fetch join 쿼리를 추가했다 — **N+1 차단**이 핵심.
-
-```java
-// DailyPlanRepository
-@Query("""
-        SELECT DISTINCT dp
-        FROM DailyPlan dp
-        LEFT JOIN FETCH dp.tasks task
-        LEFT JOIN FETCH task.topPickDetail
-        WHERE dp.userId = :userId
-          AND dp.planDate = :planDate
-        """)
-Optional<DailyPlan> findByUserIdAndPlanDateWithTasks(...);
-
-// TimetableRepository
-@Query("""
-        SELECT DISTINCT t
-        FROM Timetable t
-        LEFT JOIN FETCH t.slots
-        WHERE t.dailyPlanId = :dailyPlanId
-        """)
-Optional<Timetable> findByDailyPlanIdWithSlots(...);
-```
-
-#### (c) Duplicate key 경합 처리
-
-`DailyPlan`은 첫 진입 시 자동 생성된다. 동시 요청 두 건이 모두 "없음 → 생성"으로 진입하면 한쪽은 unique constraint 위반으로 실패한다. 이전에는 이를 그대로 노출했지만, 이번에 **`DataIntegrityViolationUtils.isDuplicateKeyViolation`**으로 정확한 케이스만 잡아 재조회로 복구하도록 했다.
-
-```java
-private DailyPlan createOrLoadToday(UserId userId, LocalDate today) {
-    try {
-        return dailyPlanRepository.saveAndFlush(DailyPlan.create(userId, today));
-    } catch (DataIntegrityViolationException e) {
-        if (!DataIntegrityViolationUtils.isDuplicateKeyViolation(e)) {
-            throw e;  // 무관한 위반은 그대로 전파
-        }
-        return dailyPlanRepository.findByUserIdAndPlanDateWithTasks(userId, today)
-                .orElseThrow(DailyPlanAlreadyExistsException::new);
-    }
-}
-```
+가장 큰 교훈: 측정 전 추측("캐시가 필요하다", "쿼리를 더 줄여야 한다",
+"readOnly가 8.5ms를 절약한다")은 대부분 실측에서 기각됐다. **추측이 아니라 측정이
+판단의 근거여야 한다.**
 
 ---
 
-## 측정 방법
+## 측정의 한계
 
-**Gatling 시뮬레이션** (`src/gatling/java/HomeTodayBaselineSimulation.java`)
-
-- Closed model: 1 virtual user가 워밍업 3회 + 측정 30회를 순차 호출
-- 매 요청 사이 500ms pause — 단일 요청의 순수 처리 비용 측정 목적
-- HTTP 200 응답만 OK로 카운트
-- 어설션: p95 < 1000ms, p99 < 2000ms, 실패율 < 1%
-
-**실행 명령**
-```bash
-./gradlew gatlingRun \
-    -DauthToken="<JWT>" \
-    -DbaseUrl=http://localhost:8080 \
-    -Diterations=30 -DpauseMs=500 -DwarmupIterations=3
-```
-
-리포트는 `build/reports/gatling/hometodaybaselinesimulation-<timestamp>/index.html`에 생성된다.
-
----
-
-## 고려사항과 잔존 리스크
-
-### 캐시 무효화 누락 시 stale 응답
-
-`@CacheEvict`를 변경 서비스 어디에 빠뜨리면 사용자는 자신이 방금 수정한 결과를 보지 못한다. 본 작업에서는 변경 서비스 7개 모두 매핑했지만, **향후 같은 도메인에 새 변경 서비스를 추가할 때 빠뜨릴 가능성**이 있다. 도메인 이벤트 기반 invalidation으로 옮기는 것이 다음 단계.
-
-### 캐시 herd / cold call
-
-p99의 1,206ms는 **캐시 미스(콜드 첫 호출)** 비용. TTL 만료 직후 동시 트래픽이 몰리면 다시 튈 수 있다.
-- 1차 대응: TTL 차등(6h / 12h)으로 동시 만료 최소화
-- 다음 단계: cache stampede protection (`@Cacheable(sync = true)` 또는 Redis 분산 락) 검토
-
-### 동시성 한계는 별도 검증 필요
-
-이번 측정은 단일 사용자 순차(closed model). **동시 트래픽 한계**는 별도로 검증해야 한다. 이전 open-model 3 RPS에서 실패율 90%+가 관측됐는데, 그 원인이 HikariCP 풀 고갈인지 다른 병목인지 추후 확인 필요.
-
-### Virtual Threads + JPA pinning
-
-`spring.threads.virtual.enabled=true` 상태. JPA/JDBC `synchronized`로 인한 carrier thread pinning은 부하 상황에서 다시 검증할 것.
+- **로컬 단일 머신.** 앱·MySQL·Redis·Gatling이 한 머신에 있다. 운영의 네트워크
+  레이턴시·다중 인스턴스는 반영되지 않는다. 다만 10 TPS는 부하 바운드가 아니라
+  결론은 바뀌지 않는다.
+- **단일 계정 데이터.** 한 테스트 계정 기준. 쿼리 구조(fetch join, 단건 finder)는
+  데이터량과 무관하므로 큰 차이는 없을 것으로 본다.
+- **표본/한계점.** 베이스라인 n=33, 피크 n=1,385. 동시성 한계점(30/50/100 TPS에서
+  언제 무너지는가)은 측정하지 않았다 — 목표가 10 TPS라 범위 밖.
 
 ---
 
 ## 변경 파일 인덱스
 
 **신규**
-- `src/main/java/com/example/movra/bc/home/today/application/service/QueryHomeTodayService.java`
-- `src/main/java/com/example/movra/bc/home/today/application/service/dto/response/HomeTodayResponse.java`
-- `src/main/java/com/example/movra/bc/home/today/application/service/dto/response/FriendAccountabilityStatusResponse.java`
-- `src/main/java/com/example/movra/bc/home/today/presentation/HomeController.java`
-- `src/main/java/com/example/movra/bc/planning/daily_plan/application/service/daily_plan/QueryTodayPlanningOverviewService.java`
-- `src/main/java/com/example/movra/bc/planning/daily_plan/application/service/daily_plan/dto/response/TodayPlanningOverviewResponse.java`
-- `src/main/java/com/example/movra/config/cache/HomeCacheKey.java`
-- `src/main/java/com/example/movra/config/cache/HomeCacheNames.java`
-- `src/main/java/com/example/movra/config/cache/RedisCacheConfig.java`
-- `src/gatling/java/HomeTodayBaselineSimulation.java`
+- `src/main/java/com/example/movra/bc/notification/application/service/NotificationPreferenceProvisioner.java`
+- `src/gatling/java/HomeTodayPeakLoadSimulation.java`
 
 **수정**
-- `bc/visioning/future_vision/application/service/*` — `findForHome()` 추가, 변경 서비스에 `@CacheEvict`
-- `bc/planning/exam_schedule/application/service/*` — `findNextForHome()` 추가, 변경 서비스에 `@CacheEvict`
-- `bc/notification/application/service/*` — `@Cacheable` / `@CachePut`
-- `bc/accountability/accountability_relation/domain/repository/AccountabilityRelationRepository.java` — `findAllBySubjectUserIdOrWatcherUserId` 추가
-- `bc/planning/daily_plan/domain/repository/DailyPlanRepository.java` — `findByUserIdAndPlanDateWithTasks` fetch join
-- `bc/planning/timetable/domain/repository/TimetableRepository.java` — `findByDailyPlanIdWithSlots` fetch join
-- `bc/analytics/activation_funnel/domain/ActivationFunnel.java` — `isFocusTimingCardAvailable(Clock)` 도메인 메서드
-- `src/main/resources/application.yml` — `spring.cache.type=redis`
+- `bc/home/today/application/service/QueryHomeTodayService.java` — `@Transactional(readOnly = true)`
+- `bc/notification/application/service/QueryNotificationPreferenceService.java` — readOnly + provisioner
+- 홈 캐시 제거 — `QueryFutureVisionService`, `QueryExamScheduleService`,
+  `UpdateNotificationPreferenceService`, `CreateFutureVisionService`,
+  `UpdateWeeklyVisionService`, `UpdateYearlyVisionService`,
+  `CreateExamScheduleService`, `UpdateExamScheduleService`, `DeleteExamScheduleService`
+- `config/cache/RedisCacheConfig.java` — 홈 캐시 항목 제거
+
+**삭제**
+- `config/cache/HomeCacheNames.java`, `config/cache/HomeCacheKey.java`
