@@ -14,7 +14,6 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 @Configuration
@@ -54,17 +53,6 @@ public class RedisCacheConfig {
 
         return RedisCacheManager.builder(redisConnectionFactory)
                 .cacheDefaults(defaultConfig)
-                .withInitialCacheConfigurations(Map.of(
-                        HomeCacheNames.FUTURE_VISION,
-                        defaultConfig.entryTtl(Duration.ofHours(12)),
-
-                        HomeCacheNames.NOTIFICATION_PREFERENCE,
-                        defaultConfig.entryTtl(Duration.ofHours(12)),
-
-                        HomeCacheNames.NEXT_EXAM_SCHEDULE,
-                        defaultConfig.entryTtl(Duration.ofHours(6))
-
-                ))
                 .build();
     }
 }

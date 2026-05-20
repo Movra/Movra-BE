@@ -7,13 +7,11 @@ import com.example.movra.bc.visioning.future_vision.application.helper.FutureVis
 import com.example.movra.bc.visioning.future_vision.application.service.dto.request.UpdateWeeklyVisionRequest;
 import com.example.movra.bc.visioning.future_vision.domain.FutureVision;
 import com.example.movra.bc.visioning.future_vision.domain.repository.FutureVisionRepository;
-import com.example.movra.config.cache.HomeCacheNames;
 import com.example.movra.sharedkernel.file.storage.ImageHelper;
 import com.example.movra.sharedkernel.file.storage.type.ImageType;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,10 +25,6 @@ public class UpdateWeeklyVisionService {
     private final ImageHelper imageHelper;
     private final CurrentUserQuery currentUserQuery;
 
-    @CacheEvict(
-            cacheNames = HomeCacheNames.FUTURE_VISION,
-            key = "@homeCacheKey.currentUserId()"
-    )
     @Transactional
     public void update(UpdateWeeklyVisionRequest request) {
         UserId userId = currentUserQuery.currentUser().userId();

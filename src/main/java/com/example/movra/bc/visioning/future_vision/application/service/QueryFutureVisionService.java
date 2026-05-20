@@ -7,10 +7,8 @@ import com.example.movra.bc.visioning.future_vision.application.service.dto.resp
 import com.example.movra.bc.visioning.future_vision.application.service.dto.response.YearlyVisionResponse;
 import com.example.movra.bc.visioning.future_vision.domain.FutureVision;
 import com.example.movra.bc.visioning.future_vision.domain.repository.FutureVisionRepository;
-import com.example.movra.config.cache.HomeCacheNames;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,11 +36,6 @@ public class QueryFutureVisionService {
         return YearlyVisionResponse.from(getFutureVisionOrThrow());
     }
 
-    @Cacheable(
-            cacheNames = HomeCacheNames.FUTURE_VISION,
-            key = "@homeCacheKey.currentUserId()",
-            unless = "#result == null"
-    )
     @Transactional(readOnly = true)
     public Optional<FutureVisionResponse> findForHome() {
         return futureVisionRepository.findByUserId(currentUserId())
