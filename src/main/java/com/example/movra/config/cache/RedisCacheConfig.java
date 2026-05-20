@@ -14,6 +14,7 @@ import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 @Configuration
@@ -51,8 +52,15 @@ public class RedisCacheConfig {
                 .disableCachingNullValues()
                 .entryTtl(Duration.ofMinutes(30));
 
+        RedisCacheConfiguration finalStatsConfig = defaultConfig.entryTtl(Duration.ofHours(24));
+
         return RedisCacheManager.builder(redisConnectionFactory)
                 .cacheDefaults(defaultConfig)
+                .withInitialCacheConfigurations(Map.of(
+                        StatsCacheNames.FOCUS_STATS_DAILY, finalStatsConfig,
+                        StatsCacheNames.FOCUS_STATS_WEEKLY, finalStatsConfig,
+                        StatsCacheNames.FOCUS_STATS_MONTHLY, finalStatsConfig
+                ))
                 .build();
     }
 }

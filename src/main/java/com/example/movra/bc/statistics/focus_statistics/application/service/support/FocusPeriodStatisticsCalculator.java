@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
@@ -36,8 +37,9 @@ public class FocusPeriodStatisticsCalculator {
         List<FocusStatisticsPeriod> rawPeriods = resolveRawPeriods(period, today, zoneId, closedSummaries);
         int coveredDayCount = resolveCoveredDayCount(closedSummaries, rawPeriods);
 
+        List<FocusStatisticsSessionView> rawSessions = fetchRawSessions(userId, rawPeriods);
         long totalFocusSeconds = calculateSummarySeconds(closedSummaries)
-                + calculateRawSeconds(userId, rawPeriods, now);
+                + calculateRawSeconds(rawSessions, rawPeriods, now);
 
         return new FocusPeriodStatisticsResult(
                 period.startDate(),
@@ -141,30 +143,47 @@ public class FocusPeriodStatisticsCalculator {
                 .sum();
     }
 
-    private long calculateRawSeconds(
+    // rawPeriods 전체를 커버하는 단일 범위 쿼리로 세션을 가져온다.
+    // 기존에는 rawPeriod 수 N만큼 개별 쿼리가 발생했고 (monthly 최대 ~16회),
+    // 이를 DB 왕복 1회 + 메모리 분배로 대체한다.
+    private List<FocusStatisticsSessionView> fetchRawSessions(
             UserId userId,
+            List<FocusStatisticsPeriod> rawPeriods
+    ) {
+        if (rawPeriods.isEmpty()) {
+            return List.of();
+        }
+        Instant globalStart = rawPeriods.stream()
+                .map(FocusStatisticsPeriod::startInstant)
+                .min(Comparator.naturalOrder())
+                .orElseThrow();
+        Instant globalEnd = rawPeriods.stream()
+                .map(FocusStatisticsPeriod::endInstant)
+                .max(Comparator.naturalOrder())
+                .orElseThrow();
+        return focusStatisticsReadPort.findSessionsInRange(userId, globalStart, globalEnd);
+    }
+
+    private long calculateRawSeconds(
+            List<FocusStatisticsSessionView> rawSessions,
             List<FocusStatisticsPeriod> rawPeriods,
             Instant now
     ) {
         return rawPeriods.stream()
-                .mapToLong(rawPeriod -> calculateRawPeriodSeconds(userId, rawPeriod, now))
+                .mapToLong(rawPeriod -> calculateRawPeriodSeconds(rawSessions, rawPeriod, now))
                 .sum();
     }
 
     private long calculateRawPeriodSeconds(
-            UserId userId,
+            List<FocusStatisticsSessionView> rawSessions,
             FocusStatisticsPeriod rawPeriod,
             Instant now
     ) {
-        List<FocusStatisticsSessionView> focusSessions = focusStatisticsReadPort.findSessions(userId, rawPeriod);
-
-        return focusSessions.stream()
-                .mapToLong(focusSession -> focusSessionOverlapCalculator.overlapSeconds(
-                        focusSession,
-                        rawPeriod.startInstant(),
-                        rawPeriod.endInstant(),
-                        now
-                ))
+        return rawSessions.stream()
+                .filter(s -> s.startedAt().isBefore(rawPeriod.endInstant())
+                        && (s.endedAt() == null || s.endedAt().isAfter(rawPeriod.startInstant())))
+                .mapToLong(s -> focusSessionOverlapCalculator.overlapSeconds(
+                        s, rawPeriod.startInstant(), rawPeriod.endInstant(), now))
                 .sum();
     }
 
