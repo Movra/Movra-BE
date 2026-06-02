@@ -1,12 +1,14 @@
 package com.example.movra.application.accountability.accountability_relation;
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
+import com.example.movra.bc.accountability.accountability_relation.application.helper.InviteCodeIssuer;
 import com.example.movra.bc.accountability.accountability_relation.application.service.CreateAccountabilityRelationService;
 import com.example.movra.bc.accountability.accountability_relation.application.service.dto.request.VisibilityPolicyRequest;
 import com.example.movra.bc.accountability.accountability_relation.application.service.exception.AccountabilityRelationAlreadyExistsException;
 import com.example.movra.bc.accountability.accountability_relation.domain.AccountabilityRelation;
 import com.example.movra.bc.accountability.accountability_relation.domain.repository.AccountabilityRelationRepository;
 import com.example.movra.bc.accountability.accountability_relation.domain.type.MonitoringTarget;
+import com.example.movra.bc.accountability.accountability_relation.domain.vo.VisibilityPolicy;
 import com.example.movra.bc.analytics.activation_event.application.service.AnalyticsEventRecorder;
 import com.example.movra.bc.analytics.activation_event.domain.type.AnalyticsEventType;
 import com.example.movra.sharedkernel.user.AuthenticatedUser;
@@ -17,15 +19,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
 
-import java.sql.SQLException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Set;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -40,6 +39,9 @@ class CreateAccountabilityRelationServiceTest {
 
     @Mock
     private AccountabilityRelationRepository accountabilityRelationRepository;
+
+    @Mock
+    private InviteCodeIssuer inviteCodeIssuer;
 
     @Mock
     private CurrentUserQuery currentUserQuery;
@@ -59,8 +61,8 @@ class CreateAccountabilityRelationServiceTest {
     void setUp() {
         createAccountabilityRelationService = new CreateAccountabilityRelationService(
                 accountabilityRelationRepository,
+                inviteCodeIssuer,
                 currentUserQuery,
-                clock,
                 analyticsEventRecorder
         );
         given(currentUserQuery.currentUser()).willReturn(
@@ -69,21 +71,23 @@ class CreateAccountabilityRelationServiceTest {
     }
 
     @Test
-    @DisplayName("create succeeds when current user has no accountability relation")
+    @DisplayName("create issues a unique invite code and records analytics when user has no relation")
     void create_success() {
         // given
+        AccountabilityRelation relation = AccountabilityRelation.create(
+                userId, new VisibilityPolicy(Set.of(MonitoringTarget.FOCUS_SESSION)), clock
+        );
         given(accountabilityRelationRepository.existsBySubjectUserId(userId)).willReturn(false);
-        given(accountabilityRelationRepository.saveAndFlush(any(AccountabilityRelation.class)))
-                .willAnswer(invocation -> invocation.getArgument(0));
+        given(inviteCodeIssuer.issueForNewRelation(eq(userId), any(VisibilityPolicy.class)))
+                .willReturn(relation);
 
         // when
         createAccountabilityRelationService.create(request());
 
         // then
-        then(accountabilityRelationRepository).should(times(1)).saveAndFlush(
-                argThat(relation -> relation.getSubjectUserId().equals(userId)
-                        && relation.getInviteCode() != null
-                        && relation.getVisibilityPolicy().allows(MonitoringTarget.FOCUS_SESSION))
+        then(inviteCodeIssuer).should(times(1)).issueForNewRelation(
+                eq(userId),
+                argThat(policy -> policy.allows(MonitoringTarget.FOCUS_SESSION))
         );
         then(analyticsEventRecorder).should().recordSafely(
                 eq(userId),
@@ -101,20 +105,16 @@ class CreateAccountabilityRelationServiceTest {
         // when & then
         assertThatThrownBy(() -> createAccountabilityRelationService.create(request()))
                 .isInstanceOf(AccountabilityRelationAlreadyExistsException.class);
-        then(accountabilityRelationRepository).should(never()).saveAndFlush(any());
+        then(inviteCodeIssuer).should(never()).issueForNewRelation(any(), any());
     }
 
     @Test
-    @DisplayName("create converts duplicate key race into AccountabilityRelationAlreadyExistsException")
+    @DisplayName("create propagates AccountabilityRelationAlreadyExistsException raised by the issuer on a race")
     void create_duplicateKeyRace_throwsException() {
         // given
         given(accountabilityRelationRepository.existsBySubjectUserId(userId)).willReturn(false);
-        DataIntegrityViolationException duplicateKey = new DataIntegrityViolationException(
-                "duplicate",
-                new SQLException("Duplicate entry", "23000", 1062)
-        );
-        given(accountabilityRelationRepository.saveAndFlush(any(AccountabilityRelation.class)))
-                .willThrow(duplicateKey);
+        given(inviteCodeIssuer.issueForNewRelation(eq(userId), any(VisibilityPolicy.class)))
+                .willThrow(new AccountabilityRelationAlreadyExistsException());
 
         // when & then
         assertThatThrownBy(() -> createAccountabilityRelationService.create(request()))
