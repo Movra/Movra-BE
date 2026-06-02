@@ -25,6 +25,10 @@ import java.time.Clock;
                 @UniqueConstraint(
                         name = "uk_accountability_relation_watcher_user_id",
                         columnNames = "watcher_user_id"
+                ),
+                @UniqueConstraint(
+                        name = "uk_accountability_relation_invite_code",
+                        columnNames = "code"
                 )
         }
 )
