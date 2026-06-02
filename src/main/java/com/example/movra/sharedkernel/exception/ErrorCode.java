@@ -84,6 +84,7 @@ public enum ErrorCode {
 
     INVITE_CODE_NOT_GENERATED(HttpStatus.BAD_REQUEST, "초대 코드가 생성되지 않았습니다."),
     INVITE_CODE_EXPIRED(HttpStatus.BAD_REQUEST, "초대 코드가 만료되었습니다."),
+    INVITE_CODE_GENERATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "초대 코드 생성에 실패했습니다. 잠시 후 다시 시도해주세요."),
 
     ACCOUNTABILITY_RELATION_NOT_FOUND(HttpStatus.NOT_FOUND, "감시 관계를 찾을 수 없습니다."),
     ACCOUNTABILITY_RELATION_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 감시 관계입니다."),
