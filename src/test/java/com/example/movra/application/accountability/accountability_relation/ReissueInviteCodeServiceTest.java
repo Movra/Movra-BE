@@ -1,9 +1,9 @@
 package com.example.movra.application.accountability.accountability_relation;
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
+import com.example.movra.bc.accountability.accountability_relation.application.helper.InviteCodeIssuer;
 import com.example.movra.bc.accountability.accountability_relation.application.service.exception.AccountabilityRelationNotFoundException;
 import com.example.movra.bc.accountability.accountability_relation.application.service.invite.ReissueInviteCodeService;
-import com.example.movra.bc.accountability.accountability_relation.domain.repository.AccountabilityRelationRepository;
 import com.example.movra.bc.analytics.activation_event.application.service.AnalyticsEventRecorder;
 import com.example.movra.sharedkernel.user.AuthenticatedUser;
 import com.example.movra.sharedkernel.user.CurrentUserQuery;
@@ -13,9 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.Clock;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.BDDMockito.given;
@@ -27,13 +24,10 @@ class ReissueInviteCodeServiceTest {
     private ReissueInviteCodeService reissueInviteCodeService;
 
     @Mock
-    private AccountabilityRelationRepository accountabilityRelationRepository;
+    private InviteCodeIssuer inviteCodeIssuer;
 
     @Mock
     private CurrentUserQuery currentUserQuery;
-
-    @Mock
-    private Clock clock;
 
     @Mock
     private AnalyticsEventRecorder analyticsEventRecorder;
@@ -43,7 +37,7 @@ class ReissueInviteCodeServiceTest {
     void reissue_relationNotFound_throwsException() {
         UserId userId = UserId.newId();
         given(currentUserQuery.currentUser()).willReturn(AuthenticatedUser.builder().userId(userId).build());
-        given(accountabilityRelationRepository.findBySubjectUserId(userId)).willReturn(Optional.empty());
+        given(inviteCodeIssuer.reissueForSubject(userId)).willThrow(new AccountabilityRelationNotFoundException());
 
         assertThatThrownBy(() -> reissueInviteCodeService.reissue())
                 .isInstanceOf(AccountabilityRelationNotFoundException.class);
