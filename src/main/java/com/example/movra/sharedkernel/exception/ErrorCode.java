@@ -29,6 +29,7 @@ public enum ErrorCode {
     INVALID_FILE_EXTENSION(HttpStatus.BAD_REQUEST, "잘못된 파일 확장자입니다."),
     FILE_UPLOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 업로드에 실패했습니다."),
     FILE_DELETE_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "파일 삭제에 실패했습니다."),
+    FILE_SIZE_EXCEEDED(HttpStatus.PAYLOAD_TOO_LARGE, "이미지 용량이 허용된 최대 크기를 초과했습니다."),
 
     DAILY_PLAN_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 일일 계획입니다."),
     DAILY_PLAN_NOT_FOUND(HttpStatus.NOT_FOUND, "일일 계획을 찾을 수 없습니다."),
