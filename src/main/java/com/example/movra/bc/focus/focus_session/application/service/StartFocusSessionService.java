@@ -17,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -42,17 +43,32 @@ public class StartFocusSessionService {
             throw new FocusSessionAlreadyInProgressException();
         }
 
-        FocusSession focusSession = focusSessionRepository.save(FocusSession.start(userId, now, presetMinutes));
+        FocusSession focusSession = focusSessionRepository.save(createSession(userId, now, presetMinutes));
         analyticsEventRecorder.recordSafely(
                 userId,
                 AnalyticsEventType.FOCUS_SESSION_STARTED,
-                Map.of(
-                        "focusSessionId", focusSession.getId().id().toString(),
-                        "startedAt", focusSession.getStartedAt().toString(),
-                        "presetMinutes", String.valueOf(focusSession.getPresetMinutes()),
-                        "presetSeconds", String.valueOf(focusSession.presetSeconds())
-                )
+                startedProperties(focusSession)
         );
         return FocusSessionResponse.from(focusSession, now);
+    }
+
+    private FocusSession createSession(UserId userId, Instant now, Integer presetMinutes) {
+        return presetMinutes == null
+                ? FocusSession.startUnlimited(userId, now)
+                : FocusSession.start(userId, now, presetMinutes);
+    }
+
+    private Map<String, String> startedProperties(FocusSession focusSession) {
+        Map<String, String> properties = new HashMap<>();
+        properties.put("focusSessionId", focusSession.getId().id().toString());
+        properties.put("startedAt", focusSession.getStartedAt().toString());
+        properties.put("unlimited", String.valueOf(focusSession.isUnlimited()));
+
+        if (focusSession.getPresetMinutes() != null) {
+            properties.put("presetMinutes", String.valueOf(focusSession.getPresetMinutes()));
+            properties.put("presetSeconds", String.valueOf(focusSession.presetSeconds()));
+        }
+
+        return properties;
     }
 }

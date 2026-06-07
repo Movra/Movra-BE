@@ -14,6 +14,7 @@ public record FocusSessionResponse(
         Long recordedElapsedSeconds,
         long elapsedSeconds,
         boolean inProgress,
+        boolean unlimited,
         Integer presetMinutes,
         Integer presetSeconds,
         Double presetCompletionRate
@@ -27,6 +28,7 @@ public record FocusSessionResponse(
                 .recordedElapsedSeconds(focusSession.getDurationSeconds())
                 .elapsedSeconds(focusSession.elapsedSecondsAt(now))
                 .inProgress(focusSession.isInProgress())
+                .unlimited(focusSession.isUnlimited())
                 .presetMinutes(focusSession.getPresetMinutes())
                 .presetSeconds(focusSession.presetSeconds())
                 .presetCompletionRate(focusSession.presetCompletionRate())
