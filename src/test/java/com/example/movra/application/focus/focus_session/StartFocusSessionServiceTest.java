@@ -104,6 +104,36 @@ class StartFocusSessionServiceTest {
     }
 
     @Test
+    @DisplayName("start creates an unlimited session when preset minutes is null")
+    void start_nullPreset_createsUnlimitedSession() {
+        // given
+        givenCurrentUser();
+        StartFocusSessionRequest unlimitedRequest = new StartFocusSessionRequest(null);
+        FocusSession focusSession = FocusSession.startUnlimited(userId, now);
+        given(clock.instant()).willReturn(now);
+        given(userRepository.findByIdForUpdate(userId)).willReturn(Optional.of(user));
+        given(focusSessionRepository.existsByUserIdAndEndedAtIsNull(userId)).willReturn(false);
+        given(focusSessionRepository.save(any(FocusSession.class))).willReturn(focusSession);
+
+        // when
+        FocusSessionResponse response = startFocusSessionService.start(unlimitedRequest);
+
+        // then
+        assertThat(response.inProgress()).isTrue();
+        assertThat(response.unlimited()).isTrue();
+        assertThat(response.presetMinutes()).isNull();
+        assertThat(response.presetSeconds()).isNull();
+        then(analyticsEventRecorder).should().recordSafely(
+                eq(userId),
+                eq(AnalyticsEventType.FOCUS_SESSION_STARTED),
+                argThat(properties ->
+                        properties.get("unlimited").equals("true")
+                                && !properties.containsKey("presetMinutes")
+                )
+        );
+    }
+
+    @Test
     @DisplayName("start throws when a session is already in progress")
     void start_alreadyInProgress_throwsException() {
         // given
