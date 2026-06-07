@@ -4,15 +4,15 @@ import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.analytics.activation_event.application.service.AnalyticsEventRecorder;
 import com.example.movra.bc.analytics.activation_event.domain.type.AnalyticsEventType;
 import com.example.movra.bc.focus.focus_session.application.service.dto.response.RecoveryCardResponse;
+import com.example.movra.bc.focus.focus_session.application.service.support.RecoveryGuidanceResolver;
 import com.example.movra.bc.focus.focus_session.domain.DailyFocusSummary;
 import com.example.movra.bc.focus.focus_session.domain.FocusSession;
+import com.example.movra.bc.focus.focus_session.domain.RecoveryTypePolicy;
 import com.example.movra.bc.focus.focus_session.domain.repository.DailyFocusSummaryRepository;
 import com.example.movra.bc.focus.focus_session.domain.repository.FocusSessionRepository;
 import com.example.movra.bc.focus.focus_session.domain.type.RecoveryType;
 import com.example.movra.bc.personalization.behavior_profile.domain.BehaviorProfile;
 import com.example.movra.bc.personalization.behavior_profile.domain.repository.BehaviorProfileRepository;
-import com.example.movra.bc.personalization.behavior_profile.domain.type.CoachingMode;
-import com.example.movra.bc.personalization.behavior_profile.domain.type.RecoveryStyle;
 import com.example.movra.bc.planning.daily_plan.domain.DailyTopPicksSummary;
 import com.example.movra.bc.planning.daily_plan.domain.repository.DailyTopPicksSummaryRepository;
 import com.example.movra.bc.planning.exam_schedule.domain.ExamSchedule;
@@ -50,6 +50,7 @@ public class QueryRecoveryCardService {
 
         Optional<DailyFocusSummary> focusSummary = dailyFocusSummaryRepository
                 .findByUserIdAndDate(userId, yesterday);
+
         boolean missedFocus = focusSummary.isEmpty() || focusSummary.get().getTotalSeconds() == 0;
         long yesterdayFocusSeconds = focusSummary.map(DailyFocusSummary::getTotalSeconds).orElse(0L);
 
@@ -65,14 +66,15 @@ public class QueryRecoveryCardService {
 
         Optional<ExamSchedule> recentPostExam = findRecentPostExam(userId, today);
         Optional<Long> daysSinceLastSession = daysSinceLastCompletedSession(userId, today);
-        RecoveryType recoveryType = determineRecoveryType(missedFocus, incompleteTopPick, recentPostExam, daysSinceLastSession);
+        RecoveryType recoveryType = RecoveryTypePolicy.determine(
+                missedFocus, incompleteTopPick, recentPostExam.isPresent(), daysSinceLastSession.orElse(null));
         Optional<BehaviorProfile> behaviorProfile = behaviorProfileRepository.findByUserId(userId);
 
         RecoveryCardResponse response = RecoveryCardResponse.builder()
                 .needsRecovery(recoveryType != RecoveryType.NONE)
                 .recoveryType(recoveryType)
-                .suggestedAction(determineSuggestedAction(behaviorProfile, recoveryType))
-                .suggestedDurationMinutes(determineSuggestedDurationMinutes(behaviorProfile, recoveryType))
+                .suggestedAction(RecoveryGuidanceResolver.resolveSuggestedAction(behaviorProfile, recoveryType))
+                .suggestedDurationMinutes(RecoveryGuidanceResolver.resolveSuggestedDurationMinutes(behaviorProfile, recoveryType))
                 .yesterdayFocusSeconds(yesterdayFocusSeconds)
                 .yesterdayTopPickCompletionRate(yesterdayTopPickCompletionRate)
                 .daysSinceLastSession(daysSinceLastSession.orElse(null))
@@ -86,30 +88,6 @@ public class QueryRecoveryCardService {
         );
 
         return response;
-    }
-
-    private RecoveryType determineRecoveryType(
-            boolean missedFocus,
-            boolean incompleteTopPick,
-            Optional<ExamSchedule> recentPostExam,
-            Optional<Long> daysSinceLastSession
-    ) {
-        if (recentPostExam.isPresent()) {
-            return RecoveryType.POST_EXAM_RECOVERY;
-        }
-        if (daysSinceLastSession.map(days -> days >= 7).orElse(false)) {
-            return RecoveryType.LONG_ABSENCE;
-        }
-        if (missedFocus && incompleteTopPick) {
-            return RecoveryType.BOTH;
-        }
-        if (missedFocus) {
-            return RecoveryType.MISSED_FOCUS;
-        }
-        if (incompleteTopPick) {
-            return RecoveryType.INCOMPLETE_TOP_PICK;
-        }
-        return RecoveryType.NONE;
     }
 
     private Optional<ExamSchedule> findRecentPostExam(UserId userId, LocalDate today) {
@@ -153,83 +131,6 @@ public class QueryRecoveryCardService {
                 .daysSinceRecentExam(ChronoUnit.DAYS.between(examSchedule.getExamDate(), today))
                 .daysSinceLastSession(response.daysSinceLastSession())
                 .build();
-    }
-
-    private String determineSuggestedAction(Optional<BehaviorProfile> behaviorProfile, RecoveryType recoveryType) {
-        if (recoveryType == RecoveryType.POST_EXAM_RECOVERY) {
-            return "시험 직후에는 회복이 먼저예요. 오늘은 10분만 가볍게 다시 시작해볼까요?";
-        }
-
-        if (recoveryType == RecoveryType.LONG_ABSENCE) {
-            return "오랜만이어도 괜찮아요. 오늘은 3분만 다시 연결해볼까요?";
-        }
-
-        if (recoveryType == RecoveryType.NONE) {
-            return null;
-        }
-
-        RecoveryStyle recoveryStyle = behaviorProfile.map(BehaviorProfile::getRecoveryStyle).orElse(null);
-        CoachingMode coachingMode = behaviorProfile.map(BehaviorProfile::getCoachingMode).orElse(CoachingMode.NEUTRAL);
-
-        if (recoveryStyle == null) {
-            return defaultMessageFor(coachingMode);
-        }
-
-        return messageFor(recoveryStyle, coachingMode);
-    }
-
-    private Integer determineSuggestedDurationMinutes(Optional<BehaviorProfile> behaviorProfile, RecoveryType recoveryType) {
-        if (recoveryType == RecoveryType.NONE) {
-            return null;
-        }
-
-        if (recoveryType == RecoveryType.POST_EXAM_RECOVERY) {
-            return 10;
-        }
-
-        if (recoveryType == RecoveryType.LONG_ABSENCE) {
-            return 3;
-        }
-
-        return behaviorProfile.map(BehaviorProfile::getRecoveryStyle)
-                .map(this::durationForRecoveryStyle)
-                .orElse(5);
-    }
-
-    private int durationForRecoveryStyle(RecoveryStyle recoveryStyle) {
-        return switch (recoveryStyle) {
-            case QUICK_RESTART -> 5;
-            case NEEDS_REFLECTION -> 5;
-            case SLOW_REBUILDER -> 3;
-        };
-    }
-
-    private String messageFor(RecoveryStyle recoveryStyle, CoachingMode coachingMode) {
-        return switch (recoveryStyle) {
-            case QUICK_RESTART -> switch (coachingMode) {
-                case GENTLE -> "어제는 쉬어갔어요. 준비됐을 때 가볍게 시작해볼까요?";
-                case STRICT -> "준비됐어? 지금 바로 5분만 가자.";
-                case NEUTRAL -> "어제는 쉬어갔어요. 지금 바로 시작해볼까요?";
-            };
-            case NEEDS_REFLECTION -> switch (coachingMode) {
-                case GENTLE -> "어제 무엇이 힘들었는지 천천히 한 줄만 적어봐도 좋아요.";
-                case STRICT -> "어제 무엇이 무너졌는지 한 줄로 정리하고 다시 시작해.";
-                case NEUTRAL -> "어제 무엇이 어려웠는지 한 줄만 적어볼까요?";
-            };
-            case SLOW_REBUILDER -> switch (coachingMode) {
-                case GENTLE -> "오늘은 3분이면 충분해요. 천천히 다시 연결해볼까요?";
-                case STRICT -> "3분만. 그 정도는 지금 할 수 있어.";
-                case NEUTRAL -> "3분만 해볼까요? 작게 시작하면 돼요.";
-            };
-        };
-    }
-
-    private String defaultMessageFor(CoachingMode coachingMode) {
-        return switch (coachingMode) {
-            case GENTLE -> "괜찮아요. 오늘 다시 시작해볼까요?";
-            case STRICT -> "다시 시작해. 지금이 그 시점이야.";
-            case NEUTRAL -> "다시 시작해볼까요?";
-        };
     }
 
     private Map<String, String> analyticsProperties(RecoveryCardResponse response, LocalDate targetDate) {
