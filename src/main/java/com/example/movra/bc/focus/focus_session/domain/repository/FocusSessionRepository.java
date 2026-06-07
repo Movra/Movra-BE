@@ -22,6 +22,16 @@ public interface FocusSessionRepository extends JpaRepository<FocusSession, Focu
     Optional<FocusSession> findFirstByUserIdAndEndedAtIsNotNullOrderByEndedAtDesc(UserId userId);
 
     @Query("""
+            SELECT fs.id
+            FROM FocusSession fs
+            WHERE fs.endedAt IS NULL
+              AND fs.startedAt <= :startedAtThreshold
+            """)
+    List<FocusSessionId> findIdsInProgressStartedBefore(
+            @Param("startedAtThreshold") Instant startedAtThreshold
+    );
+
+    @Query("""
             SELECT fs
             FROM FocusSession fs
             WHERE fs.userId = :userId
