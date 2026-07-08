@@ -2,13 +2,16 @@ package com.example.movra.bc.account.user.presentation.user;
 
 import com.example.movra.bc.account.user.application.user.LocalLoginService;
 import com.example.movra.bc.account.user.application.user.LocalSignupService;
+import com.example.movra.bc.account.user.application.user.OauthCompleteService;
 import com.example.movra.bc.account.user.application.user.OauthProfileSetupService;
 import com.example.movra.bc.account.user.application.user.QueryOnboardingContextService;
 import com.example.movra.bc.account.user.application.user.ReissueService;
+import com.example.movra.bc.account.user.application.user.dto.request.OauthCompleteRequest;
 import com.example.movra.bc.account.user.application.user.dto.request.TokenReissueRequest;
 import com.example.movra.bc.account.user.application.user.dto.request.LocalLoginRequest;
 import com.example.movra.bc.account.user.application.user.dto.request.LocalSignupRequest;
 import com.example.movra.bc.account.user.application.user.dto.request.OauthProfileSetupRequest;
+import com.example.movra.bc.account.user.application.user.dto.response.OauthCompleteResponse;
 import com.example.movra.bc.account.user.application.user.dto.response.OnboardingContextResponse;
 import com.example.movra.bc.account.user.application.user.dto.response.ProfileSetupResponse;
 import com.example.movra.bc.account.user.application.user.dto.response.TokenResponse;
@@ -29,6 +32,7 @@ public class AuthController {
 
     private final LocalSignupService localSignupService;
     private final LocalLoginService localLoginService;
+    private final OauthCompleteService oauthCompleteService;
     private final OauthProfileSetupService oauthProfileSetupService;
     private final ReissueService reissueService;
     private final QueryOnboardingContextService queryOnboardingContextService;
@@ -46,6 +50,11 @@ public class AuthController {
     @PostMapping("/login")
     public TokenResponse login(@Valid @RequestBody LocalLoginRequest localLoginRequest) {
         return localLoginService.login(localLoginRequest);
+    }
+
+    @PostMapping("/oauth/complete")
+    public OauthCompleteResponse oauthComplete(@Valid @RequestBody OauthCompleteRequest oauthCompleteRequest) {
+        return oauthCompleteService.complete(oauthCompleteRequest);
     }
 
     @PostMapping("/oauth/profile-setup")

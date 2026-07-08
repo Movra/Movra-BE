@@ -58,6 +58,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/auth/signup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/auth/oauth/complete").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/oauth/profile-setup").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/reissue").permitAll()
                         .requestMatchers(HttpMethod.GET, "/auth/onboarding-context").permitAll()
