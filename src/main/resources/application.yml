@@ -43,6 +43,14 @@ spring:
       port: ${REDIS_PORT}
       host: ${REDIS_HOST}
 
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: ${OPENAI_MODEL:gpt-4.1-mini}
+          temperature: ${OPENAI_TEMPERATURE:0.7}
+
   oauth:
     redirect:
       frontend-url: ${FRONTEND_URL}

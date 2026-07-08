@@ -22,6 +22,7 @@ public enum ErrorCode {
     PASSWORD_MISMATCH(HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "사용자를 찾을 수 없습니다."),
     USER_CREATION_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "사용자 생성에 실패했습니다."),
+    OAUTH_CALLBACK_NOT_FOUND(HttpStatus.NOT_FOUND, "OAuth 인증 코드를 찾을 수 없습니다."),
     PENDING_OAUTH_NOT_FOUND(HttpStatus.NOT_FOUND, "대기 중인 OAuth 사용자를 찾을 수 없습니다."),
     REFRESH_TOKEN_NOT_FOUND(HttpStatus.UNAUTHORIZED, "리프레시 토큰을 찾을 수 없습니다."),
 
@@ -101,7 +102,14 @@ public enum ErrorCode {
     INVALID_BEHAVIOR_PROFILE(HttpStatus.BAD_REQUEST, "행동 프로필 내용이 유효하지 않습니다."),
 
     INVALID_CHAT_MESSAGE(HttpStatus.BAD_REQUEST, "유효하지 않은 채팅 메시지입니다."),
-    CHAT_NOT_ALLOWED(HttpStatus.FORBIDDEN, "현재 상태에서는 채팅을 보낼 수 없습니다.");
+    CHAT_NOT_ALLOWED(HttpStatus.FORBIDDEN, "현재 상태에서는 채팅을 보낼 수 없습니다."),
+
+    INSIGHT_REPORT_NOT_FOUND(HttpStatus.NOT_FOUND, "분석 리포트를 찾을 수 없습니다."),
+    INVALID_INSIGHT_PERIOD(HttpStatus.BAD_REQUEST, "유효하지 않은 분석 기간입니다."),
+
+    PROFILE_ADJUSTMENT_SUGGESTION_NOT_FOUND(HttpStatus.NOT_FOUND, "프로필 조정 제안을 찾을 수 없습니다."),
+
+    INSIGHT_GENERATION_FORBIDDEN(HttpStatus.FORBIDDEN, "분석 리포트 수동 생성 권한이 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

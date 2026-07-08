@@ -137,6 +137,7 @@ public class NotificationPreference extends AbstractAggregateRoot {
             case DAILY_TOP_PICKS -> dailyTopPicksEnabled;
             case DAILY_TIMETABLE -> dailyTimetableEnabled;
             case ACCOUNTABILITY_DAILY_SUMMARY, ACCOUNTABILITY_MESSAGE -> accountabilityEnabled;
+            case INSIGHT_REPORT_READY -> true;
         };
     }
 

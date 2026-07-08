@@ -9,7 +9,8 @@ public enum NotificationType {
     RECOVERY,
     TIMING,
     D_DAY,
-    STREAK;
+    STREAK,
+    INSIGHT_REPORT_READY;
 
     public int dailyTypeLimit() {
         return switch (this) {
