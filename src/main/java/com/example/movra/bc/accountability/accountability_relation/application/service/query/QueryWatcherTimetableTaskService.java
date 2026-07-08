@@ -1,6 +1,7 @@
 package com.example.movra.bc.accountability.accountability_relation.application.service.query;
 
 import com.example.movra.bc.accountability.accountability_relation.application.helper.WatcherAccountabilityRelationReader;
+import com.example.movra.bc.accountability.accountability_relation.application.helper.WatcherMonitoringContentReader;
 import com.example.movra.bc.accountability.accountability_relation.application.helper.WatcherSummaryDateRangeValidator;
 import com.example.movra.bc.accountability.accountability_relation.domain.AccountabilityRelation;
 import com.example.movra.bc.accountability.accountability_relation.domain.type.MonitoringTarget;
@@ -20,6 +21,7 @@ import java.util.Optional;
 public class QueryWatcherTimetableTaskService {
 
     private final WatcherAccountabilityRelationReader watcherAccountabilityRelationReader;
+    private final WatcherMonitoringContentReader watcherMonitoringContentReader;
     private final WatcherSummaryDateRangeValidator watcherSummaryDateRangeValidator;
     private final DailyTimetableSummaryReader dailyTimetableSummaryReader;
 
@@ -27,7 +29,7 @@ public class QueryWatcherTimetableTaskService {
         AccountabilityRelation relation = watcherAccountabilityRelationReader.getCurrentWatcherRelation();
         relation.ensureMonitoringTargetAllowed(MonitoringTarget.TIMETABLE_TASK);
 
-        return dailyTimetableSummaryReader.findOne(relation.getSubjectUserId(), date);
+        return watcherMonitoringContentReader.findTimetableTasks(relation.getSubjectUserId(), date);
     }
 
     public List<DailyTimetableSummaryView> queryRange(LocalDate from, LocalDate to) {

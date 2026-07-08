@@ -2,6 +2,7 @@ package com.example.movra.application.accountability.accountability_relation;
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.accountability.accountability_relation.application.helper.WatcherAccountabilityRelationReader;
+import com.example.movra.bc.accountability.accountability_relation.application.helper.WatcherMonitoringContentReader;
 import com.example.movra.bc.accountability.accountability_relation.application.helper.WatcherSummaryDateRangeValidator;
 import com.example.movra.bc.accountability.accountability_relation.application.service.exception.InvalidDateRangeException;
 import com.example.movra.bc.accountability.accountability_relation.application.service.query.QueryWatcherTopPicksService;
@@ -34,12 +35,16 @@ class QueryWatcherTopPicksServiceTest {
     @Mock
     private DailyTopPicksReader dailyTopPicksReader;
 
+    @Mock
+    private WatcherMonitoringContentReader watcherMonitoringContentReader;
+
     private QueryWatcherTopPicksService queryWatcherTopPicksService;
 
     @BeforeEach
     void setUp() {
         queryWatcherTopPicksService = new QueryWatcherTopPicksService(
                 watcherAccountabilityRelationReader,
+                watcherMonitoringContentReader,
                 new WatcherSummaryDateRangeValidator(),
                 dailyTopPicksReader
         );

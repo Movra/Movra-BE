@@ -3,6 +3,8 @@ package com.example.movra.bc.accountability.accountability_relation.presentation
 import com.example.movra.bc.accountability.accountability_relation.application.service.query.QueryWatcherFocusSessionService;
 import com.example.movra.bc.accountability.accountability_relation.application.service.query.QueryWatcherTimetableTaskService;
 import com.example.movra.bc.accountability.accountability_relation.application.service.query.QueryWatcherTopPicksService;
+import com.example.movra.bc.accountability.accountability_relation.application.service.query.QueryWatcherOverviewService;
+import com.example.movra.bc.accountability.accountability_relation.application.service.dto.response.WatcherOverviewResponse;
 import com.example.movra.bc.focus.focus_session.application.service.support.dto.DailyFocusSummaryView;
 import com.example.movra.bc.planning.daily_plan.application.service.daily_plan.support.dto.DailyTopPicksSummaryView;
 import com.example.movra.bc.planning.timetable.application.service.support.dto.DailyTimetableSummaryView;
@@ -24,6 +26,12 @@ public class WatcherQueryController {
     private final QueryWatcherFocusSessionService queryWatcherFocusSessionService;
     private final QueryWatcherTopPicksService queryWatcherTopPicksService;
     private final QueryWatcherTimetableTaskService queryWatcherTimetableTaskService;
+    private final QueryWatcherOverviewService queryWatcherOverviewService;
+
+    @GetMapping("/overview")
+    public WatcherOverviewResponse queryOverview(@RequestParam LocalDate date) {
+        return queryWatcherOverviewService.query(date);
+    }
 
     @GetMapping("/focus-sessions")
     public ResponseEntity<DailyFocusSummaryView> queryFocusSession(@RequestParam LocalDate date) {

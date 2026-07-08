@@ -102,10 +102,28 @@ class AccountabilityRelationControllerTest {
     @Test
     @DisplayName("join joins accountability relation by invite code")
     void join_joinsRelation() throws Exception {
+        UUID relationId = UUID.randomUUID();
+        UUID subjectUserId = UUID.randomUUID();
+        UUID watcherUserId = UUID.randomUUID();
+        given(joinAccountabilityRelationService.join(any())).willReturn(
+                FriendAccountabilityRelationResponse.builder()
+                        .accountabilityRelationId(relationId)
+                        .subjectUserId(subjectUserId)
+                        .watcherUserId(watcherUserId)
+                        .watcherConnected(true)
+                        .allowedTargets(Set.of(MonitoringTarget.TOP_PICKS, MonitoringTarget.TIMETABLE_TASK))
+                        .build()
+        );
+
         mockMvc.perform(post("/accountability-relations/join")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"inviteCode\": \"ABC123\"}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accountabilityRelationId").value(relationId.toString()))
+                .andExpect(jsonPath("$.subjectUserId").value(subjectUserId.toString()))
+                .andExpect(jsonPath("$.watcherUserId").value(watcherUserId.toString()))
+                .andExpect(jsonPath("$.watcherConnected").value(true))
+                .andExpect(jsonPath("$.allowedTargets").isArray());
 
         then(joinAccountabilityRelationService).should().join(any());
     }

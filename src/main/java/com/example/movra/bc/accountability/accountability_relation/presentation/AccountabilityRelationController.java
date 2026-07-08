@@ -42,8 +42,8 @@ public class AccountabilityRelationController {
     }
 
     @PostMapping("/join")
-    public void join(@Valid @RequestBody JoinAccountabilityRelationRequest request) {
-        joinAccountabilityRelationService.join(request);
+    public FriendAccountabilityRelationResponse join(@Valid @RequestBody JoinAccountabilityRelationRequest request) {
+        return joinAccountabilityRelationService.join(request);
     }
 
     @PostMapping("/invite-code/reissue")

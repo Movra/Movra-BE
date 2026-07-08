@@ -1,6 +1,7 @@
 package com.example.movra.bc.accountability.accountability_relation.application.service.query;
 
 import com.example.movra.bc.accountability.accountability_relation.application.helper.WatcherAccountabilityRelationReader;
+import com.example.movra.bc.accountability.accountability_relation.application.helper.WatcherMonitoringContentReader;
 import com.example.movra.bc.accountability.accountability_relation.application.helper.WatcherSummaryDateRangeValidator;
 import com.example.movra.bc.accountability.accountability_relation.domain.AccountabilityRelation;
 import com.example.movra.bc.accountability.accountability_relation.domain.type.MonitoringTarget;
@@ -20,6 +21,7 @@ import java.util.Optional;
 public class QueryWatcherFocusSessionService {
 
     private final WatcherAccountabilityRelationReader watcherAccountabilityRelationReader;
+    private final WatcherMonitoringContentReader watcherMonitoringContentReader;
     private final WatcherSummaryDateRangeValidator watcherSummaryDateRangeValidator;
     private final DailyFocusSummaryReader dailyFocusSummaryReader;
 
@@ -27,7 +29,7 @@ public class QueryWatcherFocusSessionService {
         AccountabilityRelation relation = watcherAccountabilityRelationReader.getCurrentWatcherRelation();
         relation.ensureMonitoringTargetAllowed(MonitoringTarget.FOCUS_SESSION);
 
-        return dailyFocusSummaryReader.findOne(relation.getSubjectUserId(), date);
+        return watcherMonitoringContentReader.findFocusSessions(relation.getSubjectUserId(), date);
     }
 
     public List<DailyFocusSummaryView> queryRange(LocalDate from, LocalDate to) {

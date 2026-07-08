@@ -2,6 +2,7 @@ package com.example.movra.bc.accountability.accountability_relation.application.
 
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
 import com.example.movra.bc.accountability.accountability_relation.application.service.dto.request.JoinAccountabilityRelationRequest;
+import com.example.movra.bc.accountability.accountability_relation.application.service.dto.response.FriendAccountabilityRelationResponse;
 import com.example.movra.bc.accountability.accountability_relation.domain.AccountabilityRelation;
 import com.example.movra.bc.accountability.accountability_relation.domain.exception.InvalidInviteCodeException;
 import com.example.movra.bc.accountability.accountability_relation.domain.repository.AccountabilityRelationRepository;
@@ -29,7 +30,7 @@ public class JoinAccountabilityRelationService {
     private final NotificationGateway notificationGateway;
 
     @Transactional
-    public void join(JoinAccountabilityRelationRequest request) {
+    public FriendAccountabilityRelationResponse join(JoinAccountabilityRelationRequest request) {
         AccountabilityRelation accountabilityRelation =
                 accountabilityRelationRepository.findByInviteCode_Code(request.inviteCode())
                         .orElseThrow(InvalidInviteCodeException::new);
@@ -62,5 +63,6 @@ public class JoinAccountabilityRelationService {
                         )
                 )
         );
+        return FriendAccountabilityRelationResponse.from(accountabilityRelation);
     }
 }

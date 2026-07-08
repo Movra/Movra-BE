@@ -85,9 +85,12 @@ class JoinAccountabilityRelationServiceTest {
         given(accountabilityRelationRepository.findByInviteCode_Code(inviteCode))
                 .willReturn(Optional.of(relation));
 
-        joinAccountabilityRelationService.join(new JoinAccountabilityRelationRequest(inviteCode));
+        var response = joinAccountabilityRelationService.join(new JoinAccountabilityRelationRequest(inviteCode));
 
         assertThat(relation.getWatcherUserId()).isEqualTo(watcherUserId);
+        assertThat(response.subjectUserId()).isEqualTo(subjectUserId.id());
+        assertThat(response.watcherUserId()).isEqualTo(watcherUserId.id());
+        assertThat(response.allowedTargets()).containsExactly(MonitoringTarget.FOCUS_SESSION);
         then(analyticsEventRecorder).should().recordSafely(
                 eq(watcherUserId),
                 eq(AnalyticsEventType.ACCOUNTABILITY_FRIEND_JOINED),

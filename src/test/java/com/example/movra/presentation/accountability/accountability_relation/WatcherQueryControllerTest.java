@@ -1,10 +1,14 @@
 package com.example.movra.presentation.accountability.accountability_relation;
 
+import com.example.movra.bc.accountability.accountability_relation.application.service.dto.response.FriendAccountabilityRelationResponse;
+import com.example.movra.bc.accountability.accountability_relation.application.service.dto.response.WatcherOverviewResponse;
 import com.example.movra.bc.accountability.accountability_relation.application.service.query.QueryWatcherFocusSessionService;
+import com.example.movra.bc.accountability.accountability_relation.application.service.query.QueryWatcherOverviewService;
 import com.example.movra.bc.accountability.accountability_relation.application.service.query.QueryWatcherTimetableTaskService;
 import com.example.movra.bc.accountability.accountability_relation.application.service.query.QueryWatcherTopPicksService;
 import com.example.movra.bc.accountability.accountability_relation.presentation.WatcherQueryController;
 import com.example.movra.bc.account.user.domain.user.vo.UserId;
+import com.example.movra.bc.accountability.accountability_relation.domain.type.MonitoringTarget;
 import com.example.movra.bc.focus.focus_session.application.service.support.dto.DailyFocusSummaryItemView;
 import com.example.movra.bc.focus.focus_session.application.service.support.dto.DailyFocusSummaryView;
 import com.example.movra.bc.planning.daily_plan.application.service.daily_plan.support.dto.DailyTopPicksSummaryItemView;
@@ -29,6 +33,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -47,6 +53,9 @@ class WatcherQueryControllerTest {
     @Mock
     private QueryWatcherTimetableTaskService queryWatcherTimetableTaskService;
 
+    @Mock
+    private QueryWatcherOverviewService queryWatcherOverviewService;
+
     private MockMvc mockMvc;
 
     private final UserId subjectUserId = UserId.newId();
@@ -59,12 +68,57 @@ class WatcherQueryControllerTest {
         WatcherQueryController controller = new WatcherQueryController(
                 queryWatcherFocusSessionService,
                 queryWatcherTopPicksService,
-                queryWatcherTimetableTaskService
+                queryWatcherTimetableTaskService,
+                queryWatcherOverviewService
         );
 
         mockMvc = MockMvcBuilders.standaloneSetup(controller)
                 .setMessageConverters(new MappingJackson2HttpMessageConverter(objectMapper))
                 .build();
+    }
+
+    @Test
+    @DisplayName("queryOverview returns allowed relation and monitoring contents")
+    void queryOverview_returnsAllowedContents() throws Exception {
+        LocalDate date = LocalDate.of(2026, 4, 20);
+        UUID relationId = UUID.randomUUID();
+        UUID watcherUserId = UUID.randomUUID();
+        given(queryWatcherOverviewService.query(date)).willReturn(
+                new WatcherOverviewResponse(
+                        FriendAccountabilityRelationResponse.builder()
+                                .accountabilityRelationId(relationId)
+                                .subjectUserId(subjectUserId.id())
+                                .watcherUserId(watcherUserId)
+                                .watcherConnected(true)
+                                .allowedTargets(Set.of(MonitoringTarget.TOP_PICKS, MonitoringTarget.TIMETABLE_TASK))
+                                .build(),
+                        date,
+                        null,
+                        new DailyTopPicksSummaryView(
+                                subjectUserId, date, 1, 1,
+                                List.of(new DailyTopPicksSummaryItemView("수학 문제집", true, 30, "2단원", 1))
+                        ),
+                        new DailyTimetableSummaryView(
+                                subjectUserId, date, 1, 0,
+                                List.of(new DailyTimetableSummaryItemView(
+                                        "영어 단어", false,
+                                        LocalTime.of(9, 0), LocalTime.of(10, 0),
+                                        true, 1
+                                ))
+                        )
+                )
+        );
+
+        mockMvc.perform(get("/accountability-relations/watcher/overview")
+                        .param("date", "2026-04-20"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.relation.accountabilityRelationId").value(relationId.toString()))
+                .andExpect(jsonPath("$.relation.allowedTargets").isArray())
+                .andExpect(jsonPath("$.date").value("2026-04-20"))
+                .andExpect(jsonPath("$.topPicks.items[0].content").value("수학 문제집"))
+                .andExpect(jsonPath("$.topPicks.items[0].completed").value(true))
+                .andExpect(jsonPath("$.timetableTasks.items[0].contentSnapshot").value("영어 단어"))
+                .andExpect(jsonPath("$.timetableTasks.items[0].completedSnapshot").value(false));
     }
 
     @Test
